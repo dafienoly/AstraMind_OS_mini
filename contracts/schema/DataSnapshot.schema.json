@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "DatasetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "dataset_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Dataset Name",
+          "type": "string"
+        },
+        "dataset_version": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Dataset Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_name",
+        "dataset_version",
+        "schema_version",
+        "content_hash"
+      ],
+      "title": "DatasetRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "code_identity": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Code Identity",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "datasets": {
+      "items": {
+        "$ref": "#/$defs/DatasetRef"
+      },
+      "minItems": 1,
+      "title": "Datasets",
+      "type": "array"
+    },
+    "known_gaps": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Known Gaps",
+      "type": "array"
+    },
+    "snapshot_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "as_of",
+    "datasets",
+    "created_at",
+    "code_identity"
+  ],
+  "title": "DataSnapshot",
+  "type": "object"
+}

@@ -1,0 +1,22 @@
+{
+  "fixture_version": "golden-v1",
+  "provider": "fixture",
+  "source_identity": "fixture://synthetic/shareholder-count",
+  "retrieved_at": "2026-01-21T16:00:00+08:00",
+  "as_of": "2026-01-15T15:30:00+08:00",
+  "instrument_id": "SYNTHETIC.TEST",
+  "units": "households",
+  "schema_version": "1.0.0",
+  "observations": [
+    {
+      "market_date": "2025-12-31",
+      "available_at": "2026-01-10T18:00:00+08:00",
+      "holder_count": 1000
+    },
+    {
+      "market_date": "2025-12-31",
+      "available_at": "2026-01-20T18:00:00+08:00",
+      "holder_count": 900
+    }
+  ]
+}

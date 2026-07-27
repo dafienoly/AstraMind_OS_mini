@@ -1,0 +1,1 @@
+"""Strategy Research application services."""

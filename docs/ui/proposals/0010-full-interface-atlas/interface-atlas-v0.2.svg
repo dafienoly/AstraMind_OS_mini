@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" role="img" aria-labelledby="title desc">
+  <title id="title">AstraMind OS mini 完整界面总览 v0.2</title>
+  <desc id="desc">十组界面提案覆盖十七个工作面，加入指数、策略个股和 ETF 蜡烛图，以及行业生命周期结构地图和行业内研究排序。</desc>
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#17313d" flood-opacity=".10"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t28{font-size:28px;font-weight:700}.bold{font-weight:700}
+    </style>
+  </defs>
+
+  <rect width="1920" height="1200" fill="#e9eeec"/>
+  <text x="40" y="42" class="cn t28 ink">AstraMind OS mini · 完整界面总览</text>
+  <text x="40" y="70" class="cn t13 muted">UI-PROP-0010 v0.2 · 10 组提案覆盖 17 个重要工作面 · 本轮新增统一蜡烛图与行业生命周期研究</text>
+  <rect x="1700" y="28" width="180" height="36" rx="18" fill="#f7eddb"/><circle cx="1722" cy="46" r="5" fill="#b47a22"/>
+  <text x="1735" y="51" class="cn t12 ochre bold">禁止实施</text>
+
+  <!-- navigation and core paths -->
+  <rect x="40" y="96" width="1840" height="92" rx="14" fill="#172129" filter="url(#shadow)"/>
+  <text x="68" y="126" class="cn t10" fill="#91a1aa">五个一级入口</text>
+  <text x="68" y="154" class="cn t14 bold" fill="#fff">今日　市场　策略竞技场　组合　系统</text>
+  <line x1="408" y1="116" x2="408" y2="168" stroke="#344650"/>
+  <text x="436" y="126" class="cn t10" fill="#91a1aa">个股日常链</text><text x="436" y="153" class="cn t11" fill="#fff">今日 → 策略/行业选股 → 个股 K 线 → 组合目标 → 订单 → Shadow</text>
+  <line x1="1048" y1="116" x2="1048" y2="168" stroke="#344650"/>
+  <text x="1076" y="126" class="cn t10" fill="#91a1aa">长线周度链</text><text x="1076" y="153" class="cn t11" fill="#fff">因子 → 行业模型 → 优化器 → 风险 → 周度订单</text>
+  <line x1="1480" y1="116" x2="1480" y2="168" stroke="#344650"/>
+  <text x="1508" y="126" class="cn t10" fill="#91a1aa">市场与 ETF 链</text><text x="1508" y="153" class="cn t11" fill="#fff">大盘 K → 行业结构/轮动 → ETF K → 目标</text>
+
+  <!-- card 0001 -->
+  <rect x="40" y="216" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="56" y="244" class="mono t10 blue">UI-PROP-0001 · v0.3</text><rect x="286" y="228" width="88" height="26" rx="13" fill="#e7f2ec"/><text x="309" y="246" class="cn t9 green bold">已批准</text>
+  <rect x="56" y="268" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="56" y="268" width="28" height="180" rx="8" fill="#172129"/><rect x="76" y="268" width="8" height="180" fill="#172129"/>
+  <rect x="94" y="280" width="270" height="18" rx="4" fill="#eef5f7"/>
+  <rect x="94" y="306" width="202" height="126" rx="5" fill="#fff" stroke="#d8e0dd"/>
+  <line x1="104" y1="338" x2="286" y2="338" stroke="#e2e9e6"/><line x1="104" y1="370" x2="286" y2="370" stroke="#e2e9e6"/>
+  <g stroke-width="1.5"><line x1="116" y1="370" x2="116" y2="402" stroke="#238267"/><rect x="112" y="380" width="8" height="12" fill="#238267"/>
+    <line x1="134" y1="362" x2="134" y2="394" stroke="#c34b43"/><rect x="130" y="370" width="8" height="14" fill="#c34b43"/>
+    <line x1="152" y1="354" x2="152" y2="386" stroke="#c34b43"/><rect x="148" y="362" width="8" height="14" fill="#c34b43"/>
+    <line x1="170" y1="348" x2="170" y2="380" stroke="#238267"/><rect x="166" y="356" width="8" height="14" fill="#238267"/>
+    <line x1="188" y1="338" x2="188" y2="372" stroke="#c34b43"/><rect x="184" y="346" width="8" height="16" fill="#c34b43"/>
+    <line x1="206" y1="330" x2="206" y2="364" stroke="#c34b43"/><rect x="202" y="338" width="8" height="16" fill="#c34b43"/>
+    <line x1="224" y1="324" x2="224" y2="356" stroke="#238267"/><rect x="220" y="332" width="8" height="14" fill="#238267"/>
+    <line x1="242" y1="316" x2="242" y2="350" stroke="#c34b43"/><rect x="238" y="324" width="8" height="16" fill="#c34b43"/>
+    <line x1="260" y1="310" x2="260" y2="342" stroke="#c34b43"/><rect x="256" y="318" width="8" height="14" fill="#c34b43"/>
+    <line x1="278" y1="304" x2="278" y2="336" stroke="#c34b43"/><rect x="274" y="312" width="8" height="14" fill="#c34b43"/></g>
+  <path d="M116 390 C150 378 176 358 206 350 S252 326 278 320" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <rect x="304" y="306" width="60" height="126" rx="5" fill="#f2f6f4"/><rect x="312" y="318" width="44" height="30" rx="4" fill="#edf3f6"/><line x1="312" y1="364" x2="356" y2="364" stroke="#d6dfdc"/><line x1="312" y1="382" x2="356" y2="382" stroke="#d6dfdc"/><rect x="312" y="398" width="44" height="22" rx="4" fill="#fff7e9"/>
+  <text x="56" y="478" class="cn t16 ink bold">大盘 / 行业热力</text>
+  <text x="56" y="502" class="cn t10 muted">宽基指数日周月 K、成交量、均线与市场广度</text>
+  <rect x="56" y="526" width="134" height="28" rx="14" fill="#edf3f6"/><text x="77" y="545" class="cn t9 blue bold">新增：指数蜡烛图</text>
+  <text x="56" y="584" class="cn t10 muted">v0.2 壳层与行业热力已批准；v0.3 只修订大盘。</text>
+
+  <!-- card 0002 -->
+  <rect x="412" y="216" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="428" y="244" class="mono t10 blue">UI-PROP-0002 · v0.1</text><rect x="658" y="228" width="88" height="26" rx="13" fill="#e7f2ec"/><text x="681" y="246" class="cn t9 green bold">已批准</text>
+  <rect x="428" y="268" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <line x1="448" y1="356" x2="728" y2="356" stroke="#cfd8d4"/><line x1="588" y1="286" x2="588" y2="430" stroke="#cfd8d4"/>
+  <text x="448" y="292" class="cn t9 muted">改善</text><text x="704" y="292" class="cn t9 muted">领先</text><text x="448" y="424" class="cn t9 muted">落后</text><text x="704" y="424" class="cn t9 muted">减弱</text>
+  <path d="M492 396 C512 382 528 364 550 354 S574 328 600 312" fill="none" stroke="#2e5e84" stroke-width="3"/><circle cx="600" cy="312" r="6" fill="#2e5e84"/>
+  <path d="M662 310 C688 330 686 358 668 374 S638 402 612 408" fill="none" stroke="#b47a22" stroke-width="3"/><circle cx="612" cy="408" r="6" fill="#b47a22"/>
+  <path d="M524 324 C542 334 558 346 574 352" fill="none" stroke="#238267" stroke-width="3"/><circle cx="574" cy="352" r="6" fill="#238267"/>
+  <path d="M704 382 C680 374 664 360 646 342" fill="none" stroke="#c34b43" stroke-width="3"/><circle cx="646" cy="342" r="6" fill="#c34b43"/>
+  <text x="428" y="478" class="cn t16 ink bold">行业动态相对轮动</text>
+  <text x="428" y="502" class="cn t10 muted">申万行业在四象限中的相对位置与迁移轨迹</text>
+  <rect x="428" y="526" width="134" height="28" rx="14" fill="#e7f2ec"/><text x="450" y="545" class="cn t9 green bold">主视图 + 动效分镜</text>
+  <text x="428" y="584" class="cn t10 muted">独立于结构地图：它回答“行业正向哪里移动”。</text>
+
+  <!-- card 0011 -->
+  <rect x="784" y="216" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="800" y="244" class="mono t10 blue">UI-PROP-0011 · v0.1</text><rect x="1030" y="228" width="88" height="26" rx="13" fill="#e7f2ec"/><text x="1053" y="246" class="cn t9 green bold">已批准</text>
+  <rect x="800" y="268" width="154" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/><rect x="966" y="268" width="154" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="812" y="282" width="62" height="66" fill="#f0f7f3"/><rect x="874" y="282" width="66" height="66" fill="#eef4f8"/><rect x="812" y="348" width="62" height="72" fill="#f3f1f5"/><rect x="874" y="348" width="66" height="72" fill="#f8f5ed"/>
+  <line x1="812" y1="420" x2="944" y2="420" stroke="#77858d"/><line x1="812" y1="420" x2="812" y2="278" stroke="#77858d"/>
+  <circle cx="852" cy="314" r="14" fill="#7fb5a4"/><circle cx="900" cy="310" r="19" fill="#c6a15c" stroke="#172129" stroke-width="2"/><circle cx="920" cy="358" r="12" fill="#c78268"/><circle cx="838" cy="378" r="10" fill="#968aa7"/><circle cx="884" cy="338" r="13" fill="#6d9fbd"/>
+  <rect x="978" y="282" width="130" height="24" rx="4" fill="#edf3f6"/><rect x="978" y="316" width="130" height="28" rx="4" fill="#fff" stroke="#91aebf"/>
+  <line x1="986" y1="354" x2="1100" y2="354" stroke="#d6dfdc"/><line x1="986" y1="374" x2="1100" y2="374" stroke="#d6dfdc"/>
+  <rect x="978" y="388" width="68" height="44" rx="4" fill="#fff"/><path d="M986 420 C998 412 1008 416 1018 402 S1036 392 1040 394" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <rect x="1054" y="388" width="54" height="44" rx="4" fill="#f0f7f3"/>
+  <text x="800" y="478" class="cn t16 ink bold">生命周期结构 / 行业研究排序</text>
+  <text x="800" y="502" class="cn t10 muted">结构气泡地图、可读索引、行业内排序与个股 K</text>
+  <rect x="800" y="526" width="144" height="28" rx="14" fill="#edf3f6"/><text x="820" y="545" class="cn t9 blue bold">新增：两张连续工作面</text>
+  <text x="800" y="584" class="cn t10 muted">回答“行业在哪里”以及“行业内先研究谁”。</text>
+
+  <!-- card 0009 -->
+  <rect x="1156" y="216" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="1172" y="244" class="mono t10 blue">UI-PROP-0009 · v0.2</text><rect x="1402" y="228" width="88" height="26" rx="13" fill="#e7f2ec"/><text x="1425" y="246" class="cn t9 green bold">已批准</text>
+  <rect x="1172" y="268" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1184" y="280" width="296" height="28" rx="5" fill="#eef5f7"/>
+  <rect x="1192" y="287" width="44" height="14" rx="3" fill="#fff"/><path d="M1240 294 H1254" stroke="#91aebf"/><rect x="1258" y="287" width="44" height="14" rx="3" fill="#fff"/><path d="M1306 294 H1320" stroke="#91aebf"/><rect x="1324" y="287" width="44" height="14" rx="3" fill="#fff"/><path d="M1372 294 H1386" stroke="#91aebf"/><rect x="1390" y="287" width="44" height="14" rx="3" fill="#fff"/><path d="M1438 294 H1452" stroke="#91aebf"/><rect x="1456" y="287" width="16" height="14" rx="3" fill="#2e5e84"/>
+  <rect x="1184" y="320" width="84" height="112" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="1192" y="334" width="68" height="26" rx="4" fill="#edf3f6"/><line x1="1192" y1="376" x2="1260" y2="376" stroke="#d6dfdc"/><line x1="1192" y1="398" x2="1260" y2="398" stroke="#d6dfdc"/>
+  <rect x="1278" y="320" width="134" height="112" rx="5" fill="#fff" stroke="#d8e0dd"/><path d="M1288 400 C1314 390 1330 374 1346 378 S1380 344 1402 340" fill="none" stroke="#2e5e84" stroke-width="2.5"/>
+  <g fill="#c34b43"><rect x="1300" y="380" width="6" height="18"/><rect x="1324" y="366" width="6" height="20"/><rect x="1350" y="354" width="6" height="20"/><rect x="1380" y="338" width="6" height="22"/></g>
+  <rect x="1422" y="320" width="58" height="112" rx="5" fill="#f2f6f4"/><rect x="1430" y="334" width="42" height="26" rx="4" fill="#edf3f6"/><line x1="1430" y1="376" x2="1472" y2="376" stroke="#d6dfdc"/><rect x="1430" y="396" width="42" height="22" rx="4" fill="#fff7e9"/>
+  <text x="1172" y="478" class="cn t16 ink bold">行业 ETF 轮动</text>
+  <text x="1172" y="502" class="cn t10 muted">行业方向 → ETF 映射 → 价格核验 → 组合目标</text>
+  <rect x="1172" y="526" width="126" height="28" rx="14" fill="#edf3f6"/><text x="1192" y="545" class="cn t9 blue bold">新增：ETF 蜡烛图</text>
+  <text x="1172" y="584" class="cn t10 muted">图表无买入按钮；只能形成组合目标草案。</text>
+
+  <!-- card 0003 -->
+  <rect x="1528" y="216" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="1544" y="244" class="mono t10 blue">UI-PROP-0003 · v0.1</text><rect x="1758" y="228" width="104" height="26" rx="13" fill="#f7eddb"/><text x="1779" y="246" class="cn t9 ochre bold">待用户批准</text>
+  <rect x="1544" y="268" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1556" y="282" width="296" height="28" rx="5" fill="#eef5f7"/><line x1="1572" y1="296" x2="1770" y2="296" stroke="#91aebf" stroke-width="2"/><circle cx="1620" cy="296" r="4" fill="#2e5e84"/><circle cx="1692" cy="296" r="4" fill="#238267"/>
+  <rect x="1556" y="322" width="184" height="110" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="1568" y="334" width="76" height="36" rx="4" fill="#edf3f6"/><rect x="1652" y="334" width="76" height="36" rx="4" fill="#f2f5f3"/><rect x="1568" y="382" width="160" height="36" rx="4" fill="#f5f7f6"/>
+  <rect x="1750" y="322" width="102" height="110" rx="5" fill="#fff7e9" stroke="#ead4af"/><circle cx="1764" cy="338" r="4" fill="#b47a22"/><rect x="1764" y="352" width="74" height="24" rx="4" fill="#fff"/><rect x="1764" y="384" width="74" height="24" rx="4" fill="#fff"/><rect x="1764" y="414" width="34" height="10" rx="3" fill="#b47a22"/>
+  <text x="1544" y="478" class="cn t16 ink bold">今日工作台 / 异常衔接</text>
+  <text x="1544" y="502" class="cn t10 muted">短线、长线、市场状态、当日计划与待处理异常</text>
+  <rect x="1544" y="526" width="144" height="28" rx="14" fill="#f7eddb"/><text x="1564" y="545" class="cn t9 ochre bold">人工只处理异常边界</text>
+  <text x="1544" y="584" class="cn t10 muted">不另建审批中心；需要人工时在工作流原位衔接。</text>
+
+  <!-- card 0004 -->
+  <rect x="40" y="646" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="56" y="674" class="mono t10 blue">UI-PROP-0004 · v0.2</text><rect x="286" y="658" width="88" height="26" rx="13" fill="#e7f2ec"/><text x="309" y="676" class="cn t9 green bold">已批准</text>
+  <rect x="56" y="698" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="68" y="712" width="96" height="150" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="76" y="728" width="80" height="34" rx="4" fill="#edf3f6"/><line x1="76" y1="778" x2="156" y2="778" stroke="#d6dfdc"/><line x1="76" y1="806" x2="156" y2="806" stroke="#d6dfdc"/><line x1="76" y1="834" x2="156" y2="834" stroke="#d6dfdc"/>
+  <rect x="174" y="712" width="190" height="150" rx="5" fill="#fff" stroke="#d8e0dd"/><line x1="184" y1="750" x2="354" y2="750" stroke="#e2e9e6"/><line x1="184" y1="790" x2="354" y2="790" stroke="#e2e9e6"/>
+  <g stroke-width="1.2"><line x1="198" y1="806" x2="198" y2="836" stroke="#238267"/><rect x="194" y="816" width="8" height="12" fill="#238267"/><line x1="220" y1="792" x2="220" y2="824" stroke="#c34b43"/><rect x="216" y="802" width="8" height="14" fill="#c34b43"/><line x1="242" y1="778" x2="242" y2="812" stroke="#c34b43"/><rect x="238" y="788" width="8" height="14" fill="#c34b43"/><line x1="264" y1="766" x2="264" y2="800" stroke="#238267"/><rect x="260" y="776" width="8" height="14" fill="#238267"/><line x1="286" y1="748" x2="286" y2="786" stroke="#c34b43"/><rect x="282" y="758" width="8" height="16" fill="#c34b43"/><line x1="308" y1="736" x2="308" y2="774" stroke="#c34b43"/><rect x="304" y="746" width="8" height="16" fill="#c34b43"/><line x1="330" y1="724" x2="330" y2="764" stroke="#c34b43"/><rect x="326" y="736" width="8" height="16" fill="#c34b43"/></g>
+  <path d="M198 824 C236 806 264 784 286 770 S316 746 330 744" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <text x="56" y="908" class="cn t16 ink bold">策略竞技 / 策略选股</text>
+  <text x="56" y="932" class="cn t10 muted">多逻辑竞争、候选个股、封存证据与晋级差异</text>
+  <rect x="56" y="956" width="144" height="28" rx="14" fill="#edf3f6"/><text x="76" y="975" class="cn t9 blue bold">新增：策略个股 K 线</text>
+  <text x="56" y="1014" class="cn t10 muted">策略标记与证据截止同版本；不可显示未来 K 线。</text>
+
+  <!-- card 0005 -->
+  <rect x="412" y="646" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="428" y="674" class="mono t10 blue">UI-PROP-0005 · v0.1</text><rect x="642" y="658" width="104" height="26" rx="13" fill="#f7eddb"/><text x="663" y="676" class="cn t9 ochre bold">待用户批准</text>
+  <rect x="428" y="698" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="440" y="712" width="142" height="150" rx="5" fill="#fff" stroke="#d8e0dd"/>
+  <g><rect x="452" y="728" width="24" height="22" rx="3" fill="#e6aaa3"/><rect x="480" y="728" width="24" height="22" rx="3" fill="#cfe3dc"/><rect x="508" y="728" width="24" height="22" rx="3" fill="#dd827a"/><rect x="536" y="728" width="24" height="22" rx="3" fill="#eee3db"/>
+    <rect x="452" y="754" width="24" height="22" rx="3" fill="#f0d7d1"/><rect x="480" y="754" width="24" height="22" rx="3" fill="#d8ebe4"/><rect x="508" y="754" width="24" height="22" rx="3" fill="#e8b2aa"/><rect x="536" y="754" width="24" height="22" rx="3" fill="#bdd8cf"/></g>
+  <path d="M452 838 C474 830 494 812 514 818 S542 798 562 786" fill="none" stroke="#2e5e84" stroke-width="2.5"/>
+  <rect x="594" y="712" width="142" height="68" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="604" y="726" width="36" height="40" rx="4" fill="#f2f5f3"/><rect x="646" y="726" width="36" height="40" rx="4" fill="#edf3f6"/><rect x="688" y="726" width="38" height="40" rx="4" fill="#fff7e9"/>
+  <rect x="594" y="792" width="142" height="70" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="606" y="812" width="112" height="10" rx="5" fill="#e2e9e6"/><rect x="606" y="812" width="70" height="10" rx="5" fill="#2e5e84"/><rect x="606" y="838" width="112" height="10" rx="5" fill="#e2e9e6"/><rect x="606" y="838" width="86" height="10" rx="5" fill="#b47a22"/>
+  <text x="428" y="908" class="cn t16 ink bold">因子 / 行业模型 / 优化器</text>
+  <text x="428" y="932" class="cn t10 muted">IC、衰减、稳定性、分行业建模与可插拔优化</text>
+  <rect x="428" y="956" width="154" height="28" rx="14" fill="#edf3f6"/><text x="448" y="975" class="cn t9 blue bold">长线周度评估与调仓</text>
+  <text x="428" y="1014" class="cn t10 muted">初期可上监督学习；复杂优化器保留统一端口。</text>
+
+  <!-- card 0006 -->
+  <rect x="784" y="646" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="800" y="674" class="mono t10 blue">UI-PROP-0006 · v0.1</text><rect x="1014" y="658" width="104" height="26" rx="13" fill="#f7eddb"/><text x="1035" y="676" class="cn t9 ochre bold">待用户批准</text>
+  <rect x="800" y="698" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="812" y="712" width="296" height="36" rx="5" fill="#eef3f5"/><rect x="824" y="724" width="70" height="12" rx="3" fill="#fff"/><rect x="904" y="724" width="70" height="12" rx="3" fill="#fff"/><rect x="984" y="724" width="70" height="12" rx="3" fill="#fff"/>
+  <rect x="812" y="760" width="178" height="102" rx="5" fill="#fff" stroke="#d8e0dd"/><path d="M824 842 C844 834 862 826 880 832 S914 798 936 812 S964 782 978 776" fill="none" stroke="#2e5e84" stroke-width="2.5"/>
+  <rect x="1002" y="760" width="106" height="102" rx="5" fill="#fff7e9" stroke="#ead4af"/><line x1="1016" y1="810" x2="1094" y2="810" stroke="#cfd8d4" stroke-width="6" stroke-linecap="round"/><circle cx="1032" cy="810" r="6" fill="#238267"/><circle cx="1062" cy="810" r="5" fill="#b47a22"/><circle cx="1094" cy="810" r="5" fill="#c34b43"/>
+  <text x="800" y="908" class="cn t16 ink bold">组合总览 / 风险与回撤</text>
+  <text x="800" y="932" class="cn t10 muted">短线 5 万与长线 10 万的权益、目标、持仓和风险</text>
+  <rect x="800" y="956" width="142" height="28" rx="14" fill="#f7eddb"/><text x="820" y="975" class="cn t9 ochre bold">少持股、风险先约束</text>
+  <text x="800" y="1014" class="cn t10 muted">显示当前 → 目标 → 待成交，不把近等权写死。</text>
+
+  <!-- card 0007 -->
+  <rect x="1156" y="646" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="1172" y="674" class="mono t10 blue">UI-PROP-0007 · v0.1</text><rect x="1386" y="658" width="104" height="26" rx="13" fill="#f7eddb"/><text x="1407" y="676" class="cn t9 ochre bold">待用户批准</text>
+  <rect x="1172" y="698" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1184" y="712" width="296" height="30" rx="5" fill="#e7f2ec"/><circle cx="1198" cy="727" r="4" fill="#238267"/><rect x="1210" y="722" width="122" height="10" rx="3" fill="#bad5ca"/>
+  <rect x="1184" y="754" width="176" height="108" rx="5" fill="#fff" stroke="#d8e0dd"/><line x1="1196" y1="784" x2="1348" y2="784" stroke="#d6dfdc"/><line x1="1196" y1="814" x2="1348" y2="814" stroke="#d6dfdc"/><line x1="1196" y1="844" x2="1348" y2="844" stroke="#d6dfdc"/>
+  <rect x="1372" y="754" width="108" height="64" rx="5" fill="#eef5f7"/><line x1="1386" y1="786" x2="1466" y2="786" stroke="#91aebf" stroke-width="2"/><circle cx="1396" cy="786" r="5" fill="#238267"/><circle cx="1428" cy="786" r="5" fill="#2e5e84"/><circle cx="1460" cy="786" r="5" fill="#d0d8d5"/>
+  <rect x="1372" y="830" width="108" height="32" rx="5" fill="#fff7e9"/>
+  <text x="1172" y="908" class="cn t16 ink bold">订单计划 / Shadow / 对账</text>
+  <text x="1172" y="932" class="cn t10 muted">授权内自动衔接；失败、超授权和首单才找人</text>
+  <rect x="1172" y="956" width="156" height="28" rx="14" fill="#e7f2ec"/><text x="1192" y="975" class="cn t9 green bold">本地 Shadow 先跑通</text>
+  <text x="1172" y="1014" class="cn t10 muted">MiniQMT 与 Live 保持锁定，等待独立明确授权。</text>
+
+  <!-- card 0008 -->
+  <rect x="1528" y="646" width="352" height="408" rx="15" fill="#fff" filter="url(#shadow)"/>
+  <text x="1544" y="674" class="mono t10 blue">UI-PROP-0008 · v0.1</text><rect x="1758" y="658" width="104" height="26" rx="13" fill="#f7eddb"/><text x="1779" y="676" class="cn t9 ochre bold">待用户批准</text>
+  <rect x="1544" y="698" width="320" height="180" rx="8" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1556" y="712" width="296" height="36" rx="5" fill="#eef3f5"/><circle cx="1572" cy="730" r="5" fill="#238267"/><rect x="1584" y="724" width="126" height="12" rx="3" fill="#fff"/>
+  <rect x="1556" y="760" width="176" height="102" rx="5" fill="#fff" stroke="#d8e0dd"/><rect x="1568" y="774" width="152" height="16" rx="4" fill="#e7f2ec"/><rect x="1568" y="798" width="152" height="16" rx="4" fill="#e7f2ec"/><rect x="1568" y="822" width="152" height="16" rx="4" fill="#fff7e9"/>
+  <rect x="1744" y="760" width="108" height="46" rx="5" fill="#edf3f6"/><circle cx="1760" cy="783" r="5" fill="#238267"/><rect x="1772" y="778" width="64" height="10" rx="3" fill="#a9c7d8"/>
+  <rect x="1744" y="816" width="108" height="46" rx="5" fill="#f3f4f3"/><circle cx="1760" cy="839" r="5" fill="#b47a22"/><rect x="1772" y="834" width="64" height="10" rx="3" fill="#d8c49f"/>
+  <text x="1544" y="908" class="cn t16 ink bold">数据运行 / 连接 / 常设授权</text>
+  <text x="1544" y="932" class="cn t10 muted">数据新鲜度、失败恢复、Shadow 连接和执行边界</text>
+  <rect x="1544" y="956" width="150" height="28" rx="14" fill="#edf3f6"/><text x="1564" y="975" class="cn t9 blue bold">默认自动，异常打断</text>
+  <text x="1544" y="1014" class="cn t10 muted">不暴露机构级门禁后台，也不隐藏关键失败状态。</text>
+
+  <!-- footer -->
+  <rect x="40" y="1080" width="1840" height="78" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <circle cx="68" cy="1108" r="6" fill="#238267"/><text x="82" y="1113" class="cn t11 ink">已批准：0001 v0.3 · 0002 v0.1 · 0004 v0.2 · 0009 v0.2 · 0011 v0.1</text>
+  <circle cx="790" cy="1108" r="6" fill="#b47a22"/><text x="804" y="1113" class="cn t11 ink">待批准：0003、0005、0006、0007、0008 v0.1</text>
+  <text x="68" y="1140" class="cn t10 muted">总览图只作索引；没有独立审批中心、AI 中心或两套 Shadow/Live 工作区。所有实盘动作仍必须经过组合目标、风险与执行契约。</text>
+  <text x="1852" y="1124" text-anchor="end" class="cn t11 blue bold">批准具体版本后再实施</text>
+</svg>

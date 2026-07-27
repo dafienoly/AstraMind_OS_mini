@@ -1,0 +1,63 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "code_identity": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Code Identity",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_assumption_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Execution Assumption Version",
+      "type": "string"
+    },
+    "feature_definition_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Feature Definition Version",
+      "type": "string"
+    },
+    "logic_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Logic Id",
+      "type": "string"
+    },
+    "parameter_set_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Parameter Set Hash",
+      "type": "string"
+    },
+    "strategy_version_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Strategy Version Id",
+      "type": "string"
+    },
+    "universe_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Universe Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "strategy_version_id",
+    "logic_id",
+    "parameter_set_hash",
+    "feature_definition_version",
+    "universe_version",
+    "execution_assumption_version",
+    "code_identity",
+    "created_at"
+  ],
+  "title": "StrategyVersion",
+  "type": "object"
+}

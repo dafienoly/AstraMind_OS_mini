@@ -1,0 +1,501 @@
+# 数据产品与点时正确契约
+
+- 状态：规划基线
+- 实现状态：WP-0002B-H4 已发布最小历史主干、公司行为与统一研究价格生产快照
+
+## 数据产品分层
+
+| 层 | 含义 | 可变性 |
+| --- | --- | --- |
+| 原始层 | 提供方响应、请求与抓取元数据 | 只追加 |
+| 标准化层 | 统一身份、单位和可用时间的类型化记录 | 版本化、可重建 |
+| 快照层 | 一次请求使用的一组明确数据版本 | 不可变 |
+| 特征层 | 绑定快照和定义版本的点时正确派生值 | 不可变 |
+| 模型层 | 绑定特征和代码身份的模型或预测 | 不可变 |
+| 组合层 | 优化问题、结果和目标持仓 | 不可变事件历史 |
+| 执行层 | 订单计划与 Broker/Shadow 事件 | 不可变事件历史 |
+
+“最新”只能是指针，不能成为研究、模型、组合或执行记录的真实身份。
+
+## 标准化数据集必备元数据
+
+```text
+dataset_name
+dataset_version
+schema_version
+provider
+source_endpoint
+request_identity
+retrieved_at
+market_timezone
+date_range
+universe
+primary_key
+availability_rule
+units
+content_hash
+row_count
+known_gaps
+```
+
+每条观察还必须有市场日期或经济期间以及 `available_at`。如果提供方只有日期，适配器采用保守、书面记录的市场时间规则。
+
+## 初期数据目录
+
+### 证券与交易日历
+
+- 证券主表、上市/退市日期、交易所、板块和名称历史；
+- 交易日；
+- 可获得的历史 ST、停牌和涨跌停状态；
+- 公司行为与复权因子。
+
+这些数据决定某证券在决策时点是否存在、是否可交易。
+
+### 日度市场数据
+
+- 不复权 OHLCV 与成交额；
+- 复权因子，以及单独派生的复权价格；
+- 换手率、流通/总市值、估值和涨跌停价格；
+- ETF OHLCV、成交额、份额/规模；
+- 宽基指数与行业指数。
+
+复权收盘价不能覆盖标准化源数据中的原始收盘价。
+
+### 统一价格图表切片
+
+大盘指数、策略选出的个股、行业内研究股票和 ETF 共用一个只读价格检查器。检查器消费版本化行情，不建立第二个行情真相源。
+
+```text
+PriceChartSlice
+  chart_slice_id
+  instrument_type
+  instrument_id
+  data_snapshot_id
+  bar_dataset_version
+  as_of
+  interval
+  adjustment
+  start_trade_date
+  end_trade_date
+  evidence_cutoff
+  bar_count
+  content_hash
+  known_gaps
+
+PriceChartMarker
+  chart_slice_id
+  source_type
+  source_id
+  source_version
+  event_trade_date
+  available_at
+  marker_kind
+  label
+```
+
+- `instrument_type` 至少区分指数、股票和 ETF；
+- 首期提供日/周/月聚合、OHLCV、成交额、MA5 和 MA20，分钟级不在初期范围；
+- 周/月 K 必须从同一基础日线版本确定性聚合，并继承相同复权口径和截止时间；
+- 指数不显示股票式复权口径；个股和 ETF 必须明确不复权、前复权或后复权；
+- 策略标记、目标线和风险线与行情事实分层渲染，并携带各自来源版本；
+- 封存回放的 `end_trade_date` 不得晚于 `evidence_cutoff`，浏览器也不得预载或通过缩放暴露未来 K 线；
+- 底部双端范围轴只改变客户端可视范围，不创建新行情版本，也不能请求或展示 `evidence_cutoff` 之后的数据；
+- 悬浮提示直接读取被十字线选中的真实 Bar，显示交易日期、OHLC、涨跌额/幅、成交量、成交额和启用均线；缺失字段显式标记，不从相邻 Bar 插值；
+- 行情陈旧、复权未知、快照不一致或存在关键缺口时失败关闭，不显示演示蜡烛。
+
+### 龙虎榜
+
+主要提供方候选：
+
+- Tushare `top_list`：证券日度龙虎榜事件；
+- Tushare `top_inst`：席位或机构买卖明细。
+
+实际起始日期、权限与字段完整性必须在阶段 2 通过提供方接口核验。原始响应只追加保存，因为同一股票/日期可能有多个上榜原因，提供方也可能更正记录。
+
+```text
+LhbEvent
+  event_id
+  trade_date
+  ts_code
+  reason_code
+  reason_text
+  close
+  pct_change
+  turnover_rate
+  amount
+  list_buy
+  list_sell
+  list_amount
+  net_amount
+  net_rate
+  amount_rate
+  float_value
+  available_at
+  source_record_hash
+
+LhbSeatDetail
+  event_id
+  seat_name
+  side
+  buy
+  buy_rate
+  sell
+  sell_rate
+  net_buy
+  classification_version
+```
+
+席位分类必须版本化，当前对营业部或机构的标签不能静默改写历史特征。
+
+候选特征：
+
+- 净额/流通市值；
+- 机构净额/龙虎榜总额；
+- 买卖集中度与席位分歧；
+- 上榜原因；
+- 5/20 个交易日重复出现；
+- 事件后衰减与历史同类事件结果。
+
+可用时间规则：龙虎榜属于盘后证据，默认最早只能用于下一可交易时段。
+
+### 股东户数
+
+主要提供方候选：Tushare `stk_holdernumber`。
+
+```text
+ShareholderCountObservation
+  ts_code
+  end_date
+  ann_date
+  holder_num
+  available_at
+  source_record_hash
+```
+
+点时选择使用 `ann_date`/`available_at`，不能只使用 `end_date`。重述或同一期间多次公告在原始层分别保留。
+
+候选特征：
+
+- 相对上一次披露的变化；
+- 按不规则披露间隔折算的变化速度；
+- 连续增加/减少；
+- 相对同行业、相近市值公司的横截面异常；
+- 观察年龄与覆盖置信度。
+
+股东户数是慢速上下文。缺失或陈旧数据继续标记为缺失/陈旧，不伪装成每日新信号。
+
+### 财务数据
+
+首期只建设被明确因子使用的小型财务集合：
+
+- ROE 与盈利能力；
+- 营收和净利润增长；
+- 经营现金流质量；
+- 杠杆与利息负担；
+- 估值与市值；
+- 报告期、公告日、更新标志和可用时间。
+
+银行等特殊行业可以使用独立定义。初期不迁移提供方全部财务报表仓库。
+
+### 行业归属与生命周期
+
+```text
+IndustryMembership
+  taxonomy
+  taxonomy_version
+  industry_code
+  industry_name
+  ts_code
+  effective_from
+  effective_to
+  available_at
+  source
+```
+
+如果只能取得当前行业归属，它可以服务当前看板，但不能被描述为无生存者偏差的历史行业归属。
+
+```text
+IndustryLifecycleSnapshot
+  as_of
+  taxonomy_version
+  industry_code
+  stage
+  confidence
+  strong_participation
+  low_position_repair_participation
+  turnover_share_20d
+  breadth
+  relative_strength
+  liquidity
+  valuation_context
+  overheat_or_reversal_risk
+  eligible_constituent_count
+  covered_constituent_count
+  state_duration_sessions
+  transition_date
+  evidence_snapshot_id
+  definition_version
+```
+
+旧 AstraMind 的生命周期公式与 Fixture 是复用候选。旧项目“56 行业”只是某个注册表版本，不是领域不变量。
+
+结构地图首案将 `strong_participation` 作为横轴 `S`，将 `low_position_repair_participation` 作为纵轴 `L`，并以 `turnover_share_20d` 表示气泡面积。坐标、阶段、置信度、行业索引和后续研究排序必须绑定同一个生命周期快照和数据快照。最终窗口、阈值和公式在阶段 6 版本化冻结；覆盖不足的行业保留身份和缺口原因，不能放到坐标原点。
+
+### 行业内研究排序
+
+```text
+IndustryResearchRankingSnapshot
+  ranking_snapshot_id
+  data_snapshot_id
+  lifecycle_snapshot_id
+  as_of
+  taxonomy
+  taxonomy_version
+  industry_code
+  scoring_definition_version
+  member_count
+  covered_member_count
+  content_hash
+  known_gaps
+
+IndustryResearchRow
+  ranking_snapshot_id
+  ts_code
+  membership_effective_as_of
+  overall_priority
+  event_sentiment_score
+  technical_volume_score
+  fundamental_score
+  risk_score
+  reversal_repair_score
+  coverage
+  research_label
+  evidence_cutoff
+```
+
+- 成分股归属按 `as_of` 选择，不能用当前行业归属静默重写历史排序；
+- 所有分项和综合分绑定 `scoring_definition_version`，综合分不能只暴露不可解释的 AI 结果；
+- `research_label` 首期只使用“优先研究”“积极关注”“中性观察”，它不是投资决定、组合目标或订单；
+- 排序表和所选股票 `PriceChartSlice` 必须使用同一 `data_snapshot_id`、`as_of`、分类版本和证据截止时间；
+- 覆盖不足的股票显示缺失原因，不用零分填补后继续排名。
+
+### 行业资金相对轮动
+
+```text
+MarketRotationSnapshot
+  rotation_snapshot_id
+  data_snapshot_id
+  as_of
+  benchmark_id
+  benchmark_definition_version
+  formula_version
+  taxonomy
+  taxonomy_version
+  industry_count
+  covered_industry_count
+  date_range
+  content_hash
+  known_gaps
+
+IndustryRotationPoint
+  industry_code
+  trade_date
+  relative_trend
+  relative_momentum
+  quadrant
+  coverage
+  constituent_count
+  trail_direction
+  overflow
+
+IndustryRotationEvent
+  industry_code
+  from_quadrant
+  to_quadrant
+  first_cross_date
+  confirmed_date
+  formula_version
+  rotation_snapshot_id
+```
+
+轮动快照必须绑定同一个数据快照、基准、公式和行业注册表。行业数量来自注册表，不写死 56。任何日期覆盖不足时失败关闭，不用中心点、前值或演示数据补齐。
+
+### ETF 方向
+
+行业到 ETF 的映射随时间和版本变化：
+
+```text
+EtfDirection
+  direction_id
+  industry_exposures
+  etf_code
+  effective_from
+  effective_to
+  mapping_version
+  evidence_source
+```
+
+ETF 候选必须独立通过上市时间、流动性、成交额、价差/代理、跟踪、停牌和可交易性检查。静态映射本身不是价格确认。
+
+### MiniQMT 行情、资料与本地缓存
+
+东莞证券 MiniQMT 是实时行情和本地资料的已验证/候选提供方之一：
+
+- 用户已验证本地行情 RPC 的 L1 全推；
+- `subscribe_quote`、`get_full_tick` 和 `get_l2_quote` 已由本机 API 暴露；
+- K 线、Tick、历史下载、交易日历、合约、板块/行业/指数权重、财务、复权因子、
+  ETF 和可转债资料按数据集逐项核验；
+- L2 是否有实际数据取决于券商权限，默认不得宣称可用。
+
+```text
+ProviderCapabilityProbe
+  probe_id
+  provider
+  gateway_version
+  client_version
+  probed_at
+  account_modes
+  interface_name
+  interface_present
+  entitlement_available
+  data_available
+  observed_fields
+  known_gaps
+
+MarketFeedSession
+  feed_session_id
+  provider
+  gateway_version
+  market_level
+  entitlement_identity
+  connected_at
+  disconnected_at
+  subscriptions
+  reconnect_count
+  first_market_time
+  last_market_time
+  last_received_at
+  known_gaps
+
+RealtimeMarketObservation
+  feed_session_id
+  instrument_id
+  observation_kind
+  market_time
+  received_at
+  provider_sequence
+  payload_schema_version
+  source_record_hash
+```
+
+WP-0002A 已将能力证据实现为冻结的 `ProbeReport` 与 `ProviderCapability`：
+
+- 状态区分 `available`、`unavailable`、`permission_denied`、`empty`、`stale`、
+  `error` 和 `not_probed`；
+- 原始响应由 `RawRecordEnvelope` 包装并只追加保存；
+- Token、Windows 用户路径和提供方错误正文不进入报告；
+- `make provider-probe` 是显式联网命令，默认质量门只使用合成替身。
+
+- `market_time` 与 `received_at` 分开；提供方没有序列时不得伪造序列；
+- 订阅、退订、断线、重连和缺口必须进入会话证据；
+- 全推消息先保存提供方原始记录，再形成标准化观察或不可变微批；
+- MiniQMT 本地缓存是提供方缓存，不是 `DataSnapshot` 身份或第二套数据真相；
+- Tushare 与 MiniQMT 混合时，快照清单按数据集记录提供方、版本、时间规则和哈希；
+- 来源冲突必须输出差异和选源规则版本，不能静默以前值或“最新值”覆盖；
+- L2 权限或连续性不足时失败关闭，并明确保留 L1 状态。
+
+## 快照清单
+
+`DataSnapshot` 清单记录准确组件版本：
+
+```yaml
+snapshot_id: sha256:...
+as_of: 2026-07-24T15:30:00+08:00
+datasets:
+  daily_market: sha256:...
+  security_master: sha256:...
+  trade_calendar: sha256:...
+  lhb: sha256:...
+  shareholder_count: sha256:...
+  industry_membership: sha256:...
+known_gaps: []
+created_at: ...
+code_identity: ...
+```
+
+WP-0002A 已实现 `DatasetManifest`、内容寻址发布、原子当前指针、SQLite/WAL 台账、
+确定性 `DataSnapshotBuilder` 和只允许清单内版本化 Parquet 的 DuckDB 查询适配器。
+能力探测响应只形成证据，不冒充生产数据。
+
+WP-0002B 已发布真实生产快照。四类标准化观察均携带提供方、端点、摄入时间、
+可用时间、Schema 版本和源记录哈希；日线保留原始不复权价格，复权因子独立成表。
+WP-0002B-H1 已将日线和复权因子扩展到 2000-01-04 至 2026-07-24。历史行情的
+`available_at` 为交易日 18:00（Asia/Shanghai），因此只能用于盘后判断或后续执行。
+旧 Silver 原始响应仍由旧系统持有，Mini 保存正式发布身份和原始响应哈希，并明确
+记录 `legacy_raw_payloads_external`。任何日线缺少复权因子继续阻断发布。
+
+WP-0002B-H2 新增三类标准化数据：
+
+- `daily_basic`：收盘价、换手率、估值、股本和市值；估值字段允许按提供方定义为空，
+  股本单位为万股，市值单位为万元，`available_at` 为交易日 18:00；
+- `price_limit`：昨收、涨停价、跌停价与 `limit_prices_usable`，从 2007-01-04
+  开始，`available_at` 为交易日 08:40；
+- `suspension_event`：停牌 `S` 与复牌 `R` 事件，同一证券同日可以有多个不同事件，
+  `available_at` 保守设为交易日 18:00。
+
+覆盖报告显式记录日线与每日指标/涨跌停的双向缺口。`limit_prices_usable = false`
+的记录不能参与订单可行性判断。
+
+WP-0002B-H3 新增：
+
+- `security_name_history`：名称有效区间、提供方结束日、公告日、变更原因、历史
+  `risk_status` 与特别处理标记；
+- `daily_tradability`：上市证券逐开市日的名称/ST 证据、研究资格、Bar/停复牌/
+  涨跌停状态，以及买卖两侧可交易状态。
+
+名称区间缺失时为 `unknown`，不能用当前名称倒灌。没有 Bar 不能仅凭“无停牌事件”
+判为可交易；只有整日停牌且无同日复牌证据才标记 `suspended`。缺失或不可用的
+涨跌停价也必须失败关闭。两类投影均按交易日 18:00 作为盘后证据。完整公司行为和
+BSE 独立日历仍是缺口。
+
+WP-0002B-H4 新增：
+
+- `corporate_action`：分红送转的版本化提供方记录，公告日缺失时
+  `availability_known=false`，不能进入点时研究；
+- `adjusted_market`：原始 OHLC、复权因子、快照终端因子、标准前/后复权兼容价、
+  连续研究价格指数，以及因子收益与公司行为解释证据。
+
+原始 OHLC 是唯一成交价格。`forward_adjusted_*` 和 `backward_adjusted_*` 绑定
+不可变快照，仅用于兼容与审计；默认研究路径使用 `research_*_index`。该指数以首个
+可见 Bar 为 1，按提供方日收益累计，长期停牌跨年度时沿用最近锚点。配股和其他非
+`dividend` 公司行为仍是显式缺口。
+
+## MiniQMT L1 实时微批
+
+WP-0002C 新增实时行情内部契约：
+
+- `FeedSessionReport`：提供方、客户端版本、市场、订阅起止、消息数、重复数、断线数
+  与已知缺口；
+- `RealtimeQuoteObservation`：证券、市场毫秒时间、接收时间、L1 价量字段和原始内容
+  哈希；
+- `QuoteMicroBatch`：会话、顺序、时间窗、原始/规范化内容哈希和行数。
+
+原始全推与规范化观察分开压缩、只追加保存。相同会话/批次身份内容不一致时阻断。
+MiniQMT 全推是当前观察输入，不会改写生产 `DataSnapshot`，也不是第二个历史真相源。
+
+## 初期质量门
+
+- 统一证券编码与交易所校验；
+- 标准化主键唯一，并保留原始重复审计；
+- 交易日历完整；
+- OHLC 一致，成交额/成交量规则合理；
+- 复权因子连续；
+- 上市、ST、停牌和涨跌停状态一致；
+- 消费时点不得早于任何观察的 `available_at`；
+- 按日期、证券、行业和数据集输出覆盖报告；
+- 相同输入重建时内容哈希稳定；
+- 提供方限流、分页、部分响应和恢复状态可见。
+
+## 密钥
+
+Tushare Token、券商凭证和账户标识通过本地环境或 Git 排除的密钥文件提供。日志和 Fixture 必须脱敏。

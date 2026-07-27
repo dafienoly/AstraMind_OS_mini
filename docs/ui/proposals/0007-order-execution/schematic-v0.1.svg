@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="15" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0007 · 公共订单计划、Shadow 执行与对账</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 授权内自动衔接，只有异常才打断你</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <!-- plan -->
+  <rect x="30" y="78" width="910" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <rect x="30" y="78" width="106" height="970" rx="22" fill="#172129"/><rect x="114" y="78" width="22" height="970" fill="#172129"/>
+  <text x="52" y="115" class="num t16 bold" fill="#fff">ASTRA</text><text x="52" y="134" class="mono t9" fill="#91a1aa">MIND MINI</text>
+  <text x="55" y="194" class="cn t11" fill="#91a0a8">今日</text><text x="55" y="238" class="cn t11" fill="#91a0a8">市场</text><text x="55" y="292" class="cn t11" fill="#91a0a8">策略竞技场</text>
+  <rect x="42" y="329" width="84" height="42" rx="7" fill="#2a5067"/><rect x="42" y="329" width="3" height="42" fill="#82b9d9"/><text x="55" y="354" class="cn t11" fill="#fff">组合</text>
+  <text x="55" y="412" class="cn t11" fill="#91a0a8">系统</text>
+  <rect x="43" y="966" width="82" height="56" rx="9" fill="#20313b"/><circle cx="56" cy="984" r="4" fill="#b47a22"/>
+  <text x="66" y="988" class="cn t10" fill="#d8e0e3">Shadow</text><text x="52" y="1007" class="cn t9" fill="#82939c">本地执行器</text>
+
+  <text x="160" y="114" class="cn t11 muted">组合 / 订单计划 / 2026-07-24-01</text><text x="160" y="145" class="cn t22 ink">公共订单计划</text>
+  <rect x="758" y="107" width="152" height="40" rx="20" fill="#f7eddb"/><circle cx="780" cy="127" r="5" fill="#b47a22"/><text x="793" y="132" class="cn t11 ochre bold">模式：Shadow</text>
+  <rect x="160" y="168" width="750" height="78" rx="10" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="180" y="191" class="cn t9 muted">来源与证据</text><text x="180" y="214" class="cn t11 ink bold">短线冠军 v1.8 + 长线目标 v1.2 + ETF 方向 v0.4</text>
+  <text x="180" y="235" class="mono t9 muted">snapshot 07-24 / target hash 63e1… / mandate shadow-default-v1</text>
+
+  <rect x="160" y="264" width="750" height="112" rx="12" fill="#f7faf9" stroke="#cfdad6"/>
+  <text x="180" y="291" class="cn t13 ink bold">常设授权检查</text>
+  <circle cx="184" cy="325" r="6" fill="#238267"/><text x="198" y="330" class="cn t11 ink">Shadow 模式</text>
+  <circle cx="328" cy="325" r="6" fill="#238267"/><text x="342" y="330" class="cn t11 ink">总金额内</text>
+  <circle cx="470" cy="325" r="6" fill="#238267"/><text x="484" y="330" class="cn t11 ink">风险限制内</text>
+  <circle cx="630" cy="325" r="6" fill="#238267"/><text x="644" y="330" class="cn t11 ink">无首笔实盘</text>
+  <rect x="766" y="304" width="124" height="38" rx="19" fill="#e7f2ec"/><text x="797" y="328" class="cn t10 green bold">可继续</text>
+  <text x="180" y="358" class="cn t9 muted">正常授权内不要求逐笔审批；任何限制外变化都会转入异常抽屉。</text>
+
+  <text x="160" y="410" class="cn t14 ink bold">计划订单</text><text x="868" y="410" text-anchor="end" class="cn t10 muted">买入 2 · 卖出 1 · 阻断 1</text>
+  <rect x="160" y="426" width="750" height="310" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="180" y="446" width="710" height="36" rx="6" fill="#f5f7f6"/>
+  <text x="194" y="469" class="cn t9 muted">标的/来源</text><text x="372" y="469" class="cn t9 muted">方向</text><text x="450" y="469" class="cn t9 muted">数量/金额</text><text x="574" y="469" class="cn t9 muted">价格规则</text><text x="706" y="469" class="cn t9 muted">约束</text><text x="838" y="469" class="cn t9 muted">状态</text>
+  <text x="194" y="512" class="cn t11 ink bold">紫金矿业</text><text x="194" y="530" class="cn t9 muted">长线目标</text><text x="372" y="518" class="cn t10 red bold">买入</text><text x="450" y="518" class="num t10">100 股 · 约 ¥2,210</text><text x="574" y="518" class="cn t10">限价 ≤ 22.18</text><text x="706" y="518" class="cn t10 green">通过</text><text x="838" y="518" class="cn t10 blue">就绪</text>
+  <line x1="180" y1="546" x2="890" y2="546" class="hair"/>
+  <text x="194" y="576" class="cn t11 ink bold">贵州茅台</text><text x="194" y="594" class="cn t9 muted">长线目标</text><text x="372" y="582" class="cn t10 green bold">卖出</text><text x="450" y="582" class="num t10">100 股 · 约 ¥14,860</text><text x="574" y="582" class="cn t10">限价 ≥ 1480</text><text x="706" y="582" class="cn t10 green">T+1 通过</text><text x="838" y="582" class="cn t10 blue">就绪</text>
+  <line x1="180" y1="610" x2="890" y2="610" class="hair"/>
+  <text x="194" y="640" class="cn t11 ink bold">半导体 ETF</text><text x="194" y="658" class="cn t9 muted">ETF 轮动</text><text x="372" y="646" class="cn t10 red bold">买入</text><text x="450" y="646" class="num t10">2,000 份 · ¥2,080</text><text x="574" y="646" class="cn t10">对手价 +1 档</text><text x="706" y="646" class="cn t10 green">流动性通过</text><text x="838" y="646" class="cn t10 blue">就绪</text>
+  <line x1="180" y1="674" x2="890" y2="674" class="hair"/>
+  <text x="194" y="704" class="cn t11 ink bold">某小盘候选</text><text x="194" y="722" class="cn t9 muted">短线反转</text><text x="372" y="710" class="cn t10 muted">买入</text><text x="450" y="710" class="num t10 muted">0 股</text><text x="574" y="710" class="cn t10 muted">—</text><text x="706" y="710" class="cn t10 ochre">成交额超限</text><text x="838" y="710" class="cn t10 ochre bold">已阻断</text>
+
+  <rect x="160" y="756" width="750" height="112" rx="11" fill="#f5f7f6"/>
+  <text x="180" y="784" class="cn t13 ink bold">执行前摘要</text>
+  <text x="180" y="813" class="cn t10 muted">预计净卖出</text><text x="288" y="813" class="num t11 green bold">¥10,570</text>
+  <text x="388" y="813" class="cn t10 muted">预计费用</text><text x="478" y="813" class="num t11 ink bold">¥18.60</text>
+  <text x="588" y="813" class="cn t10 muted">最差滑点假设</text><text x="708" y="813" class="num t11 ink bold">12 bp</text>
+  <text x="180" y="844" class="cn t9 muted">数量已按 100 股/基金份额规则取整；卖出可用数量与 T+1 已检查。</text>
+  <rect x="160" y="888" width="750" height="106" rx="11" fill="#eef3f5"/>
+  <text x="180" y="918" class="cn t11 muted">下一步只发送到本地仿真执行器；不会触发 MiniQMT，也不产生真实委托。</text>
+  <rect x="678" y="929" width="210" height="44" rx="8" fill="#2e5e84"/><text x="721" y="956" class="cn t11" fill="#fff">发送到本地 Shadow</text>
+
+  <!-- execution -->
+  <rect x="970" y="78" width="920" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <text x="1002" y="114" class="cn t11 muted">组合 / 执行与对账 / shadow-run-0724-01</text><text x="1002" y="145" class="cn t22 ink">执行进度与差异</text>
+  <rect x="1702" y="108" width="154" height="34" rx="17" fill="#e7f2ec"/><circle cx="1724" cy="125" r="5" fill="#238267"/><text x="1737" y="130" class="cn t11 green bold">本地执行中</text>
+  <rect x="1002" y="168" width="854" height="104" rx="11" fill="#eef5f7"/>
+  <text x="1022" y="194" class="cn t10 muted">状态链</text>
+  <line x1="1064" y1="232" x2="1796" y2="232" stroke="#c2d2d8" stroke-width="3"/>
+  <circle cx="1070" cy="232" r="9" fill="#238267"/><circle cx="1230" cy="232" r="9" fill="#238267"/><circle cx="1390" cy="232" r="9" fill="#238267"/><circle cx="1550" cy="232" r="9" fill="#2e5e84"/><circle cx="1710" cy="232" r="9" fill="#d0d8d5"/>
+  <text x="1038" y="260" class="cn t9 green">已接收</text><text x="1202" y="260" class="cn t9 green">已校验</text><text x="1360" y="260" class="cn t9 green">已提交</text><text x="1517" y="260" class="cn t9 blue">部分成交</text><text x="1676" y="260" class="cn t9 muted">待对账</text>
+
+  <rect x="1002" y="292" width="548" height="302" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1022" y="322" class="cn t13 ink bold">订单状态</text>
+  <rect x="1022" y="340" width="508" height="34" rx="6" fill="#f5f7f6"/><text x="1038" y="361" class="cn t9 muted">标的</text><text x="1190" y="361" class="cn t9 muted">计划</text><text x="1322" y="361" class="cn t9 muted">成交</text><text x="1436" y="361" class="cn t9 muted">状态</text>
+  <text x="1038" y="404" class="cn t11 ink bold">紫金矿业</text><text x="1190" y="404" class="num t10">100 股</text><text x="1322" y="404" class="num t10">100 股</text><text x="1436" y="404" class="cn t10 green">已成交</text>
+  <line x1="1022" y1="422" x2="1530" y2="422" class="hair"/>
+  <text x="1038" y="452" class="cn t11 ink bold">贵州茅台</text><text x="1190" y="452" class="num t10">-100 股</text><text x="1322" y="452" class="num t10">-100 股</text><text x="1436" y="452" class="cn t10 green">已成交</text>
+  <line x1="1022" y1="470" x2="1530" y2="470" class="hair"/>
+  <text x="1038" y="500" class="cn t11 ink bold">半导体 ETF</text><text x="1190" y="500" class="num t10">2,000 份</text><text x="1322" y="500" class="num t10 ochre">1,200 份</text><text x="1436" y="500" class="cn t10 ochre">部分成交</text>
+  <line x1="1022" y1="518" x2="1530" y2="518" class="hair"/>
+  <text x="1038" y="548" class="cn t11 ink bold">某小盘候选</text><text x="1190" y="548" class="num t10 muted">0 股</text><text x="1322" y="548" class="num t10 muted">0 股</text><text x="1436" y="548" class="cn t10 muted">未发送</text>
+  <text x="1022" y="578" class="cn t9 muted">仿真成交使用逐笔/分钟代理规则，保留价格、时间与假设来源。</text>
+
+  <rect x="1568" y="292" width="288" height="302" rx="12" fill="#f7faf9"/>
+  <text x="1588" y="322" class="cn t13 ink bold">成交质量</text>
+  <text x="1588" y="363" class="cn t10 muted">成交率</text><text x="1828" y="363" text-anchor="end" class="num t16 ink bold">83.3%</text>
+  <text x="1588" y="403" class="cn t10 muted">加权滑点</text><text x="1828" y="403" text-anchor="end" class="num t16 green bold">4.8 bp</text>
+  <text x="1588" y="443" class="cn t10 muted">费用</text><text x="1828" y="443" text-anchor="end" class="num t16 ink bold">¥12.40</text>
+  <text x="1588" y="483" class="cn t10 muted">拒单</text><text x="1828" y="483" text-anchor="end" class="num t16 green bold">0</text>
+  <rect x="1588" y="518" width="240" height="48" rx="8" fill="#fff7e9"/><text x="1608" y="547" class="cn t10 ochre">ETF 尚余 800 份待处理</text>
+
+  <rect x="1002" y="614" width="854" height="188" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1022" y="644" class="cn t13 ink bold">组合对账</text>
+  <text x="1022" y="684" class="cn t10 muted">标的</text><text x="1190" y="684" class="cn t10 muted">执行器持仓</text><text x="1354" y="684" class="cn t10 muted">组合账本</text><text x="1506" y="684" class="cn t10 muted">差异</text><text x="1768" y="684" class="cn t10 muted">处理</text>
+  <line x1="1022" y1="698" x2="1836" y2="698" class="hair"/>
+  <text x="1022" y="730" class="cn t11 ink bold">紫金矿业</text><text x="1190" y="730" class="num t10">800 股</text><text x="1354" y="730" class="num t10">800 股</text><text x="1506" y="730" class="num t10 green">0</text><text x="1768" y="730" class="cn t10 green">一致</text>
+  <text x="1022" y="768" class="cn t11 ink bold">半导体 ETF</text><text x="1190" y="768" class="num t10">1,200 份</text><text x="1354" y="768" class="num t10">2,000 份目标</text><text x="1506" y="768" class="num t10 ochre">-800 份</text><text x="1768" y="768" class="cn t10 ochre">待成交</text>
+
+  <rect x="1002" y="822" width="854" height="172" rx="12" fill="#fff7e9" stroke="#ead4af"/>
+  <text x="1022" y="852" class="cn t13 ink bold">异常处理 · 仅此处需要你选择</text>
+  <text x="1022" y="883" class="cn t11 muted">半导体 ETF 到达收盘窗口，仍有 800 份未成交。系统默认取消余单并保留目标差异。</text>
+  <rect x="1022" y="916" width="144" height="40" rx="8" fill="#fff" stroke="#d8c29d"/><text x="1052" y="941" class="cn t11 ink">取消并保留</text>
+  <rect x="1178" y="916" width="150" height="40" rx="8" fill="#fff" stroke="#d8c29d"/><text x="1206" y="941" class="cn t11 ink">下个窗口继续</text>
+  <rect x="1340" y="916" width="170" height="40" rx="8" fill="#b47a22"/><text x="1373" y="941" class="cn t11" fill="#fff">修改价格后重试</text>
+  <text x="1532" y="941" class="cn t9 muted">一次例外 · 不修改常设授权</text>
+</svg>

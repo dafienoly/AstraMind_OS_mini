@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "Sleeve": {
+      "enum": [
+        "tactical",
+        "core"
+      ],
+      "title": "Sleeve",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "effective_from": {
+      "format": "date-time",
+      "title": "Effective From",
+      "type": "string"
+    },
+    "effective_to": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effective To"
+    },
+    "mandate_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Mandate Version",
+      "type": "string"
+    },
+    "policy_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Policy Hash",
+      "type": "string"
+    },
+    "sleeve": {
+      "$ref": "#/$defs/Sleeve"
+    },
+    "standing_mandate_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Standing Mandate Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "standing_mandate_id",
+    "mandate_version",
+    "sleeve",
+    "effective_from",
+    "policy_hash"
+  ],
+  "title": "StandingMandate",
+  "type": "object"
+}

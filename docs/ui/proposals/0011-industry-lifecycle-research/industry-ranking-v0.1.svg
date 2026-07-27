@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0011 v0.1 行业内研究排序与个股蜡烛图</title>
+  <desc id="desc">煤炭行业成分股研究优先级表与所选个股的日线蜡烛图、成交量、均线和证据摘要。</desc>
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.rise{fill:#c34b43}.fall{fill:#238267}.ochre{fill:#b47a22}.purple{fill:#78688e}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t15{font-size:15px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}
+      .hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}.up{stroke:#c34b43;fill:#c34b43}.down{stroke:#238267;fill:#238267}
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0011 · 行业内研究排序与个股价格证据</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 排名是研究优先级，不是买入名单</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <text x="62" y="204" class="cn t13" fill="#91a0a8">今日</text>
+  <rect x="46" y="236" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="236" width="3" height="42" fill="#82b9d9"/><text x="62" y="262" class="cn t13" fill="#fff">市场</text>
+  <text x="62" y="326" class="cn t13" fill="#91a0a8">策略竞技场</text><text x="62" y="384" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="442" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">Shadow</text><text x="57" y="1003" class="cn t10" fill="#82939c">研究只读</text>
+
+  <text x="182" y="112" class="cn t12 muted">市场 / 行业 / 生命周期结构 / 煤炭</text>
+  <text x="182" y="143" class="cn t26 ink">煤炭行业研究排序</text><text x="408" y="141" class="cn t12 muted">行业结构位置、公司研究优先级与价格证据使用同一截止日</text>
+  <rect x="1680" y="104" width="172" height="36" rx="18" fill="#eef5f7"/><text x="1710" y="127" class="cn t11 blue bold">数据截止 15:23</text>
+
+  <!-- identity ribbon -->
+  <rect x="174" y="158" width="1678" height="58" rx="11" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="180" class="cn t10 muted">行业快照</text><text x="194" y="200" class="mono t11 ink">lifecycle 07-24-a</text>
+  <line x1="360" y1="184" x2="406" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="406" cy="184" r="4" fill="#2e5e84"/>
+  <text x="428" y="180" class="cn t10 muted">位置</text><text x="428" y="200" class="cn t13 ink bold">繁荣 · S70 / L85</text>
+  <line x1="630" y1="184" x2="676" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="676" cy="184" r="4" fill="#2e5e84"/>
+  <text x="698" y="180" class="cn t10 muted">成员归属</text><text x="698" y="200" class="cn t13 ink bold">申万一级 2021 · 38 只</text>
+  <line x1="954" y1="184" x2="1000" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="1000" cy="184" r="4" fill="#2e5e84"/>
+  <text x="1022" y="180" class="cn t10 muted">研究覆盖</text><text x="1022" y="200" class="cn t13 ink bold">34 / 38</text>
+  <text x="1594" y="192" class="cn t11 blue">查看评分定义 v0.4 →</text>
+
+  <!-- local tabs -->
+  <rect x="174" y="234" width="1678" height="48" rx="10" fill="#f5f7f6"/>
+  <text x="202" y="264" class="cn t11 muted">行业热力</text><text x="294" y="264" class="cn t11 muted">结构地图</text>
+  <rect x="376" y="241" width="142" height="34" rx="8" fill="#fff" stroke="#91aebf"/><text x="402" y="263" class="cn t11 blue bold">行业研究排序</text>
+  <text x="552" y="264" class="cn t11 muted">相对轮动</text>
+  <rect x="1566" y="242" width="114" height="32" rx="7" fill="#fff" stroke="#d8e0dd"/><text x="1584" y="263" class="cn t10 ink">煤炭行业 ▾</text>
+  <rect x="1690" y="242" width="142" height="32" rx="7" fill="#fff" stroke="#d8e0dd"/><text x="1708" y="263" class="cn t10 ink">全部研究标签 ▾</text>
+
+  <!-- ranking table -->
+  <rect x="174" y="300" width="928" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="196" y="330" class="cn t16 ink bold">成分股研究优先级</text><text x="1078" y="330" text-anchor="end" class="cn t10 muted">综合分可解释 · 点击分项查看证据</text>
+  <rect x="194" y="348" width="888" height="40" rx="7" fill="#f5f7f6"/>
+  <text x="210" y="373" class="cn t9 muted">公司 / 标签</text>
+  <text x="408" y="373" class="cn t9 muted">综合</text><text x="470" y="373" class="cn t9 muted">事件/情绪</text><text x="552" y="373" class="cn t9 muted">技术/量价</text>
+  <text x="638" y="373" class="cn t9 muted">基本面</text><text x="714" y="373" class="cn t9 muted">风险↓</text><text x="780" y="373" class="cn t9 muted">反转</text><text x="842" y="373" class="cn t9 muted">覆盖</text><text x="930" y="373" class="cn t9 muted">证据截止</text>
+
+  <!-- row 1 selected -->
+  <rect x="194" y="398" width="888" height="70" rx="8" fill="#edf3f6" stroke="#91aebf"/>
+  <text x="210" y="423" class="cn t13 ink bold">新集能源</text><text x="210" y="445" class="mono t9 muted">601918.SH</text>
+  <rect x="288" y="413" width="92" height="26" rx="13" fill="#dcebe5"/><text x="306" y="431" class="cn t9 fall bold">优先研究</text>
+  <text x="408" y="434" class="num t15 blue bold">84.6</text><text x="488" y="434" class="num t12 ink">88</text><text x="572" y="434" class="num t12 ink">82</text>
+  <text x="650" y="434" class="num t12 ink">79</text><text x="724" y="434" class="num t12 ink">31</text><text x="790" y="434" class="num t12 ink">76</text><text x="850" y="434" class="num t12 ink">96%</text><text x="930" y="434" class="mono t10 ink">07-24</text>
+  <text x="1038" y="434" class="cn t10 blue">已选中 ›</text>
+
+  <!-- other rows -->
+  <text x="210" y="500" class="cn t12 ink bold">兖矿能源</text><text x="210" y="519" class="mono t9 muted">600188.SH</text><text x="304" y="510" class="cn t9 blue">积极关注</text>
+  <text x="408" y="510" class="num t13 ink bold">80.2</text><text x="488" y="510" class="num t11 ink">74</text><text x="572" y="510" class="num t11 ink">86</text><text x="650" y="510" class="num t11 ink">83</text><text x="724" y="510" class="num t11 ink">28</text><text x="790" y="510" class="num t11 ink">65</text><text x="850" y="510" class="num t11 ink">100%</text><text x="930" y="510" class="mono t10 ink">07-24</text>
+  <line x1="194" y1="538" x2="1082" y2="538" class="hair"/>
+
+  <text x="210" y="570" class="cn t12 ink bold">中国神华</text><text x="210" y="589" class="mono t9 muted">601088.SH</text><text x="304" y="580" class="cn t9 blue">积极关注</text>
+  <text x="408" y="580" class="num t13 ink bold">78.9</text><text x="488" y="580" class="num t11 ink">69</text><text x="572" y="580" class="num t11 ink">73</text><text x="650" y="580" class="num t11 ink">91</text><text x="724" y="580" class="num t11 ink">18</text><text x="790" y="580" class="num t11 ink">54</text><text x="850" y="580" class="num t11 ink">100%</text><text x="930" y="580" class="mono t10 ink">07-24</text>
+  <line x1="194" y1="608" x2="1082" y2="608" class="hair"/>
+
+  <text x="210" y="640" class="cn t12 ink bold">恒源煤电</text><text x="210" y="659" class="mono t9 muted">600971.SH</text><text x="304" y="650" class="cn t9 blue">积极关注</text>
+  <text x="408" y="650" class="num t13 ink bold">72.4</text><text x="488" y="650" class="num t11 ink">61</text><text x="572" y="650" class="num t11 ink">78</text><text x="650" y="650" class="num t11 ink">74</text><text x="724" y="650" class="num t11 ink">36</text><text x="790" y="650" class="num t11 ink">72</text><text x="850" y="650" class="num t11 ink">94%</text><text x="930" y="650" class="mono t10 ink">07-24</text>
+  <line x1="194" y1="678" x2="1082" y2="678" class="hair"/>
+
+  <text x="210" y="710" class="cn t12 ink bold">晋控煤业</text><text x="210" y="729" class="mono t9 muted">601001.SH</text><text x="304" y="720" class="cn t9 ochre">中性观察</text>
+  <text x="408" y="720" class="num t13 ink bold">65.8</text><text x="488" y="720" class="num t11 ink">55</text><text x="572" y="720" class="num t11 ink">64</text><text x="650" y="720" class="num t11 ink">70</text><text x="724" y="720" class="num t11 ochre">52</text><text x="790" y="720" class="num t11 ink">61</text><text x="850" y="720" class="num t11 ink">92%</text><text x="930" y="720" class="mono t10 ink">07-24</text>
+  <line x1="194" y1="748" x2="1082" y2="748" class="hair"/>
+
+  <text x="210" y="780" class="cn t12 ink bold">山煤国际</text><text x="304" y="780" class="cn t9 ochre">中性观察</text><text x="408" y="780" class="num t13 ink bold">61.7</text>
+  <text x="488" y="780" class="num t11 ink">49</text><text x="572" y="780" class="num t11 ink">58</text><text x="650" y="780" class="num t11 ink">68</text><text x="724" y="780" class="num t11 ochre">57</text><text x="790" y="780" class="num t11 ink">52</text><text x="850" y="780" class="num t11 ink">88%</text><text x="930" y="780" class="mono t10 ink">07-24</text>
+
+  <!-- selected stock candle card -->
+  <rect x="1120" y="300" width="732" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1142" y="330" class="cn t16 ink bold">新集能源 · 601918.SH</text><text x="1142" y="352" class="cn t10 muted">行业研究排序 v0.4 · 前复权 · 证据截至 2026-07-24</text>
+  <rect x="1584" y="316" width="58" height="32" rx="8" fill="#edf3f6"/><text x="1602" y="337" class="cn t10 blue bold">日 K</text><text x="1660" y="337" class="cn t10 muted">周 K</text><text x="1718" y="337" class="cn t10 muted">月 K</text>
+  <rect x="1142" y="370" width="688" height="42" rx="7" fill="#f8faf9"/>
+  <text x="1158" y="396" class="mono t9 muted">07-24</text><text x="1210" y="396" class="cn t9 muted">开</text><text x="1230" y="396" class="num t10 ink">10.46</text><text x="1288" y="396" class="cn t9 muted">高</text><text x="1308" y="396" class="num t10 ink">10.82</text>
+  <text x="1366" y="396" class="cn t9 muted">低</text><text x="1386" y="396" class="num t10 ink">10.38</text><text x="1444" y="396" class="cn t9 muted">收</text><text x="1464" y="396" class="num t10 rise bold">10.76</text>
+  <text x="1526" y="396" class="cn t9 muted">量</text><text x="1546" y="396" class="num t10 ink">38.2 万手</text><circle cx="1664" cy="391" r="4" fill="#b47a22"/><text x="1674" y="396" class="cn t9 muted">MA5</text><circle cx="1740" cy="391" r="4" fill="#2e5e84"/><text x="1750" y="396" class="cn t9 muted">MA20</text>
+
+  <line x1="1156" y1="452" x2="1810" y2="452" class="grid"/><line x1="1156" y1="508" x2="1810" y2="508" class="grid"/><line x1="1156" y1="564" x2="1810" y2="564" class="grid"/><line x1="1156" y1="620" x2="1810" y2="620" class="grid"/>
+  <text x="1818" y="456" class="num t9 muted">11.2</text><text x="1818" y="512" class="num t9 muted">10.6</text><text x="1818" y="568" class="num t9 muted">10.0</text><text x="1818" y="624" class="num t9 muted">9.4</text>
+  <g stroke-width="2">
+    <line x1="1178" y1="592" x2="1178" y2="634" class="down"/><rect x="1172" y="604" width="12" height="18" class="down"/>
+    <line x1="1206" y1="584" x2="1206" y2="626" class="up"/><rect x="1200" y="594" width="12" height="20" class="up"/>
+    <line x1="1234" y1="572" x2="1234" y2="616" class="up"/><rect x="1228" y="584" width="12" height="20" class="up"/>
+    <line x1="1262" y1="578" x2="1262" y2="624" class="down"/><rect x="1256" y="590" width="12" height="22" class="down"/>
+    <line x1="1290" y1="558" x2="1290" y2="608" class="up"/><rect x="1284" y="572" width="12" height="22" class="up"/>
+    <line x1="1318" y1="546" x2="1318" y2="596" class="up"/><rect x="1312" y="558" width="12" height="24" class="up"/>
+    <line x1="1346" y1="552" x2="1346" y2="602" class="down"/><rect x="1340" y="564" width="12" height="24" class="down"/>
+    <line x1="1374" y1="532" x2="1374" y2="586" class="up"/><rect x="1368" y="546" width="12" height="26" class="up"/>
+    <line x1="1402" y1="518" x2="1402" y2="572" class="up"/><rect x="1396" y="532" width="12" height="26" class="up"/>
+    <line x1="1430" y1="526" x2="1430" y2="582" class="down"/><rect x="1424" y="540" width="12" height="28" class="down"/>
+    <line x1="1458" y1="506" x2="1458" y2="564" class="up"/><rect x="1452" y="520" width="12" height="28" class="up"/>
+    <line x1="1486" y1="492" x2="1486" y2="550" class="up"/><rect x="1480" y="506" width="12" height="28" class="up"/>
+    <line x1="1514" y1="500" x2="1514" y2="558" class="down"/><rect x="1508" y="514" width="12" height="30" class="down"/>
+    <line x1="1542" y1="480" x2="1542" y2="540" class="up"/><rect x="1536" y="496" width="12" height="28" class="up"/>
+    <line x1="1570" y1="466" x2="1570" y2="526" class="up"/><rect x="1564" y="482" width="12" height="28" class="up"/>
+    <line x1="1598" y1="474" x2="1598" y2="534" class="down"/><rect x="1592" y="490" width="12" height="28" class="down"/>
+    <line x1="1626" y1="452" x2="1626" y2="514" class="up"/><rect x="1620" y="468" width="12" height="30" class="up"/>
+    <line x1="1654" y1="440" x2="1654" y2="502" class="up"/><rect x="1648" y="456" width="12" height="30" class="up"/>
+    <line x1="1682" y1="448" x2="1682" y2="510" class="down"/><rect x="1676" y="464" width="12" height="30" class="down"/>
+    <line x1="1710" y1="428" x2="1710" y2="490" class="up"/><rect x="1704" y="444" width="12" height="30" class="up"/>
+    <line x1="1738" y1="416" x2="1738" y2="478" class="up"/><rect x="1732" y="432" width="12" height="30" class="up"/>
+    <line x1="1766" y1="424" x2="1766" y2="486" class="down"/><rect x="1760" y="440" width="12" height="30" class="down"/>
+    <line x1="1794" y1="402" x2="1794" y2="466" class="up"/><rect x="1788" y="418" width="12" height="32" class="up"/>
+  </g>
+  <path d="M1178 612 C1290 586 1380 554 1486 526 S1660 476 1794 432" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <path d="M1178 620 C1310 604 1420 578 1530 548 S1690 500 1794 466" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <line x1="1794" y1="402" x2="1794" y2="764" stroke="#2e5e84" stroke-dasharray="4 4"/><text x="1744" y="432" class="cn t9 blue">证据截止</text>
+
+  <!-- volume -->
+  <line x1="1156" y1="650" x2="1810" y2="650" class="hair"/>
+  <g opacity=".42">
+    <rect x="1172" y="746" width="12" height="34" class="down"/><rect x="1200" y="736" width="12" height="44" class="up"/><rect x="1228" y="740" width="12" height="40" class="up"/><rect x="1256" y="748" width="12" height="32" class="down"/>
+    <rect x="1284" y="728" width="12" height="52" class="up"/><rect x="1312" y="722" width="12" height="58" class="up"/><rect x="1340" y="742" width="12" height="38" class="down"/><rect x="1368" y="714" width="12" height="66" class="up"/>
+    <rect x="1396" y="706" width="12" height="74" class="up"/><rect x="1424" y="734" width="12" height="46" class="down"/><rect x="1452" y="696" width="12" height="84" class="up"/><rect x="1480" y="690" width="12" height="90" class="up"/>
+    <rect x="1508" y="724" width="12" height="56" class="down"/><rect x="1536" y="682" width="12" height="98" class="up"/><rect x="1564" y="674" width="12" height="106" class="up"/><rect x="1592" y="714" width="12" height="66" class="down"/>
+    <rect x="1620" y="666" width="12" height="114" class="up"/><rect x="1648" y="658" width="12" height="122" class="up"/><rect x="1676" y="704" width="12" height="76" class="down"/><rect x="1704" y="648" width="12" height="132" class="up"/>
+    <rect x="1732" y="640" width="12" height="140" class="up"/><rect x="1760" y="694" width="12" height="86" class="down"/><rect x="1788" y="630" width="12" height="150" class="up"/>
+  </g>
+  <text x="1158" y="804" class="mono t9 muted">06-20</text><text x="1360" y="804" class="mono t9 muted">07-02</text><text x="1570" y="804" class="mono t9 muted">07-14</text><text x="1760" y="804" class="mono t9 muted">07-24</text>
+
+  <!-- lower evidence -->
+  <rect x="174" y="840" width="1678" height="174" rx="12" fill="#f8faf9" stroke="#d8e0dd"/>
+  <text x="196" y="870" class="cn t14 ink bold">为什么优先研究新集能源</text><text x="1818" y="870" text-anchor="end" class="cn t10 muted">所有分项可打开原始事实与定义版本</text>
+  <rect x="196" y="892" width="310" height="92" rx="9" fill="#edf3f6"/>
+  <text x="216" y="918" class="cn t10 blue bold">行业 × 公司共振</text><text x="216" y="944" class="cn t11 ink">煤炭处于强势与修复共振；公司量价扩张</text><text x="216" y="966" class="cn t9 muted">不等于未来收益保证</text>
+  <rect x="520" y="892" width="310" height="92" rx="9" fill="#f0f7f3"/>
+  <text x="540" y="918" class="cn t10 fall bold">已知事实</text><text x="540" y="944" class="cn t11 ink">事件 88 · 技术 82 · 基本面 79</text><text x="540" y="966" class="cn t9 muted">覆盖 96% · 截止 2026-07-24</text>
+  <rect x="844" y="892" width="310" height="92" rx="9" fill="#fff7e9"/>
+  <text x="864" y="918" class="cn t10 ochre bold">主要风险</text><text x="864" y="944" class="cn t11 ink">商品价格反转 · 周期集中 · 跳空风险</text><text x="864" y="966" class="cn t9 muted">风险分 31（越低越优）</text>
+  <rect x="1168" y="892" width="662" height="92" rx="9" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1188" y="918" class="cn t10 muted">页面边界</text><text x="1188" y="944" class="cn t12 ink bold">研究排序 → 价格核验 → 策略证据；不能直接进入订单</text>
+  <text x="1188" y="968" class="cn t9 muted">图中股票、分数和行情均为布局示意，不构成投资建议或实盘资格。</text>
+</svg>

@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1400" viewBox="0 0 1920 1400">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#17313d" flood-opacity=".10"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t28{font-size:28px;font-weight:700}.bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1400" fill="#e9eeec"/>
+  <text x="40" y="42" class="cn t28 ink">AstraMind OS mini · 完整界面总览</text>
+  <text x="40" y="70" class="cn t13 muted">UI-PROP-0010 v0.1 · 9 组提案覆盖 16 个重要工作面 · 图中均为示意数据</text>
+  <rect x="1700" y="28" width="180" height="36" rx="18" fill="#f7eddb"/><circle cx="1722" cy="46" r="5" fill="#b47a22"/>
+  <text x="1735" y="51" class="cn t12 ochre bold">禁止实施</text>
+
+  <!-- core navigation / flows -->
+  <rect x="40" y="96" width="1840" height="84" rx="14" fill="#172129" filter="url(#shadow)"/>
+  <text x="68" y="128" class="cn t10" fill="#91a1aa">五个一级入口</text>
+  <text x="68" y="154" class="cn t14 bold" fill="#fff">今日　　市场　　策略竞技场　　组合　　系统</text>
+  <line x1="430" y1="116" x2="430" y2="160" stroke="#344650"/>
+  <text x="458" y="128" class="cn t10" fill="#91a1aa">个股日常链</text><text x="458" y="153" class="cn t12" fill="#fff">今日 → 策略证据 → 组合目标 → 订单 → Shadow → 对账</text>
+  <line x1="1000" y1="116" x2="1000" y2="160" stroke="#344650"/>
+  <text x="1028" y="128" class="cn t10" fill="#91a1aa">长线周度链</text><text x="1028" y="153" class="cn t12" fill="#fff">因子 → 行业模型 → 优化器 → 风险 → 订单</text>
+  <line x1="1445" y1="116" x2="1445" y2="160" stroke="#344650"/>
+  <text x="1473" y="128" class="cn t10" fill="#91a1aa">市场与 ETF 链</text><text x="1473" y="153" class="cn t12" fill="#fff">大盘 → 行业 → 轮动 → ETF 目标</text>
+
+  <!-- card 0001 -->
+  <rect x="40" y="208" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="62" y="238" class="mono t10 blue">UI-PROP-0001 · v0.2</text><rect x="506" y="220" width="96" height="28" rx="14" fill="#e7f2ec"/><text x="534" y="239" class="cn t10 green bold">已批准</text>
+  <text x="62" y="270" class="cn t18 ink bold">应用壳层 / 大盘 / 行业热力</text>
+  <text x="62" y="292" class="cn t10 muted">工作面 3、4 · “市场发生了什么”</text>
+  <rect x="62" y="312" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="62" y="312" width="58" height="218" rx="11" fill="#172129"/><rect x="108" y="312" width="12" height="218" fill="#172129"/>
+  <rect x="74" y="352" width="35" height="18" rx="4" fill="#2a5067"/><rect x="136" y="328" width="450" height="28" rx="6" fill="#eef3f5"/>
+  <rect x="136" y="370" width="216" height="68" rx="7" fill="#fff" stroke="#d8e0dd"/><path d="M150 420 C178 412 190 400 216 405 S260 382 288 392 S322 372 338 376" fill="none" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="366" y="370" width="220" height="68" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="380" y="385" width="80" height="38" rx="5" fill="#e5a49c"/><rect x="466" y="385" width="52" height="38" rx="5" fill="#cfe2dc"/><rect x="524" y="385" width="48" height="38" rx="5" fill="#eed8c8"/>
+  <rect x="136" y="452" width="450" height="58" rx="7" fill="#f1f5f3"/>
+  <text x="148" y="478" class="cn t10 ink bold">大盘结论</text><text x="148" y="496" class="cn t9 muted">宽度、成交、风险状态与行业热度同屏</text>
+  <text x="62" y="548" class="cn t10 blue">详细稿：壳层 + 大盘看板 + 行业热力图</text>
+
+  <!-- card 0002 -->
+  <rect x="667" y="208" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="689" y="238" class="mono t10 blue">UI-PROP-0002 · v0.1</text><rect x="1133" y="220" width="96" height="28" rx="14" fill="#e7f2ec"/><text x="1161" y="239" class="cn t10 green bold">已批准</text>
+  <text x="689" y="270" class="cn t18 ink bold">行业动态相对轮动</text>
+  <text x="689" y="292" class="cn t10 muted">工作面 5 · “行业正在向哪里迁移”</text>
+  <rect x="689" y="312" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <line x1="720" y1="414" x2="1198" y2="414" stroke="#cfd8d4"/><line x1="958" y1="336" x2="958" y2="504" stroke="#cfd8d4"/>
+  <text x="734" y="354" class="cn t9 muted">改善</text><text x="1148" y="354" class="cn t9 muted">领先</text><text x="734" y="492" class="cn t9 muted">落后</text><text x="1148" y="492" class="cn t9 muted">减弱</text>
+  <path d="M824 462 C850 450 872 428 900 416 S938 382 968 370" fill="none" stroke="#2e5e84" stroke-width="3"/><circle cx="968" cy="370" r="7" fill="#2e5e84"/>
+  <path d="M1060 376 C1084 390 1088 414 1072 432 S1042 456 1010 466" fill="none" stroke="#b47a22" stroke-width="3"/><circle cx="1010" cy="466" r="7" fill="#b47a22"/>
+  <path d="M878 376 C896 390 916 402 936 408" fill="none" stroke="#238267" stroke-width="3"/><circle cx="936" cy="408" r="7" fill="#238267"/>
+  <rect x="708" y="474" width="176" height="34" rx="7" fill="#edf3f6"/><text x="724" y="495" class="cn t9 blue">可播放历史轨迹与阶段</text>
+  <text x="689" y="548" class="cn t10 blue">详细稿：主视图 + 动效分镜</text>
+
+  <!-- card 0003 -->
+  <rect x="1294" y="208" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="1316" y="238" class="mono t10 blue">UI-PROP-0003 · v0.1</text><rect x="1732" y="220" width="124" height="28" rx="14" fill="#f7eddb"/><text x="1754" y="239" class="cn t10 ochre bold">待你评审</text>
+  <text x="1316" y="270" class="cn t18 ink bold">今日工作台 / 异常抽屉</text>
+  <text x="1316" y="292" class="cn t10 muted">工作面 1、2 · “今天要做什么”</text>
+  <rect x="1316" y="312" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1332" y="328" width="510" height="34" rx="6" fill="#eef5f7"/><line x1="1370" y1="345" x2="1688" y2="345" stroke="#91aebf" stroke-width="2"/>
+  <rect x="1332" y="376" width="310" height="124" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="1346" y="390" width="134" height="44" rx="6" fill="#edf3f6"/><rect x="1492" y="390" width="134" height="44" rx="6" fill="#f2f5f3"/>
+  <rect x="1346" y="448" width="280" height="36" rx="6" fill="#f5f7f6"/>
+  <rect x="1656" y="376" width="186" height="124" rx="7" fill="#fff7e9" stroke="#ead4af"/><text x="1670" y="399" class="cn t10 ochre bold">需要你处理 2</text><rect x="1670" y="414" width="158" height="34" rx="5" fill="#fff"/><rect x="1670" y="458" width="76" height="28" rx="5" fill="#b47a22"/>
+  <text x="1316" y="548" class="cn t10 blue">详细稿：决策时间线 + 短长线结论 + 异常衔接</text>
+
+  <!-- card 0004 -->
+  <rect x="40" y="580" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="62" y="610" class="mono t10 blue">UI-PROP-0004 · v0.1</text><rect x="478" y="592" width="124" height="28" rx="14" fill="#f7eddb"/><text x="500" y="611" class="cn t10 ochre bold">待你评审</text>
+  <text x="62" y="642" class="cn t18 ink bold">短线策略竞技场 / 晋级证据</text>
+  <text x="62" y="664" class="cn t10 muted">工作面 7、8 · 多逻辑并行竞争</text>
+  <rect x="62" y="684" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="78" y="700" width="250" height="72" rx="7" fill="#f7faf9" stroke="#cbd8d4"/><rect x="78" y="700" width="6" height="72" rx="3" fill="#b47a22"/><text x="96" y="724" class="cn t10 ochre bold">冠军</text><text x="96" y="748" class="cn t13 ink bold">事件 / 关注</text>
+  <rect x="78" y="782" width="250" height="44" rx="7" fill="#fff" stroke="#d8e0dd"/><text x="96" y="808" class="cn t10 ink">2 · 动量 / 趋势</text>
+  <rect x="78" y="836" width="250" height="44" rx="7" fill="#fff" stroke="#d8e0dd"/><text x="96" y="862" class="cn t10 ink">3 · 超跌 / 反转</text>
+  <rect x="344" y="700" width="244" height="180" rx="7" fill="#fff" stroke="#d8e0dd"/><path d="M360 838 C390 828 414 814 438 818 S482 770 512 786 S548 740 574 730" fill="none" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="360" y="846" width="198" height="22" rx="5" fill="#f7eddb"/>
+  <text x="62" y="920" class="cn t10 blue">详细稿：公平排名 + 封存留出段 + 手动 Shadow 晋级</text>
+
+  <!-- card 0005 -->
+  <rect x="667" y="580" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="689" y="610" class="mono t10 blue">UI-PROP-0005 · v0.1</text><rect x="1105" y="592" width="124" height="28" rx="14" fill="#f7eddb"/><text x="1127" y="611" class="cn t10 ochre bold">待你评审</text>
+  <text x="689" y="642" class="cn t18 ink bold">因子 / 行业模型 / 优化器</text>
+  <text x="689" y="664" class="cn t10 muted">工作面 9、10 · 长线周度链</text>
+  <rect x="689" y="684" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="705" y="700" width="244" height="180" rx="7" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="721" y="720" width="42" height="28" rx="4" fill="#e6aaa3"/><rect x="769" y="720" width="42" height="28" rx="4" fill="#cfe3dc"/><rect x="817" y="720" width="42" height="28" rx="4" fill="#dd827a"/><rect x="865" y="720" width="42" height="28" rx="4" fill="#eee3db"/>
+  <rect x="721" y="754" width="42" height="28" rx="4" fill="#f0d7d1"/><rect x="769" y="754" width="42" height="28" rx="4" fill="#d8ebe4"/><rect x="817" y="754" width="42" height="28" rx="4" fill="#e8b2aa"/><rect x="865" y="754" width="42" height="28" rx="4" fill="#bdd8cf"/>
+  <path d="M721 846 C758 832 788 806 826 812 S872 792 916 774" fill="none" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="965" y="700" width="250" height="82" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="978" y="716" width="66" height="50" rx="5" fill="#f2f5f3"/><rect x="1052" y="716" width="66" height="50" rx="5" fill="#edf3f6"/><rect x="1126" y="716" width="76" height="50" rx="5" fill="#fff7e9"/>
+  <rect x="965" y="794" width="250" height="86" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="982" y="816" width="138" height="14" rx="7" fill="#e2e9e6"/><rect x="982" y="816" width="86" height="14" rx="7" fill="#2e5e84"/><rect x="982" y="846" width="178" height="14" rx="7" fill="#e2e9e6"/><rect x="982" y="846" width="104" height="14" rx="7" fill="#b47a22"/>
+  <text x="689" y="920" class="cn t10 blue">详细稿：IC/衰减 + GBDT/PyTorch 竞技 + 可插拔优化器</text>
+
+  <!-- card 0006 -->
+  <rect x="1294" y="580" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="1316" y="610" class="mono t10 blue">UI-PROP-0006 · v0.1</text><rect x="1732" y="592" width="124" height="28" rx="14" fill="#f7eddb"/><text x="1754" y="611" class="cn t10 ochre bold">待你评审</text>
+  <text x="1316" y="642" class="cn t18 ink bold">组合总览 / 目标桥 / 风险</text>
+  <text x="1316" y="664" class="cn t10 muted">工作面 11、12 · 当前 → 目标 → 待成交</text>
+  <rect x="1316" y="684" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1332" y="700" width="510" height="52" rx="7" fill="#eef3f5"/><text x="1348" y="722" class="cn t9 muted">账户权益</text><text x="1348" y="742" class="num t14 ink bold">¥151,420</text>
+  <rect x="1332" y="766" width="300" height="116" rx="7" fill="#fff" stroke="#d8e0dd"/><path d="M1348 854 C1372 844 1396 838 1418 844 S1462 814 1490 826 S1542 790 1616 780" fill="none" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="1648" y="766" width="194" height="116" rx="7" fill="#fff7e9" stroke="#ead4af"/><line x1="1670" y1="820" x2="1820" y2="820" stroke="#cfd8d4" stroke-width="7" stroke-linecap="round"/><circle cx="1702" cy="820" r="8" fill="#238267"/><circle cx="1760" cy="820" r="6" fill="#b47a22"/><circle cx="1820" cy="820" r="6" fill="#c34b43"/>
+  <text x="1316" y="920" class="cn t10 blue">详细稿：分仓权益 + 持仓 + 权重差异 + 回撤阶梯</text>
+
+  <!-- card 0007 -->
+  <rect x="40" y="952" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="62" y="982" class="mono t10 blue">UI-PROP-0007 · v0.1</text><rect x="478" y="964" width="124" height="28" rx="14" fill="#f7eddb"/><text x="500" y="983" class="cn t10 ochre bold">待你评审</text>
+  <text x="62" y="1014" class="cn t18 ink bold">订单计划 / Shadow / 对账</text>
+  <text x="62" y="1036" class="cn t10 muted">工作面 13、14 · 授权内自动衔接</text>
+  <rect x="62" y="1056" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="78" y="1072" width="510" height="42" rx="7" fill="#e7f2ec"/><circle cx="96" cy="1093" r="5" fill="#238267"/><text x="110" y="1097" class="cn t10 green bold">常设授权检查通过 · 可进入本地 Shadow</text>
+  <rect x="78" y="1128" width="300" height="126" rx="7" fill="#fff" stroke="#d8e0dd"/>
+  <line x1="94" y1="1160" x2="362" y2="1160" class="hair"/><line x1="94" y1="1194" x2="362" y2="1194" class="hair"/><line x1="94" y1="1228" x2="362" y2="1228" class="hair"/>
+  <rect x="394" y="1128" width="194" height="70" rx="7" fill="#eef5f7"/><line x1="412" y1="1162" x2="570" y2="1162" stroke="#91aebf" stroke-width="3"/><circle cx="430" cy="1162" r="7" fill="#238267"/><circle cx="486" cy="1162" r="7" fill="#2e5e84"/><circle cx="552" cy="1162" r="7" fill="#d0d8d5"/>
+  <rect x="394" y="1210" width="194" height="44" rx="7" fill="#fff7e9"/>
+  <text x="62" y="1292" class="cn t10 blue">详细稿：订单约束 + 执行进度 + 异常处理 + 账本对齐</text>
+
+  <!-- card 0008 -->
+  <rect x="667" y="952" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="689" y="982" class="mono t10 blue">UI-PROP-0008 · v0.1</text><rect x="1105" y="964" width="124" height="28" rx="14" fill="#f7eddb"/><text x="1127" y="983" class="cn t10 ochre bold">待你评审</text>
+  <text x="689" y="1014" class="cn t18 ink bold">数据运行 / 连接 / 常设授权</text>
+  <text x="689" y="1036" class="cn t10 muted">工作面 15、16 · 健康、失败、恢复、边界</text>
+  <rect x="689" y="1056" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="705" y="1072" width="510" height="52" rx="7" fill="#eef3f5"/><text x="721" y="1094" class="cn t9 muted">最近可用快照</text><text x="721" y="1114" class="cn t13 ink bold">07-24 15:23 · 核心 12/12</text>
+  <rect x="705" y="1138" width="300" height="116" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="721" y="1154" width="268" height="18" rx="4" fill="#e7f2ec"/><rect x="721" y="1180" width="268" height="18" rx="4" fill="#e7f2ec"/><rect x="721" y="1206" width="268" height="18" rx="4" fill="#fff7e9"/>
+  <rect x="1021" y="1138" width="194" height="52" rx="7" fill="#edf3f6"/><text x="1037" y="1169" class="cn t10 blue bold">本地 Shadow</text>
+  <rect x="1021" y="1202" width="194" height="52" rx="7" fill="#f3f4f3"/><text x="1037" y="1233" class="cn t10 muted">MiniQMT / Live 锁定</text>
+  <text x="689" y="1292" class="cn t10 blue">详细稿：数据发布 + 检查点恢复 + 授权边界 + 备份</text>
+
+  <!-- card 0009 -->
+  <rect x="1294" y="952" width="586" height="350" rx="16" fill="#fff" filter="url(#shadow)"/>
+  <text x="1316" y="982" class="mono t10 blue">UI-PROP-0009 · v0.1</text><rect x="1732" y="964" width="124" height="28" rx="14" fill="#f7eddb"/><text x="1754" y="983" class="cn t10 ochre bold">待你评审</text>
+  <text x="1316" y="1014" class="cn t18 ink bold">行业 ETF 轮动研究与目标</text>
+  <text x="1316" y="1036" class="cn t10 muted">工作面 6 · 方向 → ETF → 组合目标</text>
+  <rect x="1316" y="1056" width="542" height="218" rx="11" fill="#f8faf9" stroke="#d8e0dd"/>
+  <rect x="1332" y="1072" width="510" height="42" rx="7" fill="#eef5f7"/>
+  <rect x="1344" y="1082" width="74" height="22" rx="5" fill="#fff"/><path d="M1424 1093 H1448" stroke="#91aebf" stroke-width="2"/><rect x="1454" y="1082" width="74" height="22" rx="5" fill="#fff"/><path d="M1534 1093 H1558" stroke="#91aebf" stroke-width="2"/><rect x="1564" y="1082" width="74" height="22" rx="5" fill="#fff"/><path d="M1644 1093 H1668" stroke="#91aebf" stroke-width="2"/><rect x="1674" y="1082" width="74" height="22" rx="5" fill="#fff"/><path d="M1754 1093 H1778" stroke="#91aebf" stroke-width="2"/><rect x="1784" y="1082" width="44" height="22" rx="5" fill="#2e5e84"/>
+  <rect x="1332" y="1128" width="300" height="126" rx="7" fill="#fff" stroke="#d8e0dd"/><rect x="1348" y="1144" width="268" height="32" rx="5" fill="#edf3f6"/><line x1="1348" y1="1192" x2="1616" y2="1192" class="hair"/><line x1="1348" y1="1222" x2="1616" y2="1222" class="hair"/>
+  <rect x="1648" y="1128" width="194" height="126" rx="7" fill="#fff" stroke="#d8e0dd"/><text x="1664" y="1152" class="cn t10 blue bold">半导体 / 有色</text><rect x="1664" y="1170" width="162" height="18" rx="4" fill="#edf3f6"/><rect x="1664" y="1200" width="162" height="18" rx="4" fill="#f2f5f3"/><rect x="1664" y="1230" width="162" height="14" rx="4" fill="#2e5e84"/>
+  <text x="1316" y="1292" class="cn t10 blue">详细稿：方向漏斗 + ETF 映射 + 目标草案（不下单）</text>
+
+  <!-- footer -->
+  <rect x="40" y="1324" width="1840" height="48" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <circle cx="68" cy="1348" r="6" fill="#238267"/><text x="82" y="1353" class="cn t11 ink">已批准：0001、0002</text>
+  <circle cx="286" cy="1348" r="6" fill="#b47a22"/><text x="300" y="1353" class="cn t11 ink">待评审：0003–0009</text>
+  <text x="650" y="1353" class="cn t11 muted">没有独立登录中心、审批中心、AI 中心或 Shadow/Live 两套工作区；审批只在异常发生处就地衔接。</text>
+  <text x="1852" y="1353" text-anchor="end" class="cn t11 blue bold">先批准示意图，再实施界面</text>
+</svg>

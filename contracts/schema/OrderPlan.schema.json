@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "ExecutionMode": {
+      "enum": [
+        "shadow",
+        "paper",
+        "live"
+      ],
+      "title": "ExecutionMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_mode": {
+      "$ref": "#/$defs/ExecutionMode"
+    },
+    "order_plan_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Order Plan Id",
+      "type": "string"
+    },
+    "portfolio_target_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Portfolio Target Id",
+      "type": "string"
+    },
+    "standing_mandate_id": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Standing Mandate Id"
+    }
+  },
+  "required": [
+    "order_plan_id",
+    "portfolio_target_id",
+    "execution_mode",
+    "created_at",
+    "content_hash"
+  ],
+  "title": "OrderPlan",
+  "type": "object"
+}

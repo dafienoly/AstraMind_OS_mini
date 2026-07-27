@@ -1,0 +1,51 @@
+[project]
+name = "astramind-os-mini"
+version = "0.1.0"
+description = "Local-first A-share quantitative trading workstation"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "duckdb>=1.5,<1.6",
+  "fastapi>=0.140,<0.141",
+  "httpx>=0.28,<0.29",
+  "pydantic>=2.13,<3",
+  "pydantic-settings>=2.14,<3",
+  "pytz>=2025.2,<2027",
+  "uvicorn[standard]>=0.40,<0.41",
+]
+
+[dependency-groups]
+dev = [
+  "httpx2>=2.9,<3",
+  "mypy>=1.19,<2",
+  "pytest>=9,<10",
+  "pytest-cov>=7,<8",
+  "ruff>=0.15,<0.16",
+]
+
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "astramind_mini"
+module-root = "src"
+
+[tool.pytest.ini_options]
+addopts = "-q -s --basetemp=.pytest-tmp"
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF001"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "apps", "scripts", "tests"]
+exclude = ["tests/fixtures/architecture/"]

@@ -1,0 +1,1 @@
+"""Strategy Research bounded context."""

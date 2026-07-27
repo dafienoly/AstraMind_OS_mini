@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "data_snapshot_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Data Snapshot Id",
+      "type": "string"
+    },
+    "definition_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Definition Version",
+      "type": "string"
+    },
+    "feature_snapshot_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Feature Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "feature_snapshot_id",
+    "data_snapshot_id",
+    "as_of",
+    "definition_version",
+    "content_hash"
+  ],
+  "title": "FeatureSnapshot",
+  "type": "object"
+}

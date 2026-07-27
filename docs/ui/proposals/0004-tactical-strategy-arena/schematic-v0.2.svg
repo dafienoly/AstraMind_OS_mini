@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0004 v0.2 策略选股与个股蜡烛图</title>
+  <desc id="desc">策略候选列表联动个股蜡烛图、成交量、均线、策略标记和晋级证据。</desc>
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.rise{fill:#c34b43}.fall{fill:#238267}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}
+      .hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}.up{stroke:#c34b43;fill:#c34b43}.down{stroke:#238267;fill:#238267}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0004 · 策略选股与个股价格证据</text>
+  <text x="38" y="58" class="cn t12 muted">v0.2 · 待用户批准 · 所有策略选中个股复用同一个蜡烛图检查器</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <text x="62" y="204" class="cn t13" fill="#91a0a8">今日</text><text x="62" y="258" class="cn t13" fill="#91a0a8">市场</text>
+  <rect x="46" y="290" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="290" width="3" height="42" fill="#82b9d9"/><text x="54" y="316" class="cn t12" fill="#fff">策略竞技场</text>
+  <text x="62" y="384" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="442" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">Shadow</text><text x="57" y="1003" class="cn t10" fill="#82939c">5 万短线仓</text>
+
+  <text x="182" y="112" class="cn t12 muted">策略竞技场 / 短线 / 事件关注 v1.8</text>
+  <text x="182" y="143" class="cn t26 ink">策略选股与价格证据</text><text x="472" y="141" class="cn t12 muted">图表用于核验，不替代封存回放与失败场景</text>
+  <rect x="1694" y="104" width="158" height="36" rx="18" fill="#f7eddb"/><text x="1726" y="127" class="cn t11 ochre bold">候选 · 未晋级</text>
+
+  <rect x="174" y="158" width="1678" height="58" rx="11" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="180" class="cn t10 muted">共同证据</text><text x="194" y="200" class="mono t11 ink">snapshot 07-24-a · universe A1126 · cost-cn-v2</text>
+  <line x1="526" y1="184" x2="572" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="572" cy="184" r="4" fill="#2e5e84"/>
+  <text x="594" y="180" class="cn t10 muted">策略</text><text x="594" y="200" class="cn t13 ink bold">事件/关注 v1.8</text>
+  <line x1="760" y1="184" x2="806" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="806" cy="184" r="4" fill="#2e5e84"/>
+  <text x="828" y="180" class="cn t10 muted">证据截止</text><text x="828" y="200" class="cn t13 ink bold">2026-07-24</text>
+  <text x="1590" y="192" class="cn t11 blue">切换到组合证据 →</text>
+
+  <!-- tabs -->
+  <rect x="174" y="234" width="1678" height="48" rx="10" fill="#f5f7f6"/>
+  <text x="202" y="264" class="cn t11 muted">策略排位</text>
+  <rect x="296" y="241" width="132" height="34" rx="8" fill="#fff" stroke="#cbd7d3"/><text x="328" y="263" class="cn t11 ink bold">候选个股</text>
+  <text x="466" y="264" class="cn t11 muted">封存证据</text><text x="564" y="264" class="cn t11 muted">逐笔交易</text><text x="662" y="264" class="cn t11 muted">失败场景</text>
+  <text x="1748" y="264" class="cn t10 muted">长线因子目标也复用此检查器</text>
+
+  <!-- candidate ranking -->
+  <rect x="174" y="300" width="530" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="330" class="cn t16 ink bold">本次候选</text><text x="672" y="330" text-anchor="end" class="cn t10 muted">共 8 只 · 显示前 5</text>
+  <rect x="194" y="348" width="490" height="38" rx="7" fill="#f5f7f6"/>
+  <text x="210" y="372" class="cn t9 muted">股票 / 来源</text><text x="412" y="372" class="cn t9 muted">综合</text><text x="486" y="372" class="cn t9 muted">风险</text><text x="574" y="372" class="cn t9 muted">研究标签</text>
+
+  <rect x="194" y="398" width="490" height="78" rx="9" fill="#edf3f6" stroke="#91aebf"/>
+  <text x="210" y="425" class="cn t13 ink bold">紫金矿业</text><text x="210" y="447" class="mono t9 muted">601899.SH · 龙虎榜/量额</text>
+  <text x="412" y="435" class="num t16 blue bold">82.1</text><text x="486" y="435" class="num t12 ink">35.4</text>
+  <rect x="574" y="416" width="90" height="32" rx="16" fill="#dcebe5"/><text x="593" y="437" class="cn t10 green bold">优先研究</text>
+  <text x="210" y="466" class="cn t9 blue">已选中 · 右侧显示同一截止日价格证据</text>
+
+  <text x="210" y="510" class="cn t13 ink bold">中科曙光</text><text x="210" y="530" class="mono t9 muted">603019.SH · 动量突破</text>
+  <text x="412" y="520" class="num t14 ink bold">77.0</text><text x="486" y="520" class="num t11 ink">41.2</text><text x="574" y="520" class="cn t10 blue">积极关注</text>
+  <line x1="194" y1="548" x2="684" y2="548" class="hair"/>
+  <text x="210" y="580" class="cn t13 ink bold">中国神华</text><text x="210" y="600" class="mono t9 muted">601088.SH · 事件/质量</text>
+  <text x="412" y="590" class="num t14 ink bold">72.9</text><text x="486" y="590" class="num t11 ink">28.7</text><text x="574" y="590" class="cn t10 blue">积极关注</text>
+  <line x1="194" y1="618" x2="684" y2="618" class="hair"/>
+  <text x="210" y="650" class="cn t13 ink bold">中国化学</text><text x="210" y="670" class="mono t9 muted">601117.SH · 反转/量价</text>
+  <text x="412" y="660" class="num t14 ink bold">64.3</text><text x="486" y="660" class="num t11 ochre">53.0</text><text x="574" y="660" class="cn t10 ochre">中性观察</text>
+  <line x1="194" y1="688" x2="684" y2="688" class="hair"/>
+  <text x="210" y="720" class="cn t13 ink bold">交通银行</text><text x="210" y="740" class="mono t9 muted">601328.SH · 质量/低波</text>
+  <text x="412" y="730" class="num t14 ink bold">59.5</text><text x="486" y="730" class="num t11 ink">22.1</text><text x="574" y="730" class="cn t10 muted">中性观察</text>
+  <rect x="194" y="766" width="490" height="36" rx="7" fill="#f8faf9"/><text x="210" y="789" class="cn t9 muted">排序是研究证据，不是已批准投资决定或订单。</text>
+
+  <!-- selected stock chart -->
+  <rect x="724" y="300" width="1128" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="746" y="330" class="cn t16 ink bold">紫金矿业 · 601899.SH</text><text x="746" y="352" class="cn t10 muted">事件/关注 v1.8 · 证据窗口截至 2026-07-24</text>
+  <rect x="1568" y="316" width="62" height="32" rx="8" fill="#edf3f6"/><text x="1587" y="337" class="cn t10 blue bold">日 K</text>
+  <text x="1650" y="337" class="cn t10 muted">周 K</text><text x="1710" y="337" class="cn t10 muted">月 K</text>
+  <rect x="1770" y="316" width="62" height="32" rx="8" fill="#f5f7f6"/><text x="1787" y="337" class="cn t10 muted">均线</text>
+  <rect x="746" y="370" width="1086" height="42" rx="7" fill="#f8faf9"/>
+  <text x="762" y="396" class="cn t9 muted">2026-07-24</text><text x="858" y="396" class="cn t9 muted">开</text><text x="878" y="396" class="num t10 ink">22.02</text>
+  <text x="954" y="396" class="cn t9 muted">高</text><text x="974" y="396" class="num t10 ink">22.48</text><text x="1050" y="396" class="cn t9 muted">低</text><text x="1070" y="396" class="num t10 ink">21.86</text>
+  <text x="1146" y="396" class="cn t9 muted">收</text><text x="1166" y="396" class="num t10 rise bold">22.31</text><text x="1260" y="396" class="cn t9 muted">量</text><text x="1280" y="396" class="num t10 ink">73.5 万手</text>
+  <circle cx="1460" cy="391" r="4" fill="#b47a22"/><text x="1470" y="396" class="cn t9 muted">MA5</text><circle cx="1532" cy="391" r="4" fill="#2e5e84"/><text x="1542" y="396" class="cn t9 muted">MA20</text>
+
+  <line x1="770" y1="450" x2="1790" y2="450" class="grid"/><line x1="770" y1="508" x2="1790" y2="508" class="grid"/><line x1="770" y1="566" x2="1790" y2="566" class="grid"/><line x1="770" y1="624" x2="1790" y2="624" class="grid"/>
+  <text x="1798" y="454" class="num t9 muted">23.0</text><text x="1798" y="512" class="num t9 muted">22.0</text><text x="1798" y="570" class="num t9 muted">21.0</text><text x="1798" y="628" class="num t9 muted">20.0</text>
+  <g stroke-width="2">
+    <line x1="794" y1="596" x2="794" y2="642" class="down"/><rect x="787" y="610" width="14" height="18" class="down"/>
+    <line x1="832" y1="586" x2="832" y2="630" class="up"/><rect x="825" y="596" width="14" height="20" class="up"/>
+    <line x1="870" y1="574" x2="870" y2="620" class="up"/><rect x="863" y="586" width="14" height="20" class="up"/>
+    <line x1="908" y1="580" x2="908" y2="628" class="down"/><rect x="901" y="594" width="14" height="20" class="down"/>
+    <line x1="946" y1="560" x2="946" y2="612" class="up"/><rect x="939" y="574" width="14" height="24" class="up"/>
+    <line x1="984" y1="548" x2="984" y2="598" class="up"/><rect x="977" y="562" width="14" height="22" class="up"/>
+    <line x1="1022" y1="552" x2="1022" y2="606" class="down"/><rect x="1015" y="566" width="14" height="24" class="down"/>
+    <line x1="1060" y1="534" x2="1060" y2="590" class="up"/><rect x="1053" y="548" width="14" height="26" class="up"/>
+    <line x1="1098" y1="520" x2="1098" y2="576" class="up"/><rect x="1091" y="534" width="14" height="26" class="up"/>
+    <line x1="1136" y1="526" x2="1136" y2="586" class="down"/><rect x="1129" y="542" width="14" height="28" class="down"/>
+    <line x1="1174" y1="508" x2="1174" y2="566" class="up"/><rect x="1167" y="522" width="14" height="28" class="up"/>
+    <line x1="1212" y1="492" x2="1212" y2="552" class="up"/><rect x="1205" y="508" width="14" height="28" class="up"/>
+    <line x1="1250" y1="500" x2="1250" y2="560" class="down"/><rect x="1243" y="516" width="14" height="28" class="down"/>
+    <line x1="1288" y1="482" x2="1288" y2="542" class="up"/><rect x="1281" y="498" width="14" height="28" class="up"/>
+    <line x1="1326" y1="466" x2="1326" y2="526" class="up"/><rect x="1319" y="482" width="14" height="28" class="up"/>
+    <line x1="1364" y1="474" x2="1364" y2="536" class="down"/><rect x="1357" y="490" width="14" height="30" class="down"/>
+    <line x1="1402" y1="454" x2="1402" y2="516" class="up"/><rect x="1395" y="470" width="14" height="30" class="up"/>
+    <line x1="1440" y1="442" x2="1440" y2="504" class="up"/><rect x="1433" y="458" width="14" height="28" class="up"/>
+    <line x1="1478" y1="450" x2="1478" y2="512" class="down"/><rect x="1471" y="466" width="14" height="30" class="down"/>
+    <line x1="1516" y1="430" x2="1516" y2="492" class="up"/><rect x="1509" y="446" width="14" height="30" class="up"/>
+    <line x1="1554" y1="418" x2="1554" y2="480" class="up"/><rect x="1547" y="434" width="14" height="30" class="up"/>
+    <line x1="1592" y1="426" x2="1592" y2="488" class="down"/><rect x="1585" y="442" width="14" height="30" class="down"/>
+    <line x1="1630" y1="408" x2="1630" y2="470" class="up"/><rect x="1623" y="424" width="14" height="30" class="up"/>
+    <line x1="1668" y1="396" x2="1668" y2="458" class="up"/><rect x="1661" y="412" width="14" height="30" class="up"/>
+    <line x1="1706" y1="404" x2="1706" y2="468" class="down"/><rect x="1699" y="420" width="14" height="32" class="down"/>
+    <line x1="1744" y1="386" x2="1744" y2="450" class="up"/><rect x="1737" y="402" width="14" height="32" class="up"/>
+  </g>
+  <path d="M794 620 C930 598 1040 568 1174 540 S1410 490 1554 452 S1668 428 1744 414" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <path d="M794 628 C960 612 1110 582 1250 552 S1480 508 1600 474 S1690 452 1744 442" fill="none" stroke="#2e5e84" stroke-width="2"/>
+
+  <!-- strategy markers -->
+  <line x1="1592" y1="430" x2="1592" y2="660" stroke="#b47a22" stroke-dasharray="4 4"/>
+  <path d="M1584 446 l8 -12 8 12Z" fill="#b47a22"/><rect x="1512" y="650" width="160" height="30" rx="7" fill="#fff7e9"/><text x="1532" y="670" class="cn t9 ochre bold">07-18 盘后事件可用</text>
+  <line x1="1744" y1="390" x2="1744" y2="682" stroke="#2e5e84" stroke-dasharray="4 4"/><text x="1754" y="700" class="cn t9 blue">证据截止</text>
+
+  <!-- volume -->
+  <line x1="770" y1="664" x2="1790" y2="664" class="hair"/>
+  <g opacity=".42">
+    <rect x="787" y="744" width="14" height="40" class="down"/><rect x="825" y="732" width="14" height="52" class="up"/><rect x="863" y="738" width="14" height="46" class="up"/><rect x="901" y="748" width="14" height="36" class="down"/>
+    <rect x="939" y="724" width="14" height="60" class="up"/><rect x="977" y="730" width="14" height="54" class="up"/><rect x="1015" y="742" width="14" height="42" class="down"/><rect x="1053" y="716" width="14" height="68" class="up"/>
+    <rect x="1091" y="708" width="14" height="76" class="up"/><rect x="1129" y="736" width="14" height="48" class="down"/><rect x="1167" y="700" width="14" height="84" class="up"/><rect x="1205" y="694" width="14" height="90" class="up"/>
+    <rect x="1243" y="728" width="14" height="56" class="down"/><rect x="1281" y="688" width="14" height="96" class="up"/><rect x="1319" y="680" width="14" height="104" class="up"/><rect x="1357" y="718" width="14" height="66" class="down"/>
+    <rect x="1395" y="672" width="14" height="112" class="up"/><rect x="1433" y="686" width="14" height="98" class="up"/><rect x="1471" y="710" width="14" height="74" class="down"/><rect x="1509" y="664" width="14" height="120" class="up"/>
+    <rect x="1547" y="650" width="14" height="134" class="up"/><rect x="1585" y="704" width="14" height="80" class="down"/><rect x="1623" y="658" width="14" height="126" class="up"/><rect x="1661" y="646" width="14" height="138" class="up"/>
+    <rect x="1699" y="696" width="14" height="88" class="down"/><rect x="1737" y="640" width="14" height="144" class="up"/>
+  </g>
+  <text x="776" y="804" class="mono t9 muted">06-17</text><text x="1112" y="804" class="mono t9 muted">07-01</text><text x="1430" y="804" class="mono t9 muted">07-15</text><text x="1720" y="804" class="mono t9 muted">07-24</text>
+
+  <!-- lower evidence -->
+  <rect x="174" y="840" width="1678" height="174" rx="12" fill="#f8faf9" stroke="#d8e0dd"/>
+  <text x="194" y="870" class="cn t14 ink bold">候选证据摘要</text>
+  <text x="194" y="906" class="cn t10 muted">事件强度</text><text x="194" y="934" class="num t18 blue bold">86.1</text><text x="194" y="958" class="cn t9 muted">盘后可用 · 非同日成交</text>
+  <line x1="354" y1="894" x2="354" y2="982" class="hair"/>
+  <text x="380" y="906" class="cn t10 muted">技术/量价</text><text x="380" y="934" class="num t18 ink bold">77.0</text><text x="380" y="958" class="cn t9 muted">站上 MA20 · 成交扩张</text>
+  <line x1="560" y1="894" x2="560" y2="982" class="hair"/>
+  <text x="586" y="906" class="cn t10 muted">基本面</text><text x="586" y="934" class="num t18 ink bold">70.8</text><text x="586" y="958" class="cn t9 muted">只使用当时已公告数据</text>
+  <line x1="766" y1="894" x2="766" y2="982" class="hair"/>
+  <text x="792" y="906" class="cn t10 muted">风险</text><text x="792" y="934" class="num t18 ochre bold">35.4</text><text x="792" y="958" class="cn t9 muted">跳空与有色集中</text>
+  <line x1="950" y1="894" x2="950" y2="982" class="hair"/>
+  <text x="976" y="906" class="cn t10 muted">失败环境</text><text x="976" y="934" class="cn t13 ink bold">低成交 + 高波动</text><text x="976" y="958" class="cn t9 muted">回撤扩大 2.1 倍</text>
+  <rect x="1280" y="876" width="550" height="112" rx="10" fill="#fff7e9"/>
+  <text x="1302" y="904" class="cn t11 ochre bold">晋级仍是策略级决定</text><text x="1302" y="930" class="cn t10 muted">看 K 线不会自动晋级，也不授权 MiniQMT 或 Live。</text>
+  <rect x="1302" y="946" width="170" height="34" rx="8" fill="#fff" stroke="#d8c29d"/><text x="1340" y="968" class="cn t10 ink">继续观察</text>
+  <rect x="1484" y="946" width="220" height="34" rx="8" fill="#2e5e84"/><text x="1530" y="968" class="cn t10" fill="#fff">进入晋级证据对比</text>
+</svg>

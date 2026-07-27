@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0001 v0.3 大盘指数蜡烛图修订稿</title>
+  <desc id="desc">市场大盘页面以所选宽基指数蜡烛图为主画布，包含成交量、均线、市场状态和广度检查器。</desc>
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.rise{fill:#c34b43}.fall{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}
+      .hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}.up{stroke:#c34b43;fill:#c34b43}.down{stroke:#238267;fill:#238267}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0001 · 大盘指数蜡烛图修订</text>
+  <text x="38" y="58" class="cn t12 muted">v0.3 · 待用户批准 · v0.2 的行业热力布局保持不变</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <text x="62" y="204" class="cn t13" fill="#91a0a8">今日</text>
+  <rect x="46" y="236" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="236" width="3" height="42" fill="#82b9d9"/><text x="62" y="262" class="cn t13" fill="#fff">市场</text>
+  <text x="62" y="326" class="cn t13" fill="#91a0a8">策略竞技场</text><text x="62" y="384" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="442" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">Shadow</text><text x="57" y="1003" class="cn t10" fill="#82939c">市场只读</text>
+
+  <text x="182" y="112" class="cn t12 muted">2026-07-24 · 周五 · 已收盘 · 数据 15:23</text>
+  <text x="182" y="143" class="cn t26 ink">市场全景</text><text x="322" y="141" class="cn t12 muted">价格结构与市场广度必须相互确认</text>
+  <rect x="1688" y="101" width="164" height="38" rx="19" fill="#f7eddb"/><circle cx="1710" cy="120" r="5" fill="#b47a22"/><text x="1722" y="125" class="cn t12 ochre bold">需要你处理 2</text>
+
+  <!-- decision ribbon -->
+  <rect x="174" y="158" width="1678" height="58" rx="11" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="180" class="cn t10 muted">数据</text><text x="194" y="200" class="cn t13 ink bold">15:23 完整</text>
+  <line x1="304" y1="184" x2="350" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="350" cy="184" r="4" fill="#2e5e84"/>
+  <text x="372" y="180" class="cn t10 muted">市场状态</text><text x="372" y="200" class="cn t13 ink bold">扩散修复 · 72%</text>
+  <line x1="550" y1="184" x2="596" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="596" cy="184" r="4" fill="#2e5e84"/>
+  <text x="618" y="180" class="cn t10 muted">风险</text><text x="618" y="200" class="cn t13 ink bold">高位分歧</text>
+  <line x1="744" y1="184" x2="790" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="790" cy="184" r="4" fill="#2e5e84"/>
+  <text x="812" y="180" class="cn t10 muted">页面边界</text><text x="812" y="200" class="cn t13 ink bold">研究观察 · 不下单</text>
+  <text x="1604" y="192" class="cn t12 blue">查看方法与快照 →</text>
+
+  <!-- main tabs and index selector -->
+  <rect x="174" y="234" width="1678" height="52" rx="10" fill="#f5f7f6"/>
+  <rect x="184" y="243" width="112" height="34" rx="8" fill="#fff" stroke="#cbd7d3"/><text x="223" y="265" class="cn t12 ink bold">大盘</text>
+  <text x="354" y="265" class="cn t12 muted">行业</text><text x="494" y="265" class="cn t12 muted">ETF 轮动</text>
+  <line x1="620" y1="246" x2="620" y2="274" class="hair"/>
+  <rect x="644" y="243" width="144" height="34" rx="17" fill="#edf3f6"/><text x="674" y="265" class="cn t11 blue bold">沪深 300</text>
+  <text x="818" y="265" class="cn t11 muted">上证</text><text x="886" y="265" class="cn t11 muted">深证</text><text x="954" y="265" class="cn t11 muted">创业板</text><text x="1034" y="265" class="cn t11 muted">科创 50</text><text x="1126" y="265" class="cn t11 muted">中证 1000</text>
+  <rect x="1594" y="243" width="74" height="34" rx="8" fill="#fff" stroke="#cbd7d3"/><text x="1618" y="265" class="cn t11 ink bold">日 K</text>
+  <text x="1690" y="265" class="cn t11 muted">周 K</text><text x="1752" y="265" class="cn t11 muted">月 K</text>
+
+  <!-- quote strip -->
+  <rect x="174" y="302" width="1200" height="72" rx="10" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="326" class="cn t10 muted">沪深 300 · 000300.SH</text><text x="194" y="354" class="num t22 ink">4,126.80</text>
+  <text x="330" y="354" class="num t13 rise bold">↑ +0.94%</text>
+  <line x1="452" y1="318" x2="452" y2="358" class="hair"/>
+  <text x="476" y="328" class="cn t10 muted">开</text><text x="504" y="328" class="num t11 ink">4,088.2</text>
+  <text x="476" y="352" class="cn t10 muted">高</text><text x="504" y="352" class="num t11 ink">4,139.6</text>
+  <text x="622" y="328" class="cn t10 muted">低</text><text x="650" y="328" class="num t11 ink">4,076.9</text>
+  <text x="622" y="352" class="cn t10 muted">量</text><text x="650" y="352" class="num t11 ink">1.86 亿手</text>
+  <line x1="816" y1="318" x2="816" y2="358" class="hair"/>
+  <text x="840" y="328" class="cn t10 muted">MA5</text><text x="878" y="328" class="num t11 ochre">4,089.1</text>
+  <text x="840" y="352" class="cn t10 muted">MA20</text><text x="886" y="352" class="num t11 blue">4,032.7</text>
+  <text x="1196" y="340" class="cn t10 muted">120 根日线 · 前复权不适用于指数</text>
+
+  <!-- candle chart -->
+  <rect x="174" y="390" width="1200" height="438" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="420" class="cn t14 ink bold">价格与成交量</text>
+  <circle cx="356" cy="416" r="4" fill="#b47a22"/><text x="366" y="420" class="cn t10 muted">MA5</text>
+  <circle cx="414" cy="416" r="4" fill="#2e5e84"/><text x="424" y="420" class="cn t10 muted">MA20</text>
+  <text x="1342" y="420" text-anchor="end" class="cn t10 muted">拖动缩放 · 十字线读取 OHLCV</text>
+  <line x1="210" y1="464" x2="1328" y2="464" class="grid"/><line x1="210" y1="528" x2="1328" y2="528" class="grid"/><line x1="210" y1="592" x2="1328" y2="592" class="grid"/><line x1="210" y1="656" x2="1328" y2="656" class="grid"/>
+  <text x="1338" y="468" class="num t9 muted">4,180</text><text x="1338" y="532" class="num t9 muted">4,080</text><text x="1338" y="596" class="num t9 muted">3,980</text><text x="1338" y="660" class="num t9 muted">3,880</text>
+
+  <!-- candlesticks -->
+  <g stroke-width="2">
+    <line x1="232" y1="590" x2="232" y2="646" class="down"/><rect x="225" y="608" width="14" height="22" class="down"/>
+    <line x1="266" y1="582" x2="266" y2="632" class="up"/><rect x="259" y="594" width="14" height="24" class="up"/>
+    <line x1="300" y1="570" x2="300" y2="618" class="up"/><rect x="293" y="580" width="14" height="24" class="up"/>
+    <line x1="334" y1="566" x2="334" y2="626" class="down"/><rect x="327" y="584" width="14" height="28" class="down"/>
+    <line x1="368" y1="548" x2="368" y2="608" class="up"/><rect x="361" y="562" width="14" height="30" class="up"/>
+    <line x1="402" y1="536" x2="402" y2="588" class="up"/><rect x="395" y="548" width="14" height="24" class="up"/>
+    <line x1="436" y1="542" x2="436" y2="600" class="down"/><rect x="429" y="556" width="14" height="30" class="down"/>
+    <line x1="470" y1="528" x2="470" y2="582" class="up"/><rect x="463" y="540" width="14" height="28" class="up"/>
+    <line x1="504" y1="510" x2="504" y2="566" class="up"/><rect x="497" y="524" width="14" height="28" class="up"/>
+    <line x1="538" y1="500" x2="538" y2="558" class="down"/><rect x="531" y="516" width="14" height="26" class="down"/>
+    <line x1="572" y1="486" x2="572" y2="546" class="up"/><rect x="565" y="502" width="14" height="26" class="up"/>
+    <line x1="606" y1="474" x2="606" y2="528" class="up"/><rect x="599" y="486" width="14" height="26" class="up"/>
+    <line x1="640" y1="482" x2="640" y2="540" class="down"/><rect x="633" y="496" width="14" height="28" class="down"/>
+    <line x1="674" y1="466" x2="674" y2="522" class="up"/><rect x="667" y="478" width="14" height="28" class="up"/>
+    <line x1="708" y1="452" x2="708" y2="506" class="up"/><rect x="701" y="464" width="14" height="26" class="up"/>
+    <line x1="742" y1="458" x2="742" y2="520" class="down"/><rect x="735" y="474" width="14" height="30" class="down"/>
+    <line x1="776" y1="442" x2="776" y2="500" class="up"/><rect x="769" y="454" width="14" height="30" class="up"/>
+    <line x1="810" y1="430" x2="810" y2="486" class="up"/><rect x="803" y="444" width="14" height="26" class="up"/>
+    <line x1="844" y1="438" x2="844" y2="498" class="down"/><rect x="837" y="452" width="14" height="30" class="down"/>
+    <line x1="878" y1="424" x2="878" y2="482" class="up"/><rect x="871" y="438" width="14" height="28" class="up"/>
+    <line x1="912" y1="414" x2="912" y2="468" class="up"/><rect x="905" y="426" width="14" height="26" class="up"/>
+    <line x1="946" y1="430" x2="946" y2="486" class="down"/><rect x="939" y="444" width="14" height="28" class="down"/>
+    <line x1="980" y1="418" x2="980" y2="472" class="up"/><rect x="973" y="430" width="14" height="28" class="up"/>
+    <line x1="1014" y1="406" x2="1014" y2="462" class="up"/><rect x="1007" y="420" width="14" height="26" class="up"/>
+    <line x1="1048" y1="412" x2="1048" y2="468" class="down"/><rect x="1041" y="426" width="14" height="28" class="down"/>
+    <line x1="1082" y1="398" x2="1082" y2="454" class="up"/><rect x="1075" y="412" width="14" height="26" class="up"/>
+    <line x1="1116" y1="406" x2="1116" y2="464" class="down"/><rect x="1109" y="420" width="14" height="30" class="down"/>
+    <line x1="1150" y1="392" x2="1150" y2="448" class="up"/><rect x="1143" y="406" width="14" height="26" class="up"/>
+    <line x1="1184" y1="382" x2="1184" y2="438" class="up"/><rect x="1177" y="396" width="14" height="26" class="up"/>
+    <line x1="1218" y1="390" x2="1218" y2="452" class="down"/><rect x="1211" y="406" width="14" height="30" class="down"/>
+    <line x1="1252" y1="374" x2="1252" y2="438" class="up"/><rect x="1245" y="390" width="14" height="30" class="up"/>
+    <line x1="1286" y1="364" x2="1286" y2="426" class="up"/><rect x="1279" y="380" width="14" height="30" class="up"/>
+  </g>
+  <path d="M232 620 C340 600 420 568 504 542 S654 500 742 486 S908 448 1014 438 S1174 408 1286 394" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <path d="M232 632 C350 616 438 590 538 564 S700 522 810 494 S1002 462 1116 438 S1220 420 1286 412" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <line x1="1252" y1="442" x2="1252" y2="776" stroke="#8ab0c5" stroke-dasharray="4 4"/><text x="1262" y="454" class="cn t9 blue">07-23</text>
+
+  <!-- volume pane -->
+  <line x1="210" y1="690" x2="1328" y2="690" class="hair"/>
+  <g opacity=".42">
+    <rect x="225" y="748" width="14" height="42" class="down"/><rect x="259" y="734" width="14" height="56" class="up"/><rect x="293" y="740" width="14" height="50" class="up"/>
+    <rect x="327" y="752" width="14" height="38" class="down"/><rect x="361" y="726" width="14" height="64" class="up"/><rect x="395" y="738" width="14" height="52" class="up"/>
+    <rect x="429" y="746" width="14" height="44" class="down"/><rect x="463" y="722" width="14" height="68" class="up"/><rect x="497" y="718" width="14" height="72" class="up"/>
+    <rect x="531" y="736" width="14" height="54" class="down"/><rect x="565" y="712" width="14" height="78" class="up"/><rect x="599" y="720" width="14" height="70" class="up"/>
+    <rect x="633" y="742" width="14" height="48" class="down"/><rect x="667" y="706" width="14" height="84" class="up"/><rect x="701" y="714" width="14" height="76" class="up"/>
+    <rect x="735" y="730" width="14" height="60" class="down"/><rect x="769" y="698" width="14" height="92" class="up"/><rect x="803" y="704" width="14" height="86" class="up"/>
+    <rect x="837" y="726" width="14" height="64" class="down"/><rect x="871" y="700" width="14" height="90" class="up"/><rect x="905" y="710" width="14" height="80" class="up"/>
+    <rect x="939" y="728" width="14" height="62" class="down"/><rect x="973" y="696" width="14" height="94" class="up"/><rect x="1007" y="690" width="14" height="100" class="up"/>
+    <rect x="1041" y="722" width="14" height="68" class="down"/><rect x="1075" y="686" width="14" height="104" class="up"/><rect x="1109" y="714" width="14" height="76" class="down"/>
+    <rect x="1143" y="692" width="14" height="98" class="up"/><rect x="1177" y="680" width="14" height="110" class="up"/><rect x="1211" y="710" width="14" height="80" class="down"/>
+    <rect x="1245" y="674" width="14" height="116" class="up"/><rect x="1279" y="666" width="14" height="124" class="up"/>
+  </g>
+  <text x="216" y="810" class="mono t9 muted">06-10</text><text x="560" y="810" class="mono t9 muted">06-26</text><text x="914" y="810" class="mono t9 muted">07-10</text><text x="1264" y="810" class="mono t9 muted">07-24</text>
+
+  <!-- right inspector -->
+  <rect x="1394" y="302" width="458" height="526" rx="12" fill="#f8faf9" stroke="#d8e0dd"/>
+  <text x="1416" y="334" class="cn t16 ink bold">价格结构 × 市场广度</text>
+  <text x="1416" y="358" class="cn t10 muted">蜡烛图不能单独定义市场状态</text>
+  <rect x="1416" y="380" width="414" height="86" rx="9" fill="#edf3f6"/>
+  <text x="1436" y="406" class="cn t10 blue">当前判断</text><text x="1436" y="436" class="cn t18 blue bold">扩散修复</text><text x="1798" y="436" text-anchor="end" class="num t14 blue bold">72%</text>
+  <text x="1436" y="456" class="cn t9 muted">指数站上 MA20，但科创 50 与高位连板存在分歧</text>
+  <text x="1416" y="502" class="cn t11 muted">上涨 / 下跌</text><text x="1810" y="502" text-anchor="end" class="num t13 ink bold">3,486 / 1,512</text>
+  <line x1="1416" y1="518" x2="1830" y2="518" class="hair"/>
+  <text x="1416" y="548" class="cn t11 muted">新高 / 新低</text><text x="1810" y="548" text-anchor="end" class="num t13 ink bold">183 / 31</text>
+  <line x1="1416" y1="564" x2="1830" y2="564" class="hair"/>
+  <text x="1416" y="594" class="cn t11 muted">全 A 成交额</text><text x="1810" y="594" text-anchor="end" class="num t13 ink bold">1.31 万亿 · 78%</text>
+  <line x1="1416" y1="610" x2="1830" y2="610" class="hair"/>
+  <text x="1416" y="640" class="cn t11 muted">涨停 / 跌停 / 炸板率</text><text x="1810" y="640" text-anchor="end" class="num t13 ink bold">67 / 4 / 21.6%</text>
+  <rect x="1416" y="672" width="414" height="66" rx="9" fill="#fff7e9"/>
+  <text x="1436" y="698" class="cn t10 ochre bold">风险观察</text><text x="1436" y="721" class="cn t11 ink">高位连板回落；价格强但结构未完全确认</text>
+  <rect x="1416" y="758" width="200" height="42" rx="8" fill="#fff" stroke="#b9cbd4"/><text x="1462" y="784" class="cn t11 blue">查看市场证据</text>
+  <text x="1640" y="784" class="cn t10 muted">只读 · 无交易动作</text>
+
+  <!-- lower context -->
+  <rect x="174" y="846" width="1678" height="168" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="876" class="cn t14 ink bold">市场内部与行业扩散</text><text x="1816" y="876" text-anchor="end" class="cn t10 blue">进入行业结构地图 →</text>
+  <text x="194" y="910" class="cn t10 muted">小盘相对</text><text x="194" y="936" class="num t16 ink bold">+0.6σ</text><text x="194" y="960" class="cn t10 muted">小盘占优</text>
+  <line x1="350" y1="900" x2="350" y2="982" class="hair"/>
+  <text x="374" y="910" class="cn t10 muted">科技成长</text><text x="374" y="936" class="num t16 rise bold">+1.8%</text><text x="374" y="960" class="cn t10 muted">半导体、通信扩散</text>
+  <line x1="592" y1="900" x2="592" y2="982" class="hair"/>
+  <text x="616" y="910" class="cn t10 muted">周期资源</text><text x="616" y="936" class="num t16 rise bold">+1.2%</text><text x="616" y="960" class="cn t10 muted">有色强、能源分化</text>
+  <line x1="858" y1="900" x2="858" y2="982" class="hair"/>
+  <text x="882" y="910" class="cn t10 muted">稳健传统</text><text x="882" y="936" class="num t16 blue bold">+0.3%</text><text x="882" y="960" class="cn t10 muted">交通修复、酒缩量</text>
+  <line x1="1130" y1="900" x2="1130" y2="982" class="hair"/>
+  <text x="1154" y="910" class="cn t10 muted">图表数据身份</text><text x="1154" y="936" class="mono t10 ink">snapshot 07-24-a</text><text x="1154" y="960" class="cn t10 muted">日线 120 根 · 截止 2026-07-24</text>
+  <rect x="1590" y="912" width="240" height="54" rx="9" fill="#f5f7f6"/><text x="1624" y="944" class="cn t11 muted">图表用于市场结构研究，不构成交易指令</text>
+</svg>

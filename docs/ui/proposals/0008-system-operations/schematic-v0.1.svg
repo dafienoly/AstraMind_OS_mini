@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="15" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0008 · 数据运行、连接状态与常设授权</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 把复杂系统压缩为“健康、失败、恢复、边界”四件事</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <!-- data operations -->
+  <rect x="30" y="78" width="910" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <rect x="30" y="78" width="106" height="970" rx="22" fill="#172129"/><rect x="114" y="78" width="22" height="970" fill="#172129"/>
+  <text x="52" y="115" class="num t16 bold" fill="#fff">ASTRA</text><text x="52" y="134" class="mono t9" fill="#91a1aa">MIND MINI</text>
+  <text x="55" y="194" class="cn t11" fill="#91a0a8">今日</text><text x="55" y="238" class="cn t11" fill="#91a0a8">市场</text><text x="55" y="292" class="cn t11" fill="#91a0a8">策略竞技场</text><text x="55" y="350" class="cn t11" fill="#91a0a8">组合</text>
+  <rect x="42" y="389" width="84" height="42" rx="7" fill="#2a5067"/><rect x="42" y="389" width="3" height="42" fill="#82b9d9"/><text x="55" y="414" class="cn t11" fill="#fff">系统</text>
+  <rect x="43" y="966" width="82" height="56" rx="9" fill="#20313b"/><circle cx="56" cy="984" r="4" fill="#b47a22"/>
+  <text x="66" y="988" class="cn t10" fill="#d8e0e3">1 个失败</text><text x="52" y="1007" class="cn t9" fill="#82939c">核心数据可用</text>
+
+  <text x="160" y="114" class="cn t11 muted">系统 / 数据与任务</text><text x="160" y="145" class="cn t22 ink">今天系统能不能信</text>
+  <rect x="758" y="108" width="152" height="36" rx="18" fill="#e7f2ec"/><circle cx="780" cy="126" r="5" fill="#238267"/><text x="793" y="131" class="cn t11 green bold">核心链路健康</text>
+  <rect x="160" y="168" width="750" height="118" rx="12" fill="#eef3f5"/>
+  <text x="180" y="194" class="cn t10 muted">最近可用快照</text><text x="180" y="226" class="cn t18 ink bold">2026-07-24 15:23</text><text x="180" y="252" class="mono t9 muted">snapshot 07-24-a · manifest 91fe… · point-in-time</text>
+  <line x1="474" y1="188" x2="474" y2="266" class="hair"/>
+  <text x="500" y="194" class="cn t10 muted">必需数据集</text><text x="500" y="226" class="num t18 ink bold">12 / 12</text><text x="500" y="252" class="cn t10 green">可生成信号</text>
+  <line x1="676" y1="188" x2="676" y2="266" class="hair"/>
+  <text x="702" y="194" class="cn t10 muted">增强数据集</text><text x="702" y="226" class="num t18 ochre bold">4 / 5</text><text x="702" y="252" class="cn t10 ochre">股东户数部分失败</text>
+
+  <text x="160" y="322" class="cn t14 ink bold">数据产品</text><text x="868" y="322" text-anchor="end" class="cn t10 muted">状态来自已发布版本，不是临时内存</text>
+  <rect x="160" y="338" width="750" height="322" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="180" y="358" width="710" height="36" rx="6" fill="#f5f7f6"/>
+  <text x="194" y="381" class="cn t9 muted">数据集</text><text x="392" y="381" class="cn t9 muted">覆盖/最新日期</text><text x="562" y="381" class="cn t9 muted">质量</text><text x="696" y="381" class="cn t9 muted">版本</text><text x="838" y="381" class="cn t9 muted">状态</text>
+  <text x="194" y="426" class="cn t11 ink bold">日行情与复权</text><text x="392" y="426" class="cn t10">5,412 只 · 07-24</text><text x="562" y="426" class="num t10 green">99.98%</text><text x="696" y="426" class="mono t9">daily-0724-a</text><text x="838" y="426" class="cn t10 green">已发布</text>
+  <line x1="180" y1="444" x2="890" y2="444" class="hair"/>
+  <text x="194" y="474" class="cn t11 ink bold">财务与估值</text><text x="392" y="474" class="cn t10">4,968 只 · 2026Q2</text><text x="562" y="474" class="num t10 green">97.4%</text><text x="696" y="474" class="mono t9">fund-q2-r3</text><text x="838" y="474" class="cn t10 green">已发布</text>
+  <line x1="180" y1="492" x2="890" y2="492" class="hair"/>
+  <text x="194" y="522" class="cn t11 ink bold">龙虎榜</text><text x="392" y="522" class="cn t10">近 120 日 · 07-24</text><text x="562" y="522" class="num t10 green">100%</text><text x="696" y="522" class="mono t9">toplist-0724</text><text x="838" y="522" class="cn t10 green">已发布</text>
+  <line x1="180" y1="540" x2="890" y2="540" class="hair"/>
+  <text x="194" y="570" class="cn t11 ink bold">股东户数</text><text x="392" y="570" class="cn t10 ochre">3,814 只 · 部分</text><text x="562" y="570" class="num t10 ochre">72.1%</text><text x="696" y="570" class="mono t9 muted">未发布</text><text x="838" y="570" class="cn t10 ochre">失败</text>
+  <line x1="180" y1="588" x2="890" y2="588" class="hair"/>
+  <text x="194" y="618" class="cn t11 ink bold">行业生命周期</text><text x="392" y="618" class="cn t10">31 行业 · 07-24</text><text x="562" y="618" class="num t10 green">100%</text><text x="696" y="618" class="mono t9">life-0724</text><text x="838" y="618" class="cn t10 green">已发布</text>
+  <text x="180" y="646" class="cn t9 muted">增强数据失败不会污染已发布快照；相关因子降级并显式标记。</text>
+
+  <rect x="160" y="680" width="488" height="188" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="180" y="710" class="cn t13 ink bold">今日任务</text>
+  <text x="180" y="746" class="cn t10 ink">收盘增量</text><rect x="274" y="736" width="252" height="12" rx="6" fill="#e5ebe8"/><rect x="274" y="736" width="252" height="12" rx="6" fill="#238267"/><text x="546" y="747" class="num t9 green">完成</text>
+  <text x="180" y="780" class="cn t10 ink">特征生成</text><rect x="274" y="770" width="252" height="12" rx="6" fill="#e5ebe8"/><rect x="274" y="770" width="252" height="12" rx="6" fill="#238267"/><text x="546" y="781" class="num t9 green">完成</text>
+  <text x="180" y="814" class="cn t10 ink">股东户数</text><rect x="274" y="804" width="252" height="12" rx="6" fill="#e5ebe8"/><rect x="274" y="804" width="182" height="12" rx="6" fill="#b47a22"/><text x="546" y="815" class="num t9 ochre">失败</text>
+  <text x="180" y="849" class="cn t9 blue">查看任务日志与可重试步骤 →</text>
+
+  <rect x="666" y="680" width="244" height="188" rx="12" fill="#fff7e9" stroke="#ead4af"/>
+  <text x="686" y="710" class="cn t13 ink bold">唯一失败</text><text x="686" y="742" class="cn t11 ink">股东户数提供方</text>
+  <text x="686" y="768" class="cn t10 muted">第 4/7 页返回空数据</text><text x="686" y="792" class="cn t10 muted">未发布半成品</text>
+  <rect x="686" y="814" width="82" height="36" rx="8" fill="#b47a22"/><text x="714" y="837" class="cn t10" fill="#fff">重试</text>
+  <text x="786" y="837" class="cn t10 blue">看缺口</text>
+
+  <rect x="160" y="888" width="750" height="106" rx="11" fill="#eef3f5"/>
+  <text x="180" y="918" class="cn t12 blue bold">恢复原则：从最近成功检查点续跑，不重复已成功步骤</text>
+  <text x="180" y="944" class="cn t10 muted">每次发布都是新版本 + 原子指针；失败版本可诊断，但不会伪装成“当前”。</text>
+  <text x="788" y="967" class="cn t10 blue">查看版本谱系 →</text>
+
+  <!-- connections and mandate -->
+  <rect x="970" y="78" width="920" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <text x="1002" y="114" class="cn t11 muted">系统 / 连接与授权</text><text x="1002" y="145" class="cn t22 ink">运行边界</text>
+  <rect x="1688" y="108" width="168" height="34" rx="17" fill="#f7eddb"/><text x="1717" y="130" class="cn t11 ochre bold">Live 当前未启用</text>
+
+  <text x="1002" y="188" class="cn t14 ink bold">执行模式</text>
+  <rect x="1002" y="204" width="854" height="158" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="1022" y="224" width="252" height="116" rx="10" fill="#eef3f5" stroke="#91aebf" stroke-width="2"/>
+  <circle cx="1044" cy="248" r="6" fill="#2e5e84"/><text x="1060" y="253" class="cn t13 blue bold">本地 Shadow</text>
+  <text x="1042" y="281" class="cn t10 muted">默认 · 可执行仿真订单</text><text x="1042" y="307" class="cn t10 green">已就绪</text>
+  <rect x="1290" y="224" width="252" height="116" rx="10" fill="#f7faf9"/>
+  <circle cx="1312" cy="248" r="6" fill="#9aa9a4"/><text x="1328" y="253" class="cn t13 ink bold">MiniQMT</text>
+  <text x="1310" y="281" class="cn t10 muted">未配置 · 连接探测关闭</text><text x="1310" y="307" class="cn t10 ochre">需要单独批准接入</text>
+  <rect x="1558" y="224" width="278" height="116" rx="10" fill="#f3f4f3"/>
+  <circle cx="1580" cy="248" r="6" fill="#c3ccc8"/><text x="1596" y="253" class="cn t13 muted bold">真实交易</text>
+  <text x="1578" y="281" class="cn t10 muted">不可用 · 无切换开关</text><text x="1578" y="307" class="cn t10 muted">首笔实盘必须重新批准</text>
+
+  <text x="1002" y="402" class="cn t14 ink bold">常设授权</text>
+  <rect x="1002" y="418" width="526" height="256" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1022" y="448" class="cn t13 ink bold">shadow-default-v1</text><text x="1498" y="448" text-anchor="end" class="cn t10 green">生效中</text>
+  <text x="1022" y="486" class="cn t10 muted">允许动作</text><text x="1498" y="486" text-anchor="end" class="cn t11 ink">仿真下单、撤单、重试、对账</text>
+  <line x1="1022" y1="502" x2="1508" y2="502" class="hair"/>
+  <text x="1022" y="530" class="cn t10 muted">资金边界</text><text x="1498" y="530" text-anchor="end" class="cn t11 ink">短线 5 万 · 长线 10 万</text>
+  <line x1="1022" y1="546" x2="1508" y2="546" class="hair"/>
+  <text x="1022" y="574" class="cn t10 muted">例外阈值</text><text x="1498" y="574" text-anchor="end" class="cn t11 ink">金额、回撤、流动性、数据失真</text>
+  <line x1="1022" y1="590" x2="1508" y2="590" class="hair"/>
+  <text x="1022" y="618" class="cn t10 muted">人工处理</text><text x="1498" y="618" text-anchor="end" class="cn t11 blue">只处理超边界与失败</text>
+  <text x="1022" y="653" class="cn t9 muted">修改授权本身是受保护动作；普通订单不再逐笔征求同意。</text>
+
+  <rect x="1548" y="418" width="308" height="256" rx="12" fill="#f7faf9"/>
+  <text x="1568" y="448" class="cn t13 ink bold">受保护动作</text>
+  <circle cx="1574" cy="486" r="5" fill="#b47a22"/><text x="1588" y="491" class="cn t10 ink">连接或探测 MiniQMT</text>
+  <circle cx="1574" cy="520" r="5" fill="#b47a22"/><text x="1588" y="525" class="cn t10 ink">修改资金与风险边界</text>
+  <circle cx="1574" cy="554" r="5" fill="#b47a22"/><text x="1588" y="559" class="cn t10 ink">任何真实资金订单</text>
+  <circle cx="1574" cy="588" r="5" fill="#b47a22"/><text x="1588" y="593" class="cn t10 ink">首次从 Shadow 升级</text>
+  <rect x="1568" y="618" width="260" height="38" rx="8" fill="#fff7e9"/><text x="1600" y="642" class="cn t10 ochre">这些入口默认锁定且有说明</text>
+
+  <text x="1002" y="714" class="cn t14 ink bold">恢复与备份</text>
+  <rect x="1002" y="730" width="854" height="174" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1022" y="764" class="cn t10 muted">最近数据库备份</text><text x="1250" y="764" class="cn t11 ink bold">2026-07-24 15:40</text><text x="1818" y="764" text-anchor="end" class="cn t10 green">校验通过</text>
+  <line x1="1022" y1="782" x2="1836" y2="782" class="hair"/>
+  <text x="1022" y="812" class="cn t10 muted">最近数据快照备份</text><text x="1250" y="812" class="cn t11 ink bold">snapshot 07-24-a</text><text x="1818" y="812" text-anchor="end" class="cn t10 green">可恢复</text>
+  <line x1="1022" y1="830" x2="1836" y2="830" class="hair"/>
+  <text x="1022" y="860" class="cn t10 muted">最近恢复演练</text><text x="1250" y="860" class="cn t11 ink bold">2026-07-20 · 4m 18s</text><text x="1818" y="860" text-anchor="end" class="cn t10 green">通过</text>
+  <text x="1022" y="889" class="cn t9 blue">查看恢复点与不可变证据 →</text>
+
+  <rect x="1002" y="924" width="854" height="70" rx="11" fill="#f5f7f6"/>
+  <text x="1022" y="952" class="cn t11 ink bold">凭据只显示“已配置/缺失”，永不在界面回显 token 或券商密码。</text>
+  <text x="1022" y="976" class="cn t9 muted">未来接入 MiniQMT 前，将先给出独立连接方案、失败回退与首笔实盘检查单。</text>
+</svg>

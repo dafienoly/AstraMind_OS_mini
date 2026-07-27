@@ -1,0 +1,380 @@
+:root {
+  color: #172129;
+  background: #f2f4f3;
+  font-family: "Noto Sans SC", "Source Han Sans SC", system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+main:not(.lab-main) {
+  max-width: 720px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 15vh 32px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #68747c;
+  font: 600 0.72rem/1 "IBM Plex Mono", monospace;
+  letter-spacing: 0.13em;
+}
+
+h1 {
+  margin: 12px 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+main:not(.lab-main) section {
+  margin-top: 32px;
+  padding: 16px 0;
+  border-top: 1px solid #cbd1d4;
+  border-bottom: 1px solid #cbd1d4;
+}
+
+.lab {
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, transparent 0 49.95%, #dfe4e120 50%, transparent 50.05%),
+    #f2f4f3;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  align-items: center;
+  min-height: 62px;
+  padding: 0 4vw;
+  border-bottom: 1px solid #d5dcda;
+  background: #f8f9f8e8;
+  backdrop-filter: blur(12px);
+}
+
+.wordmark {
+  color: #172129;
+  font: 700 0.92rem/1 "IBM Plex Mono", monospace;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+}
+
+.wordmark span {
+  color: #315f99;
+}
+
+.topbar nav {
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 3vw, 42px);
+  color: #59666e;
+  font-size: 0.83rem;
+}
+
+.topbar nav span:nth-child(2) {
+  color: #172129;
+  font-weight: 650;
+}
+
+.mode-pill {
+  padding: 7px 10px;
+  border: 1px solid #cbd4d0;
+  border-radius: 999px;
+  color: #59666e;
+  font: 0.68rem/1 "IBM Plex Mono", monospace;
+}
+
+.lab-main {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 56px 0 72px;
+}
+
+.lab-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.lab-heading h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(2rem, 4vw, 3.65rem);
+  font-weight: 590;
+  letter-spacing: -0.04em;
+}
+
+.lab-heading > div > p:last-child {
+  margin: 0;
+  color: #647078;
+}
+
+.cutoff {
+  display: grid;
+  justify-items: end;
+  padding-left: 28px;
+  border-left: 2px solid #b47b20;
+}
+
+.cutoff span,
+.cutoff small {
+  color: #6d777c;
+  font-size: 0.72rem;
+}
+
+.cutoff strong {
+  margin: 3px 0;
+  font: 600 1rem/1.3 "IBM Plex Mono", monospace;
+}
+
+.decision-strip {
+  display: flex;
+  gap: 8px;
+  margin: 34px 0 12px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+}
+
+.decision-strip span {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #d5dcda;
+  border-radius: 2px;
+  background: #f8f9f8;
+  color: #5e6a71;
+  font-size: 0.72rem;
+}
+
+.decision-strip span[data-state="错误"],
+.decision-strip span[data-state="受阻"] {
+  border-left: 3px solid #b47b20;
+}
+
+.inspector {
+  border: 1px solid #d8dedb;
+  background: #fff;
+  box-shadow: 0 14px 36px #23352f0a;
+}
+
+.instrument-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 82px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e3e7e5;
+}
+
+.instrument-row > div:first-child {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.instrument-row small {
+  grid-column: 1 / -1;
+  color: #788288;
+}
+
+.instrument-code {
+  color: #315f99;
+  font: 600 0.76rem/1 "IBM Plex Mono", monospace;
+}
+
+.timeframe {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: #eef1ef;
+}
+
+.timeframe button {
+  border: 0;
+  padding: 7px 11px;
+  background: transparent;
+  color: #647078;
+  cursor: pointer;
+}
+
+.timeframe button.active {
+  background: #fff;
+  color: #172129;
+  box-shadow: 0 1px 4px #25342d14;
+}
+
+.chart-shell {
+  position: relative;
+}
+
+.chart-legend {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  border-bottom: 1px solid #edf0ef;
+  color: #627077;
+  font: 0.73rem/1 "IBM Plex Mono", monospace;
+}
+
+.chart-legend strong {
+  color: #172129;
+}
+
+.chart-canvas {
+  width: 100%;
+  height: 500px;
+}
+
+.range-block {
+  padding: 12px 22px 20px;
+  border-top: 1px solid #edf0ef;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: #68747c;
+  font: 0.68rem/1 "IBM Plex Mono", monospace;
+}
+
+.range-track {
+  position: relative;
+  height: 18px;
+}
+
+.range-track::before,
+.range-selection {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: #dfe4e1;
+}
+
+.range-selection {
+  background: #315f99;
+}
+
+.range-track input {
+  position: absolute;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.range-track input::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  appearance: none;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #315f99;
+  box-shadow: 0 0 0 1px #315f99;
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.chart-note {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 45px;
+  padding: 0 18px;
+  border-top: 1px solid #edf0ef;
+  color: #667279;
+  font-size: 0.72rem;
+}
+
+.chart-note span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.chart-note i {
+  width: 12px;
+  height: 3px;
+  background: #315f99;
+}
+
+.chart-note .up {
+  background: #c23b32;
+}
+
+.chart-note .down {
+  background: #148060;
+}
+
+.chart-note .ma20 {
+  background: #b47b20;
+}
+
+.chart-note p {
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .topbar nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: start;
+    padding: 10px 0;
+    overflow-x: auto;
+  }
+
+  .lab-main {
+    width: min(100% - 24px, 1180px);
+    padding-top: 34px;
+  }
+
+  .lab-heading,
+  .instrument-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cutoff {
+    justify-items: start;
+  }
+
+  .instrument-row {
+    padding: 16px;
+  }
+
+  .chart-legend {
+    gap: 9px;
+    overflow-x: auto;
+  }
+
+  .chart-canvas {
+    height: 390px;
+  }
+
+  .chart-note p {
+    display: none;
+  }
+}

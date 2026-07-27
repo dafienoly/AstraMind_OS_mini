@@ -1,0 +1,132 @@
+"""Explicit DuckDB schemas for WP-0002B normalized Parquet products."""
+
+SECURITY_MASTER_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("symbol", "VARCHAR"),
+    ("name", "VARCHAR"),
+    ("area", "VARCHAR"),
+    ("industry", "VARCHAR"),
+    ("market", "VARCHAR"),
+    ("exchange", "VARCHAR"),
+    ("currency", "VARCHAR"),
+    ("list_status", "VARCHAR"),
+    ("list_date", "DATE"),
+    ("delist_date", "DATE"),
+    ("connect_flag", "VARCHAR"),
+)
+
+TRADE_CALENDAR_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("exchange", "VARCHAR"),
+    ("calendar_date", "DATE"),
+    ("is_open", "BOOLEAN"),
+    ("previous_trade_date", "DATE"),
+)
+
+DAILY_BAR_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("open", "DOUBLE"),
+    ("high", "DOUBLE"),
+    ("low", "DOUBLE"),
+    ("close", "DOUBLE"),
+    ("previous_close", "DOUBLE"),
+    ("change", "DOUBLE"),
+    ("percent_change", "DOUBLE"),
+    ("volume_lots", "DOUBLE"),
+    ("amount_thousand_cny", "DOUBLE"),
+)
+
+ADJUSTMENT_FACTOR_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("adjustment_factor", "DOUBLE"),
+)
+
+DAILY_BASIC_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("close", "DOUBLE"),
+    ("turnover_rate", "DOUBLE"),
+    ("turnover_rate_free_float", "DOUBLE"),
+    ("volume_ratio", "DOUBLE"),
+    ("price_earnings", "DOUBLE"),
+    ("price_earnings_ttm", "DOUBLE"),
+    ("price_book", "DOUBLE"),
+    ("price_sales", "DOUBLE"),
+    ("price_sales_ttm", "DOUBLE"),
+    ("dividend_yield", "DOUBLE"),
+    ("dividend_yield_ttm", "DOUBLE"),
+    ("total_shares_ten_thousand", "DOUBLE"),
+    ("float_shares_ten_thousand", "DOUBLE"),
+    ("free_float_shares_ten_thousand", "DOUBLE"),
+    ("total_market_value_ten_thousand_cny", "DOUBLE"),
+    ("circulating_market_value_ten_thousand_cny", "DOUBLE"),
+)
+
+PRICE_LIMIT_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("previous_close", "DOUBLE"),
+    ("upper_limit", "DOUBLE"),
+    ("lower_limit", "DOUBLE"),
+    ("limit_prices_usable", "BOOLEAN"),
+)
+
+SUSPENSION_EVENT_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("suspension_timing", "VARCHAR"),
+    ("suspension_type", "VARCHAR"),
+)
+
+__all__ = [
+    "ADJUSTMENT_FACTOR_COLUMNS",
+    "DAILY_BAR_COLUMNS",
+    "DAILY_BASIC_COLUMNS",
+    "PRICE_LIMIT_COLUMNS",
+    "SECURITY_MASTER_COLUMNS",
+    "SUSPENSION_EVENT_COLUMNS",
+    "TRADE_CALENDAR_COLUMNS",
+]

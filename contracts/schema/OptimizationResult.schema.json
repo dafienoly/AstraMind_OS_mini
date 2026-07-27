@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "optimization_problem_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Optimization Problem Id",
+      "type": "string"
+    },
+    "optimization_result_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Optimization Result Id",
+      "type": "string"
+    },
+    "optimizer_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Optimizer Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "optimization_result_id",
+    "optimization_problem_id",
+    "optimizer_version",
+    "created_at",
+    "content_hash"
+  ],
+  "title": "OptimizationResult",
+  "type": "object"
+}

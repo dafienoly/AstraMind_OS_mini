@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "Sleeve": {
+      "enum": [
+        "tactical",
+        "core"
+      ],
+      "title": "Sleeve",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "optimization_result_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Optimization Result Id",
+      "type": "string"
+    },
+    "portfolio_target_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Portfolio Target Id",
+      "type": "string"
+    },
+    "sleeve": {
+      "$ref": "#/$defs/Sleeve"
+    }
+  },
+  "required": [
+    "portfolio_target_id",
+    "optimization_result_id",
+    "sleeve",
+    "as_of",
+    "content_hash"
+  ],
+  "title": "PortfolioTarget",
+  "type": "object"
+}

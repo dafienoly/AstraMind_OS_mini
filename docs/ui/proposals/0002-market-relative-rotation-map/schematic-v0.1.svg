@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#17313d" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow-red" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#c34b43"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#2e5e84"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#238267"/>
+    </marker>
+    <style>
+      .cn { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; }
+      .num { font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif; font-variant-numeric: tabular-nums; }
+      .mono { font-family: "IBM Plex Mono", monospace; }
+      .title { fill: #172129; font-size: 25px; font-weight: 700; }
+      .h2 { fill: #172129; font-size: 18px; font-weight: 650; }
+      .body { fill: #46545d; font-size: 14px; }
+      .small { fill: #68747c; font-size: 12px; }
+      .tiny { fill: #7f8a91; font-size: 10px; }
+      .hair { stroke: #d6dfdc; stroke-width: 1; }
+      .grid { stroke: #dfe6e3; stroke-width: 1; stroke-dasharray: 4 7; }
+      .chip { fill: #eef3f5; stroke: #d8e1e3; stroke-width: 1; }
+      .node-label { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; font-size: 11px; fill: #37464f; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+
+  <text x="34" y="28" class="cn title">UI-PROP-0002 · 行业资金相对轮动</text>
+  <text x="34" y="50" class="cn small">v0.1 · 待用户批准 · 示意数据，不代表真实行情</text>
+  <rect x="1695" y="18" width="190" height="34" rx="17" fill="#f7eddb"/>
+  <circle cx="1717" cy="35" r="5" fill="#b47a22"/>
+  <text x="1730" y="40" class="cn small" fill="#9a681e" style="font-weight:700">禁止实施</text>
+
+  <rect x="30" y="70" width="1860" height="980" rx="22" fill="#ffffff" filter="url(#shadow)"/>
+
+  <!-- navigation -->
+  <path d="M52 70 H132 Q154 70 154 92 V1028 Q154 1050 132 1050 H52 Q30 1050 30 1028 V92 Q30 70 52 70 Z" fill="#172129"/>
+  <text x="57" y="112" class="num" font-size="19" font-weight="800" fill="#ffffff">ASTRA</text>
+  <text x="57" y="132" class="mono" font-size="10" fill="#93a3ac">MIND MINI</text>
+  <line x1="51" y1="154" x2="133" y2="154" stroke="#31434e"/>
+
+  <text x="62" y="205" class="cn body" fill="#91a0a8">今日</text>
+  <rect x="46" y="226" width="94" height="42" rx="7" fill="#2a5067"/>
+  <rect x="46" y="226" width="3" height="42" rx="1.5" fill="#82b9d9"/>
+  <text x="62" y="252" class="cn body" fill="#ffffff">市场</text>
+  <text x="62" y="310" class="cn body" fill="#91a0a8">策略竞技场</text>
+  <text x="62" y="365" class="cn body" fill="#91a0a8">组合</text>
+  <text x="62" y="420" class="cn body" fill="#91a0a8">系统</text>
+
+  <rect x="47" y="958" width="91" height="68" rx="10" fill="#20313b"/>
+  <circle cx="62" cy="976" r="5" fill="#b47a22"/>
+  <text x="73" y="980" class="cn small" fill="#d8e0e3">Shadow</text>
+  <text x="57" y="1002" class="cn tiny" fill="#82939c">MiniQMT 未连接</text>
+
+  <!-- page header -->
+  <text x="182" y="105" class="cn small">2026-07-24 · 周五 · 已收盘</text>
+  <text x="182" y="137" class="cn title">行业 · 相对轮动</text>
+  <text x="450" y="136" class="cn small">研究观察，不是买卖信号</text>
+
+  <rect x="1717" y="94" width="140" height="36" rx="18" fill="#f7eddb"/>
+  <circle cx="1738" cy="112" r="5" fill="#b47a22"/>
+  <text x="1750" y="117" class="cn small" fill="#9a681e" style="font-weight:700">需要你处理 2</text>
+
+  <!-- decision ribbon -->
+  <rect x="174" y="151" width="1682" height="57" rx="11" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="174" class="cn tiny">数据</text>
+  <text x="194" y="194" class="cn body" style="font-weight:700">15:23 完整</text>
+  <line x1="300" y1="178" x2="344" y2="178" stroke="#87a9bc" stroke-width="2"/>
+  <circle cx="344" cy="178" r="4" fill="#2e5e84"/>
+  <text x="366" y="174" class="cn tiny">信号</text>
+  <text x="366" y="194" class="cn body" style="font-weight:700">4 个就绪</text>
+  <line x1="472" y1="178" x2="516" y2="178" stroke="#87a9bc" stroke-width="2"/>
+  <circle cx="516" cy="178" r="4" fill="#2e5e84"/>
+  <text x="538" y="174" class="cn tiny">风险</text>
+  <text x="538" y="194" class="cn body" style="font-weight:700">授权内</text>
+  <line x1="630" y1="178" x2="674" y2="178" stroke="#87a9bc" stroke-width="2"/>
+  <circle cx="674" cy="178" r="4" fill="#2e5e84"/>
+  <text x="696" y="174" class="cn tiny">订单</text>
+  <text x="696" y="194" class="cn body" style="font-weight:700">2 个计划</text>
+  <text x="1642" y="185" class="cn body" fill="#2e5e84">查看链路 →</text>
+
+  <!-- market tabs -->
+  <rect x="174" y="220" width="1682" height="52" rx="10" fill="#f5f7f6"/>
+  <text x="284" y="252" class="cn body">大盘</text>
+  <rect x="417" y="228" width="160" height="36" rx="8" fill="#ffffff" stroke="#ccd7d4"/>
+  <text x="482" y="252" class="cn body" style="font-weight:700">行业</text>
+  <text x="690" y="252" class="cn body">ETF 轮动</text>
+
+  <!-- local mode and data identity -->
+  <rect x="174" y="284" width="1682" height="58" rx="10" fill="#ffffff" stroke="#d8e0dd"/>
+  <rect x="188" y="296" width="114" height="34" rx="17" fill="#eef2f2"/>
+  <text x="216" y="318" class="cn small">行业热力</text>
+  <rect x="308" y="296" width="124" height="34" rx="17" fill="#2e5e84"/>
+  <text x="336" y="318" class="cn small" fill="#ffffff" style="font-weight:700">相对轮动</text>
+  <line x1="456" y1="296" x2="456" y2="330" class="hair"/>
+  <text x="478" y="312" class="cn tiny">基准</text>
+  <text x="478" y="328" class="cn small">全市场等权</text>
+  <text x="628" y="312" class="cn tiny">公式</text>
+  <text x="628" y="328" class="mono small">rotation-v0.1</text>
+  <text x="798" y="312" class="cn tiny">行业注册表</text>
+  <text x="798" y="328" class="cn small">申万 2021 · 31/31</text>
+  <text x="1004" y="312" class="cn tiny">截止</text>
+  <text x="1004" y="328" class="num small">2026-07-24</text>
+  <rect x="1160" y="297" width="102" height="32" rx="16" fill="#e5f1ec"/>
+  <text x="1185" y="318" class="cn small" fill="#23745d">覆盖完整</text>
+  <rect x="1532" y="297" width="144" height="32" rx="16" class="chip"/>
+  <text x="1561" y="318" class="cn small">仅近期跃迁</text>
+  <rect x="1688" y="297" width="154" height="32" rx="16" class="chip"/>
+  <text x="1716" y="318" class="cn small">搜索行业 ⌕</text>
+
+  <!-- quadrant canvas -->
+  <rect x="174" y="356" width="1222" height="576" rx="12" fill="#fbfcfc" stroke="#d7e0dd"/>
+  <rect x="190" y="372" width="594" height="252" fill="#eaf3f5"/>
+  <rect x="784" y="372" width="594" height="252" fill="#f8eae8"/>
+  <rect x="190" y="624" width="594" height="252" fill="#edf2f0"/>
+  <rect x="784" y="624" width="594" height="252" fill="#f8f0e3"/>
+
+  <!-- center neutral bands -->
+  <rect x="764" y="372" width="40" height="504" fill="#ffffff" opacity="0.58"/>
+  <rect x="190" y="604" width="1188" height="40" fill="#ffffff" opacity="0.58"/>
+
+  <!-- grid -->
+  <line x1="388" y1="372" x2="388" y2="876" class="grid"/>
+  <line x1="586" y1="372" x2="586" y2="876" class="grid"/>
+  <line x1="982" y1="372" x2="982" y2="876" class="grid"/>
+  <line x1="1180" y1="372" x2="1180" y2="876" class="grid"/>
+  <line x1="190" y1="456" x2="1378" y2="456" class="grid"/>
+  <line x1="190" y1="540" x2="1378" y2="540" class="grid"/>
+  <line x1="190" y1="708" x2="1378" y2="708" class="grid"/>
+  <line x1="190" y1="792" x2="1378" y2="792" class="grid"/>
+  <line x1="784" y1="372" x2="784" y2="876" stroke="#87969d" stroke-width="1.4"/>
+  <line x1="190" y1="624" x2="1378" y2="624" stroke="#87969d" stroke-width="1.4"/>
+
+  <text x="212" y="402" class="cn h2" fill="#2e5e84">弱势改善</text>
+  <text x="212" y="424" class="cn small">相对趋势偏弱 · 动量回升</text>
+  <text x="1202" y="402" class="cn h2" fill="#b6433c">强势领先</text>
+  <text x="1160" y="424" class="cn small">相对趋势强 · 动量增强</text>
+  <text x="212" y="838" class="cn h2" fill="#5c6b72">弱势落后</text>
+  <text x="212" y="860" class="cn small">相对趋势弱 · 动量偏弱</text>
+  <text x="1196" y="838" class="cn h2" fill="#9b6c22">强势降温</text>
+  <text x="1152" y="860" class="cn small">相对趋势仍强 · 动量转弱</text>
+
+  <text x="1230" y="905" class="cn small">相对趋势 →</text>
+  <text x="790" y="892" class="num tiny">100</text>
+  <text x="180" y="630" class="num tiny" text-anchor="end">100</text>
+  <text x="202" y="390" class="cn tiny" transform="rotate(-90 202 390)">相对动量 →</text>
+
+  <!-- selected trail: non-ferrous metals -->
+  <path d="M548 760 C590 735, 630 715, 666 681 S735 625, 784 592 S878 522, 945 468 S1020 430, 1088 420"
+        fill="none" stroke="#c34b43" stroke-width="5" stroke-linecap="round" opacity="0.88" marker-end="url(#arrow-red)"/>
+  <circle cx="548" cy="760" r="5" fill="#c34b43" opacity="0.18"/>
+  <circle cx="606" cy="722" r="6" fill="#c34b43" opacity="0.28"/>
+  <circle cx="666" cy="681" r="7" fill="#c34b43" opacity="0.4"/>
+  <circle cx="726" cy="632" r="8" fill="#c34b43" opacity="0.52"/>
+  <circle cx="784" cy="592" r="9" fill="#c34b43" opacity="0.64"/>
+  <circle cx="862" cy="534" r="10" fill="#c34b43" opacity="0.76"/>
+  <circle cx="945" cy="468" r="11" fill="#c34b43" opacity="0.88"/>
+  <circle cx="1088" cy="420" r="16" fill="#ffffff" stroke="#c34b43" stroke-width="5"/>
+  <circle cx="1088" cy="420" r="6" fill="#c34b43"/>
+  <rect x="1108" y="395" width="116" height="34" rx="7" fill="#ffffff" stroke="#e2a7a3"/>
+  <text x="1122" y="417" class="cn body" fill="#b6433c" style="font-weight:700">有色金属</text>
+
+  <!-- semiconductor -->
+  <path d="M462 556 C520 515, 586 473, 650 450 S748 423, 842 434"
+        fill="none" stroke="#2e5e84" stroke-width="3.2" stroke-linecap="round" opacity="0.72" marker-end="url(#arrow-blue)"/>
+  <circle cx="462" cy="556" r="5" fill="#2e5e84" opacity="0.25"/>
+  <circle cx="550" cy="492" r="6" fill="#2e5e84" opacity="0.42"/>
+  <circle cx="650" cy="450" r="7" fill="#2e5e84" opacity="0.58"/>
+  <circle cx="748" cy="424" r="8" fill="#2e5e84" opacity="0.7"/>
+  <circle cx="842" cy="434" r="10" fill="#ffffff" stroke="#2e5e84" stroke-width="3"/>
+  <text x="856" y="431" class="node-label" style="font-weight:700">半导体</text>
+
+  <!-- transport improving -->
+  <path d="M398 786 C442 758, 492 720, 534 674 S600 612, 658 580"
+        fill="none" stroke="#238267" stroke-width="3" stroke-linecap="round" opacity="0.68" marker-end="url(#arrow-green)"/>
+  <circle cx="398" cy="786" r="5" fill="#238267" opacity="0.25"/>
+  <circle cx="478" cy="731" r="6" fill="#238267" opacity="0.42"/>
+  <circle cx="534" cy="674" r="7" fill="#238267" opacity="0.55"/>
+  <circle cx="658" cy="580" r="10" fill="#ffffff" stroke="#238267" stroke-width="3"/>
+  <text x="606" y="564" class="node-label" style="font-weight:700">交通运输</text>
+
+  <!-- food and beverage cooling -->
+  <path d="M1160 498 C1194 535, 1210 583, 1204 632 S1180 708, 1138 746"
+        fill="none" stroke="#b47a22" stroke-width="3" stroke-linecap="round" opacity="0.62" marker-end="url(#arrow-red)"/>
+  <circle cx="1160" cy="498" r="5" fill="#b47a22" opacity="0.28"/>
+  <circle cx="1204" cy="632" r="7" fill="#b47a22" opacity="0.52"/>
+  <circle cx="1138" cy="746" r="10" fill="#ffffff" stroke="#b47a22" stroke-width="3"/>
+  <text x="1154" y="750" class="node-label" style="font-weight:700">食品饮料</text>
+
+  <!-- other current nodes -->
+  <g fill="#ffffff" stroke-width="2">
+    <circle cx="1016" cy="486" r="9" stroke="#c34b43"/><text x="1029" y="490" class="node-label">能源</text>
+    <circle cx="940" cy="548" r="9" stroke="#c34b43"/><text x="953" y="552" class="node-label">通信</text>
+    <circle cx="704" cy="510" r="9" stroke="#2e5e84"/><text x="646" y="501" class="node-label">计算机</text>
+    <circle cx="556" cy="612" r="9" stroke="#2e5e84"/><text x="505" y="603" class="node-label">化工</text>
+    <circle cx="496" cy="684" r="9" stroke="#66777f"/><text x="445" y="676" class="node-label">房地产</text>
+    <circle cx="676" cy="754" r="9" stroke="#66777f"/><text x="624" y="779" class="node-label">银行</text>
+    <circle cx="866" cy="712" r="9" stroke="#b47a22"/><text x="880" y="716" class="node-label">汽车</text>
+    <circle cx="1036" cy="666" r="9" stroke="#b47a22"/><text x="1050" y="670" class="node-label">机械设备</text>
+    <circle cx="1270" cy="570" r="9" stroke="#c34b43"/><text x="1284" y="574" class="node-label">公用事业</text>
+    <circle cx="346" cy="528" r="9" stroke="#2e5e84"/><text x="300" y="518" class="node-label">医药</text>
+  </g>
+
+  <!-- inspector -->
+  <rect x="1412" y="356" width="444" height="576" rx="12" fill="#ffffff" stroke="#d7e0dd"/>
+  <text x="1436" y="385" class="cn tiny">已选择 · 周期</text>
+  <text x="1436" y="418" class="cn title">有色金属</text>
+  <rect x="1436" y="438" width="396" height="82" rx="10" fill="#f8eae8"/>
+  <text x="1454" y="462" class="cn tiny" fill="#b6433c">当前象限</text>
+  <text x="1454" y="492" class="cn h2" fill="#b6433c">强势领先</text>
+  <text x="1728" y="492" class="num small" fill="#b6433c">置信 84%</text>
+
+  <text x="1436" y="554" class="cn small">相对趋势</text>
+  <text x="1798" y="554" class="num body" fill="#c34b43" text-anchor="end">107.6</text>
+  <line x1="1436" y1="566" x2="1832" y2="566" class="hair"/>
+  <text x="1436" y="590" class="cn small">相对动量</text>
+  <text x="1798" y="590" class="num body" fill="#c34b43" text-anchor="end">106.4</text>
+  <line x1="1436" y1="602" x2="1832" y2="602" class="hair"/>
+  <text x="1436" y="626" class="cn small">近 20 日方向</text>
+  <text x="1798" y="626" class="cn body" fill="#c34b43" text-anchor="end">↗ 加速改善</text>
+  <line x1="1436" y1="638" x2="1832" y2="638" class="hair"/>
+  <text x="1436" y="662" class="cn small">有效覆盖</text>
+  <text x="1798" y="662" class="num body" text-anchor="end">27 / 28 · 96.4%</text>
+
+  <text x="1436" y="704" class="cn h2">最近结构跃迁</text>
+  <rect x="1436" y="718" width="396" height="78" rx="9" fill="#f6f7f6"/>
+  <text x="1452" y="741" class="cn small">07/18 · 弱势改善 → 强势领先</text>
+  <text x="1452" y="766" class="cn tiny">连续 2 个交易日确认 · 已越过中性区</text>
+  <text x="1452" y="785" class="cn tiny">研究观察，不是买卖信号</text>
+
+  <text x="1436" y="832" class="cn h2">数据与方法</text>
+  <text x="1436" y="857" class="cn small">基准：全市场合格证券等权</text>
+  <text x="1436" y="880" class="cn small">公式：rotation-v0.1 · 尾迹 20 日</text>
+  <text x="1436" y="903" class="cn small">截止：2026-07-24 · 数据完整</text>
+  <text x="1738" y="903" class="cn small" fill="#2e5e84">展开身份 →</text>
+
+  <!-- playback -->
+  <rect x="174" y="946" width="1682" height="78" rx="12" fill="#f8faf9" stroke="#d7e0dd"/>
+  <rect x="194" y="963" width="48" height="44" rx="22" fill="#2e5e84"/>
+  <path d="M213 975 L213 995 L229 985 Z" fill="#ffffff"/>
+  <text x="258" y="981" class="cn tiny">播放速度</text>
+  <rect x="258" y="988" width="54" height="24" rx="12" class="chip"/><text x="272" y="1005" class="num tiny">0.5x</text>
+  <rect x="318" y="988" width="46" height="24" rx="12" fill="#2e5e84"/><text x="332" y="1005" class="num tiny" fill="#ffffff">1x</text>
+  <rect x="370" y="988" width="46" height="24" rx="12" class="chip"/><text x="384" y="1005" class="num tiny">2x</text>
+
+  <text x="448" y="981" class="cn tiny">2026-06-27</text>
+  <line x1="448" y1="1001" x2="1476" y2="1001" stroke="#c5d1ce" stroke-width="4" stroke-linecap="round"/>
+  <line x1="448" y1="1001" x2="1288" y2="1001" stroke="#2e5e84" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="1288" cy="1001" r="10" fill="#ffffff" stroke="#2e5e84" stroke-width="4"/>
+  <text x="1248" y="981" class="num small" fill="#2e5e84">2026-07-24</text>
+  <text x="1423" y="981" class="cn tiny">最新</text>
+
+  <text x="1510" y="981" class="cn tiny">尾迹</text>
+  <rect x="1510" y="988" width="86" height="24" rx="12" class="chip"/>
+  <text x="1534" y="1005" class="cn tiny">20 日 ▾</text>
+  <rect x="1610" y="973" width="112" height="34" rx="17" class="chip"/>
+  <text x="1637" y="995" class="cn small">回到最新</text>
+  <rect x="1732" y="973" width="100" height="34" rx="17" class="chip"/>
+  <text x="1756" y="995" class="cn small">筛选 2</text>
+</svg>

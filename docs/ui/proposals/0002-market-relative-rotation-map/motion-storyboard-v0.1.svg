@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#17313d" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#c34b43"/>
+    </marker>
+    <style>
+      .cn { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; }
+      .num { font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif; font-variant-numeric: tabular-nums; }
+      .title { fill: #172129; font-size: 28px; font-weight: 700; }
+      .h2 { fill: #172129; font-size: 18px; font-weight: 650; }
+      .body { fill: #46545d; font-size: 14px; }
+      .small { fill: #68747c; font-size: 12px; }
+      .tiny { fill: #7f8a91; font-size: 10px; }
+      .grid { stroke: #dce4e1; stroke-width: 1; stroke-dasharray: 4 6; }
+      .axis { stroke: #88979e; stroke-width: 1.3; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="60" y="66" class="cn title">资金相对轮动 · 动态故事板</text>
+  <text x="60" y="94" class="cn body">播放不是装饰：同一行业在不同交易日的位置、速度和方向连续变化</text>
+  <rect x="1650" y="46" width="210" height="38" rx="19" fill="#f7eddb"/>
+  <circle cx="1674" cy="65" r="5" fill="#b47a22"/>
+  <text x="1688" y="70" class="cn small" fill="#9a681e" style="font-weight:700">UI-PROP-0002 v0.1</text>
+
+  <!-- panel 1 -->
+  <g transform="translate(60,140)">
+    <rect width="560" height="640" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">帧 01 · 起点</text>
+    <text x="28" y="72" class="cn h2">2026-06-27</text>
+    <text x="388" y="62" class="cn small">暂停</text>
+    <rect x="438" y="41" width="92" height="30" rx="15" fill="#eef3f5"/>
+    <text x="463" y="61" class="num small">1x</text>
+
+    <rect x="28" y="98" width="504" height="440" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+    <rect x="40" y="110" width="240" height="202" fill="#eaf3f5"/>
+    <rect x="280" y="110" width="240" height="202" fill="#f8eae8"/>
+    <rect x="40" y="312" width="240" height="214" fill="#edf2f0"/>
+    <rect x="280" y="312" width="240" height="214" fill="#f8f0e3"/>
+    <line x1="280" y1="110" x2="280" y2="526" class="axis"/>
+    <line x1="40" y1="312" x2="520" y2="312" class="axis"/>
+    <line x1="160" y1="110" x2="160" y2="526" class="grid"/>
+    <line x1="400" y1="110" x2="400" y2="526" class="grid"/>
+    <text x="50" y="133" class="cn tiny" fill="#2e5e84">弱势改善</text>
+    <text x="454" y="133" class="cn tiny" fill="#b6433c">强势领先</text>
+    <text x="50" y="512" class="cn tiny">弱势落后</text>
+    <text x="454" y="512" class="cn tiny" fill="#9b6c22">强势降温</text>
+
+    <circle cx="174" cy="446" r="12" fill="#ffffff" stroke="#c34b43" stroke-width="4"/>
+    <text x="190" y="451" class="cn small" fill="#b6433c">有色金属</text>
+    <circle cx="130" cy="260" r="8" fill="#ffffff" stroke="#2e5e84" stroke-width="3"/>
+    <text x="92" y="247" class="cn tiny">半导体</text>
+    <circle cx="344" cy="190" r="8" fill="#ffffff" stroke="#b47a22" stroke-width="3"/>
+    <text x="355" y="194" class="cn tiny">食品饮料</text>
+    <circle cx="112" cy="416" r="8" fill="#ffffff" stroke="#238267" stroke-width="3"/>
+    <text x="74" y="404" class="cn tiny">交通运输</text>
+    <circle cx="382" cy="246" r="8" fill="#ffffff" stroke="#c34b43" stroke-width="3"/>
+    <text x="393" y="250" class="cn tiny">能源</text>
+
+    <rect x="28" y="560" width="504" height="52" rx="9" fill="#f6f8f7"/>
+    <text x="46" y="582" class="cn small">观察：周期行业仍在弱势区，科技动量先改善</text>
+    <text x="46" y="602" class="cn tiny">当前帧不产生买卖判断</text>
+  </g>
+
+  <!-- connector -->
+  <path d="M638 455 H690" stroke="#8fa1aa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M680 445 L696 455 L680 465" fill="none" stroke="#8fa1aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="646" y="432" class="cn tiny">播放</text>
+
+  <!-- panel 2 -->
+  <g transform="translate(710,140)">
+    <rect width="560" height="640" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">帧 02 · 迁移中</text>
+    <text x="28" y="72" class="cn h2">2026-07-11</text>
+    <circle cx="409" cy="57" r="13" fill="#2e5e84"/>
+    <rect x="404" y="50" width="3" height="14" fill="#ffffff"/>
+    <rect x="411" y="50" width="3" height="14" fill="#ffffff"/>
+    <rect x="438" y="41" width="92" height="30" rx="15" fill="#2e5e84"/>
+    <text x="474" y="61" class="num small" fill="#ffffff">1x</text>
+
+    <rect x="28" y="98" width="504" height="440" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+    <rect x="40" y="110" width="240" height="202" fill="#eaf3f5"/>
+    <rect x="280" y="110" width="240" height="202" fill="#f8eae8"/>
+    <rect x="40" y="312" width="240" height="214" fill="#edf2f0"/>
+    <rect x="280" y="312" width="240" height="214" fill="#f8f0e3"/>
+    <line x1="280" y1="110" x2="280" y2="526" class="axis"/>
+    <line x1="40" y1="312" x2="520" y2="312" class="axis"/>
+    <line x1="160" y1="110" x2="160" y2="526" class="grid"/>
+    <line x1="400" y1="110" x2="400" y2="526" class="grid"/>
+    <text x="50" y="133" class="cn tiny" fill="#2e5e84">弱势改善</text>
+    <text x="454" y="133" class="cn tiny" fill="#b6433c">强势领先</text>
+    <text x="50" y="512" class="cn tiny">弱势落后</text>
+    <text x="454" y="512" class="cn tiny" fill="#9b6c22">强势降温</text>
+
+    <path d="M174 446 C205 423, 232 392, 254 354 S288 300, 318 274"
+          fill="none" stroke="#c34b43" stroke-width="4" opacity="0.82" marker-end="url(#arrow)"/>
+    <circle cx="174" cy="446" r="4" fill="#c34b43" opacity="0.25"/>
+    <circle cx="220" cy="405" r="5" fill="#c34b43" opacity="0.42"/>
+    <circle cx="254" cy="354" r="6" fill="#c34b43" opacity="0.6"/>
+    <circle cx="318" cy="274" r="12" fill="#ffffff" stroke="#c34b43" stroke-width="4"/>
+    <text x="334" y="279" class="cn small" fill="#b6433c">有色金属</text>
+
+    <path d="M130 260 C170 228, 220 194, 286 182"
+          fill="none" stroke="#2e5e84" stroke-width="3" opacity="0.68"/>
+    <circle cx="286" cy="182" r="9" fill="#ffffff" stroke="#2e5e84" stroke-width="3"/>
+    <text x="298" y="186" class="cn tiny">半导体</text>
+
+    <path d="M112 416 C150 392, 190 356, 220 300"
+          fill="none" stroke="#238267" stroke-width="3" opacity="0.62"/>
+    <circle cx="220" cy="300" r="9" fill="#ffffff" stroke="#238267" stroke-width="3"/>
+    <text x="168" y="290" class="cn tiny">交通运输</text>
+
+    <path d="M344 190 C380 230, 400 272, 394 322"
+          fill="none" stroke="#b47a22" stroke-width="3" opacity="0.58"/>
+    <circle cx="394" cy="322" r="9" fill="#ffffff" stroke="#b47a22" stroke-width="3"/>
+    <text x="406" y="326" class="cn tiny">食品饮料</text>
+
+    <rect x="28" y="560" width="504" height="52" rx="9" fill="#f6f8f7"/>
+    <text x="46" y="582" class="cn small">观察：有色跨过相对趋势中轴，交通进入改善区</text>
+    <text x="46" y="602" class="cn tiny">穿越尚需连续确认，不立即标记跃迁</text>
+  </g>
+
+  <!-- connector -->
+  <path d="M1288 455 H1340" stroke="#8fa1aa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1330 445 L1346 455 L1330 465" fill="none" stroke="#8fa1aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1296" y="432" class="cn tiny">继续</text>
+
+  <!-- panel 3 -->
+  <g transform="translate(1360,140)">
+    <rect width="500" height="640" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">帧 03 · 结构确认</text>
+    <text x="28" y="72" class="cn h2">2026-07-24</text>
+    <rect x="366" y="41" width="104" height="30" rx="15" fill="#e5f1ec"/>
+    <text x="389" y="61" class="cn small" fill="#23745d">已到最新</text>
+
+    <rect x="28" y="98" width="444" height="440" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+    <rect x="40" y="110" width="210" height="202" fill="#eaf3f5"/>
+    <rect x="250" y="110" width="210" height="202" fill="#f8eae8"/>
+    <rect x="40" y="312" width="210" height="214" fill="#edf2f0"/>
+    <rect x="250" y="312" width="210" height="214" fill="#f8f0e3"/>
+    <line x1="250" y1="110" x2="250" y2="526" class="axis"/>
+    <line x1="40" y1="312" x2="460" y2="312" class="axis"/>
+    <line x1="145" y1="110" x2="145" y2="526" class="grid"/>
+    <line x1="355" y1="110" x2="355" y2="526" class="grid"/>
+    <text x="50" y="133" class="cn tiny" fill="#2e5e84">弱势改善</text>
+    <text x="396" y="133" class="cn tiny" fill="#b6433c">强势领先</text>
+    <text x="50" y="512" class="cn tiny">弱势落后</text>
+    <text x="396" y="512" class="cn tiny" fill="#9b6c22">强势降温</text>
+
+    <path d="M158 446 C190 414, 220 374, 248 330 S304 244, 374 178"
+          fill="none" stroke="#c34b43" stroke-width="4.5" opacity="0.9" marker-end="url(#arrow)"/>
+    <circle cx="158" cy="446" r="4" fill="#c34b43" opacity="0.18"/>
+    <circle cx="205" cy="397" r="5" fill="#c34b43" opacity="0.32"/>
+    <circle cx="248" cy="330" r="6" fill="#c34b43" opacity="0.48"/>
+    <circle cx="304" cy="244" r="7" fill="#c34b43" opacity="0.67"/>
+    <circle cx="374" cy="178" r="14" fill="#ffffff" stroke="#c34b43" stroke-width="4"/>
+    <text x="320" y="160" class="cn small" fill="#b6433c" style="font-weight:700">有色金属</text>
+
+    <circle cx="276" cy="202" r="9" fill="#ffffff" stroke="#2e5e84" stroke-width="3"/>
+    <text x="290" y="206" class="cn tiny">半导体</text>
+    <circle cx="208" cy="256" r="9" fill="#ffffff" stroke="#238267" stroke-width="3"/>
+    <text x="146" y="246" class="cn tiny">交通运输</text>
+    <circle cx="362" cy="402" r="9" fill="#ffffff" stroke="#b47a22" stroke-width="3"/>
+    <text x="376" y="406" class="cn tiny">食品饮料</text>
+
+    <rect x="28" y="560" width="444" height="52" rx="9" fill="#f8eae8"/>
+    <text x="46" y="582" class="cn small" fill="#b6433c">确认：有色进入“强势领先”并连续保持 2 日</text>
+    <text x="46" y="602" class="cn tiny">显示结构跃迁提示，仍不产生买卖信号</text>
+  </g>
+
+  <!-- behavior notes -->
+  <rect x="60" y="828" width="1800" height="190" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+  <text x="88" y="866" class="cn h2">动态行为冻结项</text>
+
+  <circle cx="104" cy="905" r="12" fill="#2e5e84"/>
+  <text x="100" y="910" class="num small" fill="#ffffff">1</text>
+  <text x="128" y="910" class="cn body">首次进入与刷新后暂停；用户主动播放才开始连续迁移。</text>
+
+  <circle cx="104" cy="946" r="12" fill="#2e5e84"/>
+  <text x="100" y="951" class="num small" fill="#ffffff">2</text>
+  <text x="128" y="951" class="cn body">每帧只切换已经加载的交易日，不逐帧请求网络或重算生产坐标。</text>
+
+  <circle cx="104" cy="987" r="12" fill="#2e5e84"/>
+  <text x="100" y="992" class="num small" fill="#ffffff">3</text>
+  <text x="128" y="992" class="cn body">当前节点、尾迹、象限统计、右侧详情和跃迁事件始终使用同一日期。</text>
+
+  <line x1="944" y1="856" x2="944" y2="996" stroke="#d6dfdc"/>
+
+  <circle cx="980" cy="905" r="12" fill="#b47a22"/>
+  <text x="976" y="910" class="num small" fill="#ffffff">4</text>
+  <text x="1004" y="910" class="cn body">拖动时间轴后保持暂停，不擅自继续播放。</text>
+
+  <circle cx="980" cy="946" r="12" fill="#b47a22"/>
+  <text x="976" y="951" class="num small" fill="#ffffff">5</text>
+  <text x="1004" y="951" class="cn body">只突出选中/命中行业尾迹，其他行业保留当前空间位置。</text>
+
+  <circle cx="980" cy="987" r="12" fill="#b47a22"/>
+  <text x="976" y="992" class="num small" fill="#ffffff">6</text>
+  <text x="1004" y="992" class="cn body">减弱动画模式使用离散日期切换，所有核心信息仍可访问。</text>
+</svg>

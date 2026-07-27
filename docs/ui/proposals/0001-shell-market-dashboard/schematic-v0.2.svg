@@ -1,0 +1,424 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">AstraMind OS Mini 应用框架、大盘与行业看板提案</title>
+  <desc id="desc">两个桌面示意图展示同一个市场入口下的大盘与行业热力看板。</desc>
+  <defs>
+    <style>
+      .bg{fill:#e8ecea}
+      .frame{fill:#f8f9f8;stroke:#cdd4d1;stroke-width:1.5}
+      .surface{fill:#ffffff;stroke:#d8dfdc;stroke-width:1}
+      .subtle{fill:#f2f4f3}
+      .ink{fill:#172129}
+      .muted{fill:#68747c}
+      .blue{fill:#2e5e84}
+      .blue-soft{fill:#e8f0f5}
+      .ochre{fill:#b47a22}
+      .ochre-soft{fill:#f5eee1}
+      .rise{fill:#c34b43}
+      .rise-soft{fill:#f8e8e6}
+      .fall{fill:#238267}
+      .fall-soft{fill:#e3f1ec}
+      .line{stroke:#d8dfdc;stroke-width:1}
+      .grid{stroke:#e7ebe9;stroke-width:1}
+      .txt{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}
+      .mono{font-family:"IBM Plex Mono","SFMono-Regular",monospace}
+      .t10{font-size:10px}
+      .t11{font-size:11px}
+      .t12{font-size:12px}
+      .t13{font-size:13px}
+      .t14{font-size:14px}
+      .t16{font-size:16px}
+      .t18{font-size:18px}
+      .t22{font-size:22px;font-weight:650}
+      .t28{font-size:28px;font-weight:650}
+      .bold{font-weight:650}
+      .med{font-weight:520}
+      .hair{stroke:#c7d0cc;stroke-width:1}
+      .chart-blue{fill:none;stroke:#2e5e84;stroke-width:3}
+      .chart-red{fill:none;stroke:#c34b43;stroke-width:2.5}
+      .chart-green{fill:none;stroke:#238267;stroke-width:2.5}
+    </style>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#60706a" flood-opacity=".12"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" class="bg"/>
+  <text x="40" y="38" class="txt t22 ink">UI-PROP-0001 · 市场工作区</text>
+  <text x="40" y="62" class="txt t12 muted">v0.2 · 待用户批准 · 示意数据，不代表真实行情</text>
+  <rect x="1680" y="26" width="200" height="34" rx="17" class="ochre-soft"/>
+  <circle cx="1702" cy="43" r="5" class="ochre"/>
+  <text x="1726" y="47" class="txt t12 ochre bold">禁止实施</text>
+
+  <!-- LEFT FRAME: BROAD MARKET -->
+  <g transform="translate(38 84)">
+    <rect x="0" y="0" width="906" height="950" rx="20" class="frame" filter="url(#shadow)"/>
+
+    <!-- navigation -->
+    <rect x="0" y="0" width="116" height="950" rx="20" fill="#172129"/>
+    <text x="24" y="38" class="txt t16" fill="#ffffff" font-weight="650">ASTRA</text>
+    <text x="24" y="55" class="mono t10" fill="#98a7ae">MIND MINI</text>
+    <line x1="18" y1="76" x2="98" y2="76" stroke="#344149"/>
+    <g class="txt t12">
+      <text x="25" y="119" fill="#9eabb1">今日</text>
+      <rect x="13" y="139" width="90" height="38" rx="8" fill="#29475b"/>
+      <rect x="13" y="139" width="3" height="38" rx="2" fill="#78a6c3"/>
+      <text x="25" y="163" fill="#ffffff" font-weight="650">市场</text>
+      <text x="25" y="215" fill="#9eabb1">策略竞技场</text>
+      <text x="25" y="267" fill="#9eabb1">组合</text>
+      <text x="25" y="319" fill="#9eabb1">系统</text>
+    </g>
+    <rect x="15" y="873" width="86" height="47" rx="9" fill="#202d35"/>
+    <circle cx="29" cy="890" r="4" fill="#b47a22"/>
+    <text x="39" y="894" class="txt t10" fill="#d9e0e3">Shadow</text>
+    <text x="25" y="910" class="txt t10" fill="#87969d">MiniQMT 未连接</text>
+
+    <!-- header -->
+    <text x="142" y="35" class="txt t13 muted">2026-07-24 · 周五 · 已收盘</text>
+    <text x="142" y="61" class="txt t22 ink">市场全景</text>
+    <rect x="762" y="21" width="119" height="34" rx="17" class="ochre-soft"/>
+    <circle cx="780" cy="38" r="5" class="ochre"/>
+    <text x="792" y="42" class="txt t11 ochre bold">需要你处理 2</text>
+
+    <!-- decision ribbon -->
+    <rect x="136" y="82" width="746" height="52" rx="10" fill="#edf2f4" stroke="#cfdbe1"/>
+    <text x="153" y="103" class="txt t10 muted">数据</text>
+    <text x="153" y="121" class="txt t12 ink bold">15:23 完整</text>
+    <line x1="250" y1="96" x2="280" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="280" cy="96" r="3" class="blue"/>
+    <text x="297" y="103" class="txt t10 muted">信号</text>
+    <text x="297" y="121" class="txt t12 ink bold">4 个就绪</text>
+    <line x1="396" y1="96" x2="426" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="426" cy="96" r="3" class="blue"/>
+    <text x="443" y="103" class="txt t10 muted">风险</text>
+    <text x="443" y="121" class="txt t12 ink bold">授权内</text>
+    <line x1="530" y1="96" x2="560" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="560" cy="96" r="3" class="blue"/>
+    <text x="577" y="103" class="txt t10 muted">订单</text>
+    <text x="577" y="121" class="txt t12 ink bold">2 个计划</text>
+    <text x="777" y="113" class="txt t11 blue bold">查看链路 →</text>
+
+    <!-- tabs -->
+    <rect x="136" y="153" width="746" height="42" rx="9" class="subtle"/>
+    <rect x="142" y="158" width="112" height="32" rx="7" fill="#ffffff" stroke="#d1d9d6"/>
+    <text x="181" y="179" class="txt t12 ink bold">大盘</text>
+    <text x="321" y="179" class="txt t12 muted">行业</text>
+    <text x="466" y="179" class="txt t12 muted">ETF 轮动</text>
+    <text x="738" y="179" class="txt t11 muted">20日 ▾</text>
+
+    <!-- index strip -->
+    <rect x="136" y="213" width="746" height="92" rx="11" class="surface"/>
+    <g class="txt">
+      <text x="153" y="235" class="t10 muted">上证指数</text>
+      <text x="153" y="260" class="mono t18 ink bold">3,427.18</text>
+      <text x="153" y="282" class="mono t11 rise bold">↑ +0.82%</text>
+      <line x1="270" y1="227" x2="270" y2="291" class="line"/>
+      <text x="288" y="235" class="t10 muted">深证成指</text>
+      <text x="288" y="260" class="mono t18 ink bold">10,918</text>
+      <text x="288" y="282" class="mono t11 rise bold">↑ +1.14%</text>
+      <line x1="405" y1="227" x2="405" y2="291" class="line"/>
+      <text x="423" y="235" class="t10 muted">创业板</text>
+      <text x="423" y="260" class="mono t18 ink bold">2,232</text>
+      <text x="423" y="282" class="mono t11 rise bold">↑ +1.43%</text>
+      <line x1="540" y1="227" x2="540" y2="291" class="line"/>
+      <text x="558" y="235" class="t10 muted">科创50</text>
+      <text x="558" y="260" class="mono t18 ink bold">1,021</text>
+      <text x="558" y="282" class="mono t11 fall bold">↓ -0.24%</text>
+      <line x1="675" y1="227" x2="675" y2="291" class="line"/>
+      <text x="693" y="235" class="t10 muted">全A成交额</text>
+      <text x="693" y="260" class="mono t18 ink bold">1.31万亿</text>
+      <text x="693" y="282" class="mono t11 blue bold">近20日 78%</text>
+    </g>
+
+    <!-- main chart -->
+    <rect x="136" y="323" width="489" height="318" rx="11" class="surface"/>
+    <text x="154" y="351" class="txt t16 ink bold">市场参与度</text>
+    <text x="154" y="372" class="txt t11 muted">上涨家数、结构强势与成交额扩散</text>
+    <rect x="474" y="338" width="132" height="31" rx="15" class="blue-soft"/>
+    <text x="495" y="358" class="txt t10 blue bold">扩散修复 · 72%</text>
+    <line x1="160" y1="404" x2="602" y2="404" class="grid"/>
+    <line x1="160" y1="456" x2="602" y2="456" class="grid"/>
+    <line x1="160" y1="508" x2="602" y2="508" class="grid"/>
+    <line x1="160" y1="560" x2="602" y2="560" class="grid"/>
+    <line x1="160" y1="602" x2="602" y2="602" class="hair"/>
+    <polyline points="164,558 196,548 228,560 260,526 292,532 324,506 356,494 388,470 420,481 452,445 484,430 516,409 548,420 580,392" class="chart-blue"/>
+    <polyline points="164,520 196,528 228,513 260,505 292,484 324,492 356,465 388,448 420,460 452,438 484,441 516,421 548,403 580,408" class="chart-red"/>
+    <text x="164" y="620" class="mono t10 muted">06/27</text>
+    <text x="367" y="620" class="mono t10 muted">07/11</text>
+    <text x="553" y="620" class="mono t10 muted">07/24</text>
+    <circle cx="175" cy="389" r="4" class="blue"/>
+    <text x="186" y="393" class="txt t10 muted">上涨占比</text>
+    <circle cx="253" cy="389" r="4" class="rise"/>
+    <text x="264" y="393" class="txt t10 muted">结构强势</text>
+
+    <!-- regime inspector -->
+    <rect x="643" y="323" width="239" height="318" rx="11" class="surface"/>
+    <text x="661" y="351" class="txt t16 ink bold">今日判断</text>
+    <text x="661" y="377" class="txt t11 muted">不是交易指令</text>
+    <rect x="661" y="396" width="202" height="68" rx="9" class="blue-soft"/>
+    <text x="677" y="419" class="txt t10 blue">市场状态</text>
+    <text x="677" y="446" class="txt t18 blue bold">扩散修复</text>
+    <text x="818" y="446" class="mono t11 blue bold">72%</text>
+    <text x="661" y="491" class="txt t11 ink bold">支持</text>
+    <text x="705" y="491" class="txt t11 muted">上涨 3,486 / 下跌 1,512</text>
+    <text x="661" y="516" class="txt t11 ink bold">分歧</text>
+    <text x="705" y="516" class="txt t11 muted">科创50 未确认</text>
+    <text x="661" y="541" class="txt t11 ink bold">风险</text>
+    <text x="705" y="541" class="txt t11 muted">高位连板回落</text>
+    <line x1="661" y1="563" x2="863" y2="563" class="line"/>
+    <text x="661" y="588" class="txt t10 muted">数据完整度</text>
+    <text x="829" y="588" class="mono t10 ink bold">98.7%</text>
+    <text x="661" y="614" class="txt t11 blue bold">查看证据与口径 →</text>
+
+    <!-- market internals -->
+    <rect x="136" y="659" width="746" height="122" rx="11" class="surface"/>
+    <text x="154" y="686" class="txt t14 ink bold">市场内部</text>
+    <g class="txt">
+      <text x="154" y="713" class="t10 muted">涨停 / 跌停</text>
+      <text x="154" y="743" class="mono t18 ink bold">67 / 4</text>
+      <text x="154" y="762" class="t10 rise">↑ 涨停扩散</text>
+      <line x1="274" y1="701" x2="274" y2="763" class="line"/>
+      <text x="295" y="713" class="t10 muted">炸板率</text>
+      <text x="295" y="743" class="mono t18 ink bold">21.6%</text>
+      <text x="295" y="762" class="t10 muted">近20日中位</text>
+      <line x1="409" y1="701" x2="409" y2="763" class="line"/>
+      <text x="430" y="713" class="t10 muted">新高 / 新低</text>
+      <text x="430" y="743" class="mono t18 ink bold">183 / 31</text>
+      <text x="430" y="762" class="t10 rise">↑ 广度改善</text>
+      <line x1="558" y1="701" x2="558" y2="763" class="line"/>
+      <text x="579" y="713" class="t10 muted">大盘 / 小盘</text>
+      <text x="579" y="743" class="mono t18 ink bold">-0.6σ</text>
+      <text x="579" y="762" class="t10 muted">小盘相对占优</text>
+      <line x1="703" y1="701" x2="703" y2="763" class="line"/>
+      <text x="724" y="713" class="t10 muted">波动压力</text>
+      <text x="724" y="743" class="mono t18 ink bold">正常</text>
+      <text x="724" y="762" class="t10 muted">未触发阈值</text>
+    </g>
+
+    <!-- industry preview -->
+    <rect x="136" y="799" width="746" height="121" rx="11" class="surface"/>
+    <text x="154" y="827" class="txt t14 ink bold">行业扩散预览</text>
+    <text x="764" y="827" class="txt t10 blue bold">进入行业看板 →</text>
+    <rect x="154" y="846" width="150" height="52" rx="7" class="rise-soft"/>
+    <text x="166" y="866" class="txt t10 muted">科技</text>
+    <text x="166" y="887" class="txt t13 rise bold">半导体 · 通信</text>
+    <rect x="316" y="846" width="150" height="52" rx="7" fill="#f5e3df"/>
+    <text x="328" y="866" class="txt t10 muted">周期</text>
+    <text x="328" y="887" class="txt t13 rise bold">有色 · 能源</text>
+    <rect x="478" y="846" width="150" height="52" rx="7" class="blue-soft"/>
+    <text x="490" y="866" class="txt t10 muted">老登</text>
+    <text x="490" y="887" class="txt t13 blue bold">交通 · 化工</text>
+    <rect x="640" y="846" width="224" height="52" rx="7" class="ochre-soft"/>
+    <text x="652" y="866" class="txt t10 muted">结构分歧</text>
+    <text x="652" y="887" class="txt t13 ochre bold">酒类缩量，待确认</text>
+  </g>
+
+  <!-- RIGHT FRAME: INDUSTRIES -->
+  <g transform="translate(976 84)">
+    <rect x="0" y="0" width="906" height="950" rx="20" class="frame" filter="url(#shadow)"/>
+
+    <!-- navigation -->
+    <rect x="0" y="0" width="116" height="950" rx="20" fill="#172129"/>
+    <text x="24" y="38" class="txt t16" fill="#ffffff" font-weight="650">ASTRA</text>
+    <text x="24" y="55" class="mono t10" fill="#98a7ae">MIND MINI</text>
+    <line x1="18" y1="76" x2="98" y2="76" stroke="#344149"/>
+    <g class="txt t12">
+      <text x="25" y="119" fill="#9eabb1">今日</text>
+      <rect x="13" y="139" width="90" height="38" rx="8" fill="#29475b"/>
+      <rect x="13" y="139" width="3" height="38" rx="2" fill="#78a6c3"/>
+      <text x="25" y="163" fill="#ffffff" font-weight="650">市场</text>
+      <text x="25" y="215" fill="#9eabb1">策略竞技场</text>
+      <text x="25" y="267" fill="#9eabb1">组合</text>
+      <text x="25" y="319" fill="#9eabb1">系统</text>
+    </g>
+    <rect x="15" y="873" width="86" height="47" rx="9" fill="#202d35"/>
+    <circle cx="29" cy="890" r="4" fill="#b47a22"/>
+    <text x="39" y="894" class="txt t10" fill="#d9e0e3">Shadow</text>
+    <text x="25" y="910" class="txt t10" fill="#87969d">MiniQMT 未连接</text>
+
+    <!-- header -->
+    <text x="142" y="35" class="txt t13 muted">2026-07-24 · 周五 · 已收盘</text>
+    <text x="142" y="61" class="txt t22 ink">行业看板</text>
+    <rect x="762" y="21" width="119" height="34" rx="17" class="ochre-soft"/>
+    <circle cx="780" cy="38" r="5" class="ochre"/>
+    <text x="792" y="42" class="txt t11 ochre bold">需要你处理 2</text>
+
+    <!-- decision ribbon -->
+    <rect x="136" y="82" width="746" height="52" rx="10" fill="#edf2f4" stroke="#cfdbe1"/>
+    <text x="153" y="103" class="txt t10 muted">数据</text>
+    <text x="153" y="121" class="txt t12 ink bold">15:23 完整</text>
+    <line x1="250" y1="96" x2="280" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="280" cy="96" r="3" class="blue"/>
+    <text x="297" y="103" class="txt t10 muted">信号</text>
+    <text x="297" y="121" class="txt t12 ink bold">4 个就绪</text>
+    <line x1="396" y1="96" x2="426" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="426" cy="96" r="3" class="blue"/>
+    <text x="443" y="103" class="txt t10 muted">风险</text>
+    <text x="443" y="121" class="txt t12 ink bold">授权内</text>
+    <line x1="530" y1="96" x2="560" y2="96" stroke="#9cb3c1" stroke-width="2"/>
+    <circle cx="560" cy="96" r="3" class="blue"/>
+    <text x="577" y="103" class="txt t10 muted">订单</text>
+    <text x="577" y="121" class="txt t12 ink bold">2 个计划</text>
+    <text x="777" y="113" class="txt t11 blue bold">查看链路 →</text>
+
+    <!-- tabs -->
+    <rect x="136" y="153" width="746" height="42" rx="9" class="subtle"/>
+    <text x="181" y="179" class="txt t12 muted">大盘</text>
+    <rect x="274" y="158" width="112" height="32" rx="7" fill="#ffffff" stroke="#d1d9d6"/>
+    <text x="313" y="179" class="txt t12 ink bold">行业</text>
+    <text x="466" y="179" class="txt t12 muted">ETF 轮动</text>
+    <text x="738" y="179" class="txt t11 muted">20日 ▾</text>
+
+    <!-- filters -->
+    <rect x="136" y="213" width="746" height="54" rx="10" class="surface"/>
+    <rect x="151" y="224" width="92" height="32" rx="16" class="blue-soft"/>
+    <text x="172" y="245" class="txt t11 blue bold">行业热力</text>
+    <rect x="249" y="224" width="94" height="32" rx="16" class="subtle"/>
+    <text x="270" y="245" class="txt t11 muted">相对轮动</text>
+    <line x1="361" y1="226" x2="361" y2="255" class="line"/>
+    <text x="382" y="245" class="txt t11 muted">科技</text>
+    <text x="437" y="245" class="txt t11 muted">周期</text>
+    <text x="492" y="245" class="txt t11 muted">传统</text>
+    <text x="558" y="245" class="txt t11 muted">相对强度 ▾</text>
+    <text x="658" y="245" class="txt t11 muted">生命周期 ▾</text>
+    <rect x="764" y="224" width="99" height="32" rx="8" class="subtle"/>
+    <text x="785" y="245" class="txt t10 muted">搜索行业</text>
+
+    <!-- heatmap -->
+    <rect x="136" y="285" width="487" height="486" rx="11" class="surface"/>
+    <text x="154" y="314" class="txt t16 ink bold">行业结构热图</text>
+    <text x="154" y="335" class="txt t11 muted">颜色＝相对强度 · 边框＝生命周期置信度</text>
+    <text x="521" y="318" class="txt t10 muted">弱</text>
+    <rect x="545" y="309" width="15" height="9" rx="2" class="fall-soft"/>
+    <rect x="563" y="309" width="15" height="9" rx="2" class="subtle"/>
+    <rect x="581" y="309" width="15" height="9" rx="2" class="rise-soft"/>
+    <text x="600" y="318" class="txt t10 muted">强</text>
+
+    <!-- heatmap rows -->
+    <g class="txt">
+      <rect x="154" y="358" width="102" height="68" rx="8" fill="#f3d9d5" stroke="#c34b43" stroke-width="2"/>
+      <text x="166" y="379" class="t10 muted">周期</text>
+      <text x="166" y="401" class="t13 rise bold">有色金属</text>
+      <text x="166" y="417" class="mono t10 rise">+2.1σ · 扩散</text>
+
+      <rect x="266" y="358" width="102" height="68" rx="8" fill="#f7e7e4" stroke="#d9a29c"/>
+      <text x="278" y="379" class="t10 muted">科技</text>
+      <text x="278" y="401" class="t13 rise bold">通信</text>
+      <text x="278" y="417" class="mono t10 rise">+1.4σ · 强势</text>
+
+      <rect x="378" y="358" width="102" height="68" rx="8" fill="#f7e4e0" stroke="#cf8078"/>
+      <text x="390" y="379" class="t10 muted">周期</text>
+      <text x="390" y="401" class="t13 rise bold">能源</text>
+      <text x="390" y="417" class="mono t10 rise">+1.3σ · 扩散</text>
+
+      <rect x="490" y="358" width="115" height="68" rx="8" fill="#edf2f4" stroke="#aec1cc"/>
+      <text x="502" y="379" class="t10 muted">科技</text>
+      <text x="502" y="401" class="t13 blue bold">半导体</text>
+      <text x="502" y="417" class="mono t10 blue">+0.5σ · 分歧</text>
+
+      <rect x="154" y="436" width="102" height="68" rx="8" fill="#f5e7e4" stroke="#d8aaa4"/>
+      <text x="166" y="457" class="t10 muted">老登</text>
+      <text x="166" y="479" class="t13 rise bold">交通运输</text>
+      <text x="166" y="495" class="mono t10 rise">+1.0σ · 修复</text>
+
+      <rect x="266" y="436" width="102" height="68" rx="8" fill="#edf2f4" stroke="#aec1cc"/>
+      <text x="278" y="457" class="t10 muted">老登</text>
+      <text x="278" y="479" class="t13 blue bold">化工</text>
+      <text x="278" y="495" class="mono t10 blue">+0.4σ · 修复</text>
+
+      <rect x="378" y="436" width="102" height="68" rx="8" fill="#f2f4f3" stroke="#cfd7d4"/>
+      <text x="390" y="457" class="t10 muted">老登</text>
+      <text x="390" y="479" class="t13 ink bold">白酒</text>
+      <text x="390" y="495" class="mono t10 muted">-0.1σ · 待定</text>
+
+      <rect x="490" y="436" width="115" height="68" rx="8" fill="#e7f2ee" stroke="#75ad98"/>
+      <text x="502" y="457" class="t10 muted">防御</text>
+      <text x="502" y="479" class="t13 fall bold">公用事业</text>
+      <text x="502" y="495" class="mono t10 fall">-0.7σ · 退潮</text>
+
+      <rect x="154" y="514" width="102" height="68" rx="8" fill="#f2f4f3" stroke="#cfd7d4"/>
+      <text x="166" y="535" class="t10 muted">科技</text>
+      <text x="166" y="557" class="t13 ink bold">计算机</text>
+      <text x="166" y="573" class="mono t10 muted">0.0σ · 待定</text>
+
+      <rect x="266" y="514" width="102" height="68" rx="8" fill="#eaf3ef" stroke="#8db8a8"/>
+      <text x="278" y="535" class="t10 muted">消费</text>
+      <text x="278" y="557" class="t13 fall bold">医药</text>
+      <text x="278" y="573" class="mono t10 fall">-0.5σ · 观察</text>
+
+      <rect x="378" y="514" width="102" height="68" rx="8" fill="#e2f0eb" stroke="#5ca184"/>
+      <text x="390" y="535" class="t10 muted">金融</text>
+      <text x="390" y="557" class="t13 fall bold">银行</text>
+      <text x="390" y="573" class="mono t10 fall">-1.0σ · 退潮</text>
+
+      <rect x="490" y="514" width="115" height="68" rx="8" fill="#edf2f4" stroke="#aec1cc"/>
+      <text x="502" y="535" class="t10 muted">制造</text>
+      <text x="502" y="557" class="t13 blue bold">机械设备</text>
+      <text x="502" y="573" class="mono t10 blue">+0.3σ · 修复</text>
+
+      <rect x="154" y="592" width="102" height="68" rx="8" fill="#e8f2ee" stroke="#7eaf9d"/>
+      <text x="166" y="613" class="t10 muted">地产</text>
+      <text x="166" y="635" class="t13 fall bold">房地产</text>
+      <text x="166" y="651" class="mono t10 fall">-0.8σ · 退潮</text>
+
+      <rect x="266" y="592" width="102" height="68" rx="8" fill="#f7e8e5" stroke="#d3a09a"/>
+      <text x="278" y="613" class="t10 muted">制造</text>
+      <text x="278" y="635" class="t13 rise bold">汽车</text>
+      <text x="278" y="651" class="mono t10 rise">+0.9σ · 扩散</text>
+
+      <rect x="378" y="592" width="102" height="68" rx="8" fill="#edf2f4" stroke="#aec1cc"/>
+      <text x="390" y="613" class="t10 muted">材料</text>
+      <text x="390" y="635" class="t13 blue bold">建材</text>
+      <text x="390" y="651" class="mono t10 blue">+0.2σ · 修复</text>
+
+      <rect x="490" y="592" width="115" height="68" rx="8" fill="#e9f3ef" stroke="#8db8a8"/>
+      <text x="502" y="613" class="t10 muted">消费</text>
+      <text x="502" y="635" class="t13 fall bold">食品饮料</text>
+      <text x="502" y="651" class="mono t10 fall">-0.6σ · 观察</text>
+    </g>
+    <rect x="154" y="682" width="451" height="66" rx="8" class="subtle"/>
+    <text x="168" y="704" class="txt t10 muted">覆盖与可信度</text>
+    <text x="168" y="728" class="txt t11 ink">52 / 56 行业可比较 · 4 个行业覆盖不足</text>
+    <text x="525" y="728" class="txt t10 ochre bold">查看缺口 →</text>
+
+    <!-- industry inspector -->
+    <rect x="643" y="285" width="239" height="486" rx="11" class="surface"/>
+    <text x="661" y="310" class="txt t10 muted">已选择 · 周期</text>
+    <text x="661" y="340" class="txt t22 ink bold">有色金属</text>
+    <rect x="661" y="357" width="202" height="71" rx="9" class="rise-soft"/>
+    <text x="677" y="380" class="txt t10 rise">生命周期</text>
+    <text x="677" y="407" class="txt t18 rise bold">强势扩散</text>
+    <text x="817" y="407" class="mono t11 rise bold">高 84%</text>
+    <text x="661" y="454" class="txt t10 muted">相对强度</text>
+    <text x="835" y="454" class="mono t11 rise bold">+2.1σ</text>
+    <text x="661" y="480" class="txt t10 muted">上涨广度</text>
+    <text x="831" y="480" class="mono t11 ink bold">73%</text>
+    <text x="661" y="506" class="txt t10 muted">成交额加速</text>
+    <text x="825" y="506" class="mono t11 rise bold">+28%</text>
+    <text x="661" y="532" class="txt t10 muted">状态持续</text>
+    <text x="817" y="532" class="mono t11 ink bold">6 交易日</text>
+    <line x1="661" y1="553" x2="863" y2="553" class="line"/>
+    <text x="661" y="578" class="txt t11 ink bold">领先个股</text>
+    <text x="661" y="601" class="txt t10 muted">紫金矿业 · 洛阳钼业 · 云铝股份</text>
+    <line x1="661" y1="620" x2="863" y2="620" class="line"/>
+    <text x="661" y="645" class="txt t11 ink bold">ETF 方向</text>
+    <text x="661" y="669" class="txt t10 muted">有色ETF · 价格确认</text>
+    <text x="661" y="690" class="txt t10 muted">资源ETF · 映射待核验</text>
+    <rect x="661" y="713" width="202" height="36" rx="8" class="subtle"/>
+    <text x="704" y="736" class="txt t11 blue bold">查看行业证据 →</text>
+
+    <!-- lifecycle trail -->
+    <rect x="136" y="790" width="746" height="130" rx="11" class="surface"/>
+    <text x="154" y="818" class="txt t14 ink bold">生命周期变化</text>
+    <text x="764" y="818" class="txt t10 muted">最近 20 个交易日</text>
+    <line x1="176" y1="865" x2="835" y2="865" stroke="#cfd7d4" stroke-width="3"/>
+    <circle cx="205" cy="865" r="8" class="fall"/>
+    <circle cx="335" cy="865" r="8" class="ochre"/>
+    <circle cx="485" cy="865" r="8" class="blue"/>
+    <circle cx="665" cy="865" r="10" class="rise"/>
+    <text x="173" y="893" class="txt t10 muted">低位修复</text>
+    <text x="305" y="893" class="txt t10 muted">方向未明</text>
+    <text x="458" y="893" class="txt t10 muted">扩散观察</text>
+    <text x="636" y="893" class="txt t10 rise bold">强势扩散</text>
+    <text x="785" y="868" class="mono t10 muted">07/24</text>
+  </g>
+</svg>

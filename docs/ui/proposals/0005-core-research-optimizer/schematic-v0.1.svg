@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="15" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <linearGradient id="heat" x1="0" x2="1"><stop offset="0" stop-color="#238267"/><stop offset=".5" stop-color="#f4f1e7"/><stop offset="1" stop-color="#c34b43"/></linearGradient>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0005 · 因子研究、行业模型与组合优化器</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 长线周度评估，规则基线与机器学习挑战者并行</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <!-- factor lab -->
+  <rect x="30" y="78" width="910" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <rect x="30" y="78" width="106" height="970" rx="22" fill="#172129"/><rect x="114" y="78" width="22" height="970" fill="#172129"/>
+  <text x="52" y="115" class="num t16 bold" fill="#fff">ASTRA</text><text x="52" y="134" class="mono t9" fill="#91a1aa">MIND MINI</text>
+  <text x="55" y="194" class="cn t11" fill="#91a0a8">今日</text><text x="55" y="238" class="cn t11" fill="#91a0a8">市场</text>
+  <rect x="42" y="267" width="84" height="42" rx="7" fill="#2a5067"/><rect x="42" y="267" width="3" height="42" fill="#82b9d9"/><text x="55" y="292" class="cn t11" fill="#fff">策略竞技场</text>
+  <text x="55" y="350" class="cn t11" fill="#91a0a8">组合</text><text x="55" y="406" class="cn t11" fill="#91a0a8">系统</text>
+  <rect x="43" y="966" width="82" height="56" rx="9" fill="#20313b"/><circle cx="56" cy="984" r="4" fill="#238267"/>
+  <text x="66" y="988" class="cn t10" fill="#d8e0e3">数据完整</text><text x="52" y="1007" class="cn t9" fill="#82939c">as-of 07-24</text>
+
+  <text x="160" y="114" class="cn t11 muted">策略竞技场 / 长线 / 因子实验室</text><text x="160" y="145" class="cn t22 ink">因子证据先于模型</text>
+  <rect x="758" y="110" width="152" height="34" rx="17" fill="#edf3f6"/><text x="787" y="132" class="cn t11 blue bold">周度评估 · 10 万</text>
+  <rect x="160" y="168" width="750" height="50" rx="9" fill="#f5f7f6"/>
+  <text x="178" y="190" class="cn t10 muted">研究范围</text><text x="178" y="208" class="cn t11 ink">A 股 1,126 只 · 剔除 ST/停牌/上市不足 120 日 · 点时正确财务数据</text>
+
+  <text x="160" y="252" class="cn t14 ink bold">因子族</text>
+  <rect x="160" y="268" width="750" height="74" rx="10" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="176" y="286" width="86" height="38" rx="19" fill="#2e5e84"/><text x="202" y="310" class="cn t11" fill="#fff">质量</text>
+  <rect x="272" y="286" width="86" height="38" rx="19" fill="#f2f5f3"/><text x="298" y="310" class="cn t11 ink">价值</text>
+  <rect x="368" y="286" width="86" height="38" rx="19" fill="#f2f5f3"/><text x="394" y="310" class="cn t11 ink">成长</text>
+  <rect x="464" y="286" width="86" height="38" rx="19" fill="#f2f5f3"/><text x="490" y="310" class="cn t11 ink">动量</text>
+  <rect x="560" y="286" width="86" height="38" rx="19" fill="#f2f5f3"/><text x="586" y="310" class="cn t11 ink">低波</text>
+  <rect x="656" y="286" width="108" height="38" rx="19" fill="#f2f5f3"/><text x="679" y="310" class="cn t11 ink">龙虎榜/持有人</text>
+  <rect x="774" y="286" width="116" height="38" rx="19" fill="#f2f5f3"/><text x="802" y="310" class="cn t11 ink">行业生命周期</text>
+
+  <rect x="160" y="360" width="472" height="286" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="180" y="390" class="cn t13 ink bold">分行业 IC 热力</text><text x="610" y="390" text-anchor="end" class="cn t9 muted">红=正向 · 绿=反向</text>
+  <text x="278" y="421" class="cn t9 muted">ROE</text><text x="356" y="421" class="cn t9 muted">现金流</text><text x="444" y="421" class="cn t9 muted">毛利率</text><text x="535" y="421" class="cn t9 muted">负债率</text>
+  <text x="180" y="458" class="cn t10 ink">科技成长</text>
+  <rect x="270" y="438" width="64" height="30" rx="4" fill="#e8a59e"/><rect x="348" y="438" width="64" height="30" rx="4" fill="#f1d9d2"/><rect x="426" y="438" width="64" height="30" rx="4" fill="#df827a"/><rect x="504" y="438" width="64" height="30" rx="4" fill="#cde2db"/>
+  <text x="180" y="504" class="cn t10 ink">周期资源</text>
+  <rect x="270" y="484" width="64" height="30" rx="4" fill="#e5b0a8"/><rect x="348" y="484" width="64" height="30" rx="4" fill="#d6ebe3"/><rect x="426" y="484" width="64" height="30" rx="4" fill="#f1d2cb"/><rect x="504" y="484" width="64" height="30" rx="4" fill="#bcd9cf"/>
+  <text x="180" y="550" class="cn t10 ink">稳健传统</text>
+  <rect x="270" y="530" width="64" height="30" rx="4" fill="#d8867e"/><rect x="348" y="530" width="64" height="30" rx="4" fill="#e9a9a0"/><rect x="426" y="530" width="64" height="30" rx="4" fill="#eee3db"/><rect x="504" y="530" width="64" height="30" rx="4" fill="#d8e8e1"/>
+  <text x="180" y="595" class="cn t10 muted">全市场</text>
+  <rect x="270" y="576" width="298" height="12" rx="6" fill="url(#heat)"/>
+  <text x="180" y="625" class="cn t10 blue">查看点时定义与缺失率 →</text>
+
+  <rect x="648" y="360" width="262" height="286" rx="12" fill="#f7faf9"/>
+  <text x="668" y="390" class="cn t13 ink bold">因子衰减</text><text x="886" y="390" text-anchor="end" class="cn t9 muted">未来收益相关</text>
+  <line x1="678" y1="434" x2="882" y2="434" class="grid"/><line x1="678" y1="486" x2="882" y2="486" class="grid"/><line x1="678" y1="538" x2="882" y2="538" class="grid"/>
+  <path d="M678 420 C716 430 744 446 780 462 S840 494 882 520" fill="none" stroke="#2e5e84" stroke-width="3"/>
+  <path d="M678 444 C718 446 748 454 780 466 S840 474 882 482" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <text x="678" y="570" class="cn t9 blue">科技成长</text><text x="748" y="570" class="cn t9 ochre">稳健传统</text>
+  <text x="678" y="606" class="cn t10 muted">建议持有期</text><text x="882" y="606" text-anchor="end" class="num t13 ink bold">10–20 日</text>
+  <text x="678" y="630" class="cn t9 muted">不是用全行业一个半衰期</text>
+
+  <rect x="160" y="664" width="750" height="202" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="180" y="695" class="cn t13 ink bold">候选因子清单</text>
+  <rect x="180" y="712" width="710" height="34" rx="6" fill="#f5f7f6"/>
+  <text x="194" y="733" class="cn t9 muted">因子</text><text x="392" y="733" class="cn t9 muted">覆盖</text><text x="492" y="733" class="cn t9 muted">IC 均值</text><text x="590" y="733" class="cn t9 muted">换手</text><text x="694" y="733" class="cn t9 muted">稳定性</text><text x="836" y="733" class="cn t9 muted">处理</text>
+  <text x="194" y="773" class="cn t11 ink bold">经营现金流 / 总资产</text><text x="392" y="773" class="num t10">96.1%</text><text x="492" y="773" class="num t10 red">0.041</text><text x="590" y="773" class="num t10">低</text><text x="694" y="773" class="cn t10 green">跨期稳定</text><text x="836" y="773" class="cn t10 blue">入模</text>
+  <line x1="180" y1="790" x2="890" y2="790" class="hair"/>
+  <text x="194" y="820" class="cn t11 ink bold">ROE 同比改善</text><text x="392" y="820" class="num t10">91.7%</text><text x="492" y="820" class="num t10 red">0.036</text><text x="590" y="820" class="num t10">中</text><text x="694" y="820" class="cn t10 ochre">科技更强</text><text x="836" y="820" class="cn t10 blue">分行业</text>
+  <text x="180" y="850" class="cn t9 muted">每个数字都可回到原始字段、发布日期和本次快照。</text>
+
+  <rect x="160" y="884" width="750" height="110" rx="11" fill="#eef3f5"/>
+  <text x="180" y="914" class="cn t12 blue bold">下一步：送入行业专家模型</text>
+  <text x="180" y="940" class="cn t11 muted">科技成长、周期资源、稳健传统分别建模；共享组合约束，不共享盲目参数。</text>
+  <rect x="718" y="926" width="170" height="42" rx="8" fill="#2e5e84"/><text x="754" y="952" class="cn t11" fill="#fff">打开模型竞技场</text>
+
+  <!-- model & optimizer -->
+  <rect x="970" y="78" width="920" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <text x="1002" y="114" class="cn t11 muted">策略竞技场 / 长线 / 行业专家与优化器</text><text x="1002" y="145" class="cn t22 ink">模型负责预测，优化器负责持仓</text>
+  <rect x="1714" y="108" width="142" height="34" rx="17" fill="#edf3f6"/><text x="1742" y="130" class="cn t11 blue bold">目标：下周组合</text>
+
+  <text x="1002" y="189" class="cn t14 ink bold">模型竞技场</text>
+  <rect x="1002" y="206" width="854" height="218" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <rect x="1022" y="226" width="248" height="176" rx="10" fill="#f7faf9" stroke="#cbd8d4"/>
+  <text x="1040" y="251" class="cn t10 green bold">基线 · 当前生产</text><text x="1040" y="280" class="cn t16 ink bold">规则加权 v1.2</text>
+  <text x="1040" y="307" class="cn t10 muted">透明 · 稳健 · 低样本要求</text><text x="1040" y="342" class="cn t10 muted">留出 IC</text><text x="1248" y="342" text-anchor="end" class="num t13 ink bold">0.038</text>
+  <text x="1040" y="370" class="cn t10 muted">组合回撤</text><text x="1248" y="370" text-anchor="end" class="num t13 ink bold">-7.4%</text>
+  <rect x="1284" y="226" width="248" height="176" rx="10" fill="#f7faf9" stroke="#cbd8d4"/>
+  <text x="1302" y="251" class="cn t10 blue bold">挑战者 · 建议晋级 Shadow</text><text x="1302" y="280" class="cn t16 ink bold">GBDT 行业专家 v0.7</text>
+  <text x="1302" y="307" class="cn t10 muted">三类行业独立模型 + 集成</text><text x="1302" y="342" class="cn t10 muted">留出 IC</text><text x="1510" y="342" text-anchor="end" class="num t13 red bold">0.052</text>
+  <text x="1302" y="370" class="cn t10 muted">组合回撤</text><text x="1510" y="370" text-anchor="end" class="num t13 ink bold">-7.1%</text>
+  <rect x="1546" y="226" width="290" height="176" rx="10" fill="#fff7e9" stroke="#ead4af"/>
+  <text x="1564" y="251" class="cn t10 ochre bold">实验 · 暂不晋级</text><text x="1564" y="280" class="cn t16 ink bold">PyTorch 多任务 v0.2</text>
+  <text x="1564" y="307" class="cn t10 muted">共享表征 + 行业头 · GPU 可用</text><text x="1564" y="342" class="cn t10 muted">留出 IC</text><text x="1814" y="342" text-anchor="end" class="num t13 red bold">0.055</text>
+  <text x="1564" y="370" class="cn t10 muted">稳定性</text><text x="1814" y="370" text-anchor="end" class="cn t11 ochre bold">样本外波动</text>
+
+  <rect x="1002" y="444" width="854" height="84" rx="11" fill="#f5f7f6"/>
+  <text x="1022" y="472" class="cn t11 ink bold">行业路由</text>
+  <rect x="1022" y="486" width="164" height="28" rx="14" fill="#e7eef2"/><text x="1058" y="505" class="cn t10 blue">科技成长专家</text>
+  <rect x="1196" y="486" width="164" height="28" rx="14" fill="#f2eade"/><text x="1232" y="505" class="cn t10 ochre">周期资源专家</text>
+  <rect x="1370" y="486" width="164" height="28" rx="14" fill="#e8efeb"/><text x="1406" y="505" class="cn t10 green">稳健传统专家</text>
+  <text x="1818" y="504" text-anchor="end" class="cn t9 muted">行业不明 → 基线模型</text>
+
+  <text x="1002" y="568" class="cn t14 ink bold">组合优化器</text><text x="1818" y="568" text-anchor="end" class="cn t10 muted">接口预留：规则 / 凸优化 / 风险模型 / 强化学习策略</text>
+  <rect x="1002" y="584" width="528" height="272" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1022" y="614" class="cn t13 ink bold">当前 → 目标权重</text>
+  <text x="1022" y="649" class="cn t10 ink">紫金矿业</text><rect x="1130" y="635" width="118" height="15" rx="7" fill="#d9e2df"/><rect x="1130" y="635" width="78" height="15" rx="7" fill="#91aebf"/>
+  <rect x="1270" y="635" width="118" height="15" rx="7" fill="#e7ecea"/><rect x="1270" y="635" width="96" height="15" rx="7" fill="#2e5e84"/><text x="1410" y="648" class="num t10 red">8% → 10%</text>
+  <text x="1022" y="690" class="cn t10 ink">贵州茅台</text><rect x="1130" y="676" width="118" height="15" rx="7" fill="#d9e2df"/><rect x="1130" y="676" width="92" height="15" rx="7" fill="#91aebf"/>
+  <rect x="1270" y="676" width="118" height="15" rx="7" fill="#e7ecea"/><rect x="1270" y="676" width="84" height="15" rx="7" fill="#2e5e84"/><text x="1410" y="689" class="num t10 green">10% → 9%</text>
+  <text x="1022" y="731" class="cn t10 ink">中芯国际</text><rect x="1130" y="717" width="118" height="15" rx="7" fill="#d9e2df"/><rect x="1130" y="717" width="46" height="15" rx="7" fill="#91aebf"/>
+  <rect x="1270" y="717" width="118" height="15" rx="7" fill="#e7ecea"/><rect x="1270" y="717" width="74" height="15" rx="7" fill="#2e5e84"/><text x="1410" y="730" class="num t10 red">5% → 8%</text>
+  <text x="1022" y="772" class="cn t10 ink">现金</text><rect x="1130" y="758" width="118" height="15" rx="7" fill="#d9e2df"/><rect x="1130" y="758" width="55" height="15" rx="7" fill="#91aebf"/>
+  <rect x="1270" y="758" width="118" height="15" rx="7" fill="#e7ecea"/><rect x="1270" y="758" width="36" height="15" rx="7" fill="#2e5e84"/><text x="1410" y="771" class="num t10 red">6% → 4%</text>
+  <text x="1022" y="824" class="cn t10 muted">灰色为当前 · 蓝色为目标 · 零碎股与最小交易额将在订单层处理</text>
+
+  <rect x="1548" y="584" width="308" height="272" rx="12" fill="#f7faf9"/>
+  <text x="1568" y="614" class="cn t13 ink bold">约束与目标</text>
+  <text x="1568" y="649" class="cn t10 muted">个股上限</text><text x="1828" y="649" text-anchor="end" class="num t11 ink bold">12%</text>
+  <text x="1568" y="680" class="cn t10 muted">单行业上限</text><text x="1828" y="680" text-anchor="end" class="num t11 ink bold">30%</text>
+  <text x="1568" y="711" class="cn t10 muted">预留现金</text><text x="1828" y="711" text-anchor="end" class="num t11 ink bold">≥ 3%</text>
+  <text x="1568" y="742" class="cn t10 muted">换手预算</text><text x="1828" y="742" text-anchor="end" class="num t11 ink bold">≤ 25%</text>
+  <text x="1568" y="773" class="cn t10 muted">目标函数</text><text x="1828" y="773" text-anchor="end" class="cn t10 blue bold">收益 − 风险 − 成本</text>
+  <rect x="1568" y="797" width="260" height="38" rx="8" fill="#edf3f6"/><text x="1612" y="821" class="cn t10 blue">预计成本 ¥126 · 可调仓</text>
+
+  <rect x="1002" y="876" width="854" height="118" rx="11" fill="#eef3f5"/>
+  <text x="1022" y="906" class="cn t12 blue bold">本周建议：GBDT 作为 Shadow 挑战者，组合仍由稳健优化器生成</text>
+  <text x="1022" y="932" class="cn t11 muted">机器学习模型不直接输出订单；强化学习若加入，也必须遵守同一优化器接口和风险边界。</text>
+  <rect x="1618" y="926" width="216" height="44" rx="8" fill="#2e5e84"/><text x="1660" y="953" class="cn t11" fill="#fff">生成组合目标草案</text>
+</svg>

@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}
+      .bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0003 · 今日工作台与异常抽屉</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 示意数据，不代表真实行情</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/>
+  <circle cx="1731" cy="39" r="5" fill="#b47a22"/><text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <rect x="46" y="178" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="178" width="3" height="42" fill="#82b9d9"/>
+  <text x="62" y="204" class="cn t13" fill="#fff">今日</text>
+  <text x="62" y="258" class="cn t13" fill="#91a0a8">市场</text><text x="62" y="314" class="cn t13" fill="#91a0a8">策略竞技场</text>
+  <text x="62" y="370" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="426" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">Shadow</text><text x="57" y="1003" class="cn t10" fill="#82939c">MiniQMT 未连接</text>
+
+  <!-- header and ribbon -->
+  <text x="182" y="112" class="cn t12 muted">2026-07-24 · 周五 · 已收盘</text>
+  <text x="182" y="143" class="cn t26 ink">今日计划</text>
+  <text x="322" y="141" class="cn t12 muted">先看结论，再看证据；没有动作也是结论</text>
+  <rect x="1688" y="101" width="164" height="38" rx="19" fill="#f7eddb"/><circle cx="1710" cy="120" r="5" fill="#b47a22"/>
+  <text x="1722" y="125" class="cn t12 ochre bold">需要你处理 2</text>
+  <rect x="174" y="158" width="1678" height="58" rx="11" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="180" class="cn t10 muted">数据</text><text x="194" y="200" class="cn t13 ink bold">15:23 完整</text>
+  <line x1="304" y1="184" x2="350" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="350" cy="184" r="4" fill="#2e5e84"/>
+  <text x="372" y="180" class="cn t10 muted">信号</text><text x="372" y="200" class="cn t13 ink bold">短线 2 · 长线不调仓</text>
+  <line x1="574" y1="184" x2="620" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="620" cy="184" r="4" fill="#2e5e84"/>
+  <text x="642" y="180" class="cn t10 muted">风险</text><text x="642" y="200" class="cn t13 ink bold">1 项阻断</text>
+  <line x1="744" y1="184" x2="790" y2="184" stroke="#87a9bc" stroke-width="2"/><circle cx="790" cy="184" r="4" fill="#2e5e84"/>
+  <text x="812" y="180" class="cn t10 muted">订单</text><text x="812" y="200" class="cn t13 ink bold">3 个计划 · Shadow</text>
+  <text x="1604" y="192" class="cn t12 blue">查看决策链 →</text>
+
+  <!-- timeline -->
+  <rect x="174" y="234" width="1190" height="124" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="262" class="cn t16 ink bold">今日决策时间线</text>
+  <line x1="236" y1="310" x2="1288" y2="310" stroke="#cad6d2" stroke-width="3"/>
+  <circle cx="260" cy="310" r="10" fill="#238267"/><circle cx="505" cy="310" r="10" fill="#238267"/><circle cx="770" cy="310" r="10" fill="#2e5e84"/>
+  <circle cx="1020" cy="310" r="10" fill="#b47a22"/><circle cx="1270" cy="310" r="10" fill="#d0d8d5"/>
+  <text x="220" y="290" class="cn t11 muted">15:23 数据完成</text><text x="462" y="290" class="cn t11 muted">15:25 信号完成</text>
+  <text x="718" y="290" class="cn t11 muted">15:27 目标生成</text><text x="966" y="290" class="cn t11 ochre">15:28 风险阻断 1</text>
+  <text x="1214" y="290" class="cn t11 muted">待进入 Shadow</text>
+  <text x="222" y="338" class="cn t10 green">完整</text><text x="480" y="338" class="cn t10 green">4 个版本</text>
+  <text x="731" y="338" class="cn t10 blue">2 买 1 卖</text><text x="978" y="338" class="cn t10 ochre">流动性</text><text x="1226" y="338" class="cn t10 muted">未提交</text>
+
+  <!-- tactical sleeve -->
+  <rect x="174" y="374" width="575" height="310" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="404" class="cn t11 muted">短线分仓 · 5 万元 · 日度</text><text x="194" y="438" class="cn t22 ink">今日计划：换入 1 只</text>
+  <rect x="194" y="454" width="535" height="64" rx="9" fill="#edf3f6"/>
+  <text x="212" y="478" class="cn t12 blue bold">冠军：事件/关注 v1.8 · 5 日</text><text x="212" y="500" class="cn t11 muted">封存回放通过 · Shadow 诊断 12 笔 · 不等于 Live 资格</text>
+  <text x="194" y="548" class="cn t12 muted">计划买入</text><text x="292" y="548" class="cn t14 ink bold">紫金矿业</text><text x="670" y="548" class="num t13 red" text-anchor="end">¥24,800</text>
+  <line x1="194" y1="562" x2="729" y2="562" class="hair"/>
+  <text x="194" y="590" class="cn t12 muted">计划卖出</text><text x="292" y="590" class="cn t14 ink bold">中科曙光</text><text x="670" y="590" class="num t13 green" text-anchor="end">全部</text>
+  <line x1="194" y1="604" x2="729" y2="604" class="hair"/>
+  <text x="194" y="632" class="cn t12 muted">阻断</text><text x="292" y="632" class="cn t13 ochre bold">候选成交额不足，已降为 0 股</text>
+  <text x="194" y="660" class="cn t11 blue">查看策略证据 →</text><text x="566" y="660" class="cn t11 blue">查看订单计划 →</text>
+
+  <!-- core sleeve -->
+  <rect x="769" y="374" width="595" height="310" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="789" y="404" class="cn t11 muted">长线分仓 · 10 万元 · 周度</text><text x="789" y="438" class="cn t22 ink">今日结论：保持不动</text>
+  <rect x="789" y="454" width="555" height="64" rx="9" fill="#f2f5f3"/>
+  <text x="807" y="478" class="cn t12 ink bold">下次评估：周五盘后</text><text x="807" y="500" class="cn t11 muted">目标漂移 1.8% &lt; 调仓阈值 3.0% · 预计成本高于改善</text>
+  <text x="789" y="548" class="cn t12 muted">当前持仓</text><text x="910" y="548" class="cn t13 ink bold">5 只</text><text x="1298" y="548" class="num t13" text-anchor="end">¥97,260</text>
+  <line x1="789" y1="562" x2="1344" y2="562" class="hair"/>
+  <text x="789" y="590" class="cn t12 muted">现金</text><text x="1298" y="590" class="num t13" text-anchor="end">¥2,740</text>
+  <line x1="789" y1="604" x2="1344" y2="604" class="hair"/>
+  <text x="789" y="632" class="cn t12 muted">本周回撤</text><text x="1298" y="632" class="num t13 green" text-anchor="end">-1.2% · 正常</text>
+  <text x="789" y="660" class="cn t11 blue">查看因子与模型 →</text><text x="1190" y="660" class="cn t11 blue">查看组合 →</text>
+
+  <!-- holdings / completed -->
+  <rect x="174" y="702" width="1190" height="312" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="732" class="cn t16 ink bold">持仓与最近动作</text>
+  <text x="1244" y="732" class="cn t11 muted">账户权益 ¥151,420 · 今日 +0.76%</text>
+  <rect x="194" y="750" width="1150" height="38" rx="7" fill="#f5f7f6"/>
+  <text x="212" y="774" class="cn t11 muted">股票</text><text x="430" y="774" class="cn t11 muted">分仓/策略</text><text x="650" y="774" class="cn t11 muted">市值</text>
+  <text x="810" y="774" class="cn t11 muted">今日</text><text x="970" y="774" class="cn t11 muted">目标</text><text x="1210" y="774" class="cn t11 muted">状态</text>
+  <text x="212" y="818" class="cn t13 ink bold">中科曙光</text><text x="430" y="818" class="cn t12 muted">短线 · 动量 v2.3</text><text x="650" y="818" class="num t12">¥23,600</text>
+  <text x="810" y="818" class="num t12 red">+1.9%</text><text x="970" y="818" class="cn t12">清仓</text><text x="1210" y="818" class="cn t12 ochre">待 Shadow</text>
+  <line x1="194" y1="838" x2="1344" y2="838" class="hair"/>
+  <text x="212" y="870" class="cn t13 ink bold">贵州茅台</text><text x="430" y="870" class="cn t12 muted">长线 · 核心 v1.2</text><text x="650" y="870" class="num t12">¥19,840</text>
+  <text x="810" y="870" class="num t12 green">-0.3%</text><text x="970" y="870" class="cn t12">保持</text><text x="1210" y="870" class="cn t12 green">已对齐</text>
+  <line x1="194" y1="890" x2="1344" y2="890" class="hair"/>
+  <text x="212" y="922" class="cn t13 ink bold">紫金矿业</text><text x="430" y="922" class="cn t12 muted">短线 · 事件 v1.8</text><text x="650" y="922" class="num t12">¥0</text>
+  <text x="810" y="922" class="cn t12 muted">—</text><text x="970" y="922" class="cn t12">买入 ¥24,800</text><text x="1210" y="922" class="cn t12 blue">计划</text>
+  <rect x="194" y="948" width="1150" height="46" rx="8" fill="#f8faf9"/><text x="212" y="976" class="cn t12 muted">最近完成：14:52 长线组合对账完成 · 无差异</text>
+
+  <!-- attention drawer -->
+  <rect x="1388" y="234" width="464" height="780" rx="14" fill="#fbfcfb" stroke="#cbd6d2" filter="url(#shadow)"/>
+  <text x="1414" y="270" class="cn t18 ink bold">需要你处理</text><rect x="1760" y="247" width="62" height="28" rx="14" fill="#f7eddb"/>
+  <text x="1785" y="266" class="num t12 ochre bold">2</text>
+  <text x="1414" y="300" class="cn t11 muted">这里只放超授权、失败或异常；正常计划不会出现</text>
+
+  <rect x="1414" y="324" width="412" height="206" rx="11" fill="#fff7e9" stroke="#ead4af"/>
+  <text x="1434" y="352" class="cn t10 ochre">风险阻断 · 短线计划</text><text x="1434" y="381" class="cn t16 ink bold">候选订单流动性不足</text>
+  <text x="1434" y="409" class="cn t12 muted">计划 ¥19,600，占近 20 日成交额 0.18%</text><text x="1434" y="430" class="cn t12 muted">当前限制 0.10%，系统已将目标调整为 0 股</text>
+  <rect x="1434" y="454" width="126" height="36" rx="8" fill="#fff" stroke="#d8c29d"/><text x="1465" y="477" class="cn t12 ink">保持阻断</text>
+  <rect x="1572" y="454" width="118" height="36" rx="8" fill="#fff" stroke="#d8c29d"/><text x="1605" y="477" class="cn t12 ink">修改计划</text>
+  <rect x="1702" y="454" width="104" height="36" rx="8" fill="#b47a22"/><text x="1723" y="477" class="cn t12" fill="#fff">批准一次</text>
+  <text x="1434" y="512" class="cn t10 muted">一次例外不会修改常设授权</text>
+
+  <rect x="1414" y="548" width="412" height="174" rx="11" fill="#f5f7f6" stroke="#d7e0dd"/>
+  <text x="1434" y="576" class="cn t10 muted">数据失败 · 股东户数</text><text x="1434" y="605" class="cn t16 ink bold">提供方返回部分页面</text>
+  <text x="1434" y="633" class="cn t12 muted">本次快照未发布；昨日成功快照仍可历史只读</text>
+  <rect x="1434" y="658" width="112" height="36" rx="8" fill="#2e5e84"/><text x="1470" y="681" class="cn t12" fill="#fff">重试</text>
+  <text x="1566" y="681" class="cn t12 blue">查看缺口 →</text>
+
+  <text x="1414" y="766" class="cn t14 ink bold">已处理</text>
+  <line x1="1414" y1="782" x2="1826" y2="782" class="hair"/>
+  <text x="1434" y="816" class="cn t12 muted">14:52 · 长线组合对账完成</text><text x="1788" y="816" class="cn t11 green">无差异</text>
+  <text x="1434" y="852" class="cn t12 muted">12:06 · 日行情重试完成</text><text x="1788" y="852" class="cn t11 green">已恢复</text>
+  <rect x="1414" y="934" width="412" height="52" rx="9" fill="#eef3f5"/><text x="1541" y="966" class="cn t12 blue bold">查看全部异常历史 →</text>
+</svg>

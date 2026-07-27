@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0009 v0.2 ETF 轮动与候选蜡烛图</title>
+  <desc id="desc">ETF 轮动页面从行业方向筛选 ETF，并联动所选 ETF 的蜡烛图、成交量、均线、流动性与目标草案。</desc>
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.rise{fill:#c34b43}.fall{fill:#238267}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}
+      .hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}.up{stroke:#c34b43;fill:#c34b43}.down{stroke:#238267;fill:#238267}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0009 · ETF 轮动与价格证据</text>
+  <text x="38" y="58" class="cn t12 muted">v0.2 · 待用户批准 · 行业方向、ETF 映射、价格结构和目标仍是四个不同步骤</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <text x="62" y="204" class="cn t13" fill="#91a0a8">今日</text>
+  <rect x="46" y="236" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="236" width="3" height="42" fill="#82b9d9"/><text x="62" y="262" class="cn t13" fill="#fff">市场</text>
+  <text x="62" y="326" class="cn t13" fill="#91a0a8">策略竞技场</text><text x="62" y="384" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="442" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">研究模式</text><text x="57" y="1003" class="cn t10" fill="#82939c">不直接下单</text>
+
+  <text x="182" y="112" class="cn t12 muted">市场 / ETF 轮动 · 2026-07-24 收盘</text><text x="182" y="143" class="cn t26 ink">方向到 ETF，再核验价格结构</text>
+  <rect x="1670" y="103" width="182" height="38" rx="19" fill="#edf3f6"/><text x="1708" y="127" class="cn t12 blue bold">下次评估：周五</text>
+
+  <!-- compact funnel -->
+  <rect x="174" y="166" width="1678" height="110" rx="12" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="194" class="cn t13 ink bold">方向漏斗</text><text x="1816" y="194" text-anchor="end" class="cn t10 muted">每一步保留淘汰原因</text>
+  <rect x="194" y="210" width="214" height="44" rx="8" fill="#fff"/><text x="212" y="237" class="cn t11 ink bold">行业状态 · 31 → 8</text>
+  <path d="M416 232 H450" stroke="#89a9ba" stroke-width="2"/><path d="M442 225 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="460" y="210" width="214" height="44" rx="8" fill="#fff"/><text x="478" y="237" class="cn t11 ink bold">相对强弱 · 8 → 4</text>
+  <path d="M682 232 H716" stroke="#89a9ba" stroke-width="2"/><path d="M708 225 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="726" y="210" width="214" height="44" rx="8" fill="#fff"/><text x="744" y="237" class="cn t11 ink bold">ETF 映射 · 4 → 11</text>
+  <path d="M948 232 H982" stroke="#89a9ba" stroke-width="2"/><path d="M974 225 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="992" y="210" width="256" height="44" rx="8" fill="#fff"/><text x="1010" y="237" class="cn t11 ink bold">流动性/跟踪/成本 · 11 → 5</text>
+  <path d="M1256 232 H1290" stroke="#89a9ba" stroke-width="2"/><path d="M1282 225 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="1300" y="210" width="232" height="44" rx="8" fill="#fff"/><text x="1318" y="237" class="cn t11 ink bold">价格结构核验 · 5 → 3</text>
+  <rect x="1552" y="210" width="280" height="44" rx="8" fill="#2e5e84"/><text x="1599" y="237" class="cn t11 bold" fill="#fff">目标草案 · 仍不是订单</text>
+
+  <!-- candidates -->
+  <rect x="174" y="296" width="480" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="326" class="cn t16 ink bold">方向与 ETF 候选</text>
+  <rect x="194" y="344" width="440" height="50" rx="8" fill="#f5f7f6"/>
+  <text x="210" y="365" class="cn t9 muted">当前方向</text><text x="210" y="385" class="cn t12 blue bold">半导体 · 扩张 · +1.42σ</text>
+  <text x="194" y="430" class="cn t10 muted">候选 ETF</text>
+  <rect x="194" y="444" width="440" height="82" rx="9" fill="#edf3f6" stroke="#91aebf"/>
+  <text x="210" y="470" class="cn t13 ink bold">半导体 ETF</text><text x="210" y="490" class="mono t9 muted">512480 · 规模 286 亿</text>
+  <text x="210" y="513" class="cn t9 blue">已选中 · 综合分 86</text><text x="606" y="486" text-anchor="end" class="cn t10 green">跟踪 0.18%</text>
+  <text x="210" y="560" class="cn t13 ink bold">芯片 ETF</text><text x="210" y="580" class="mono t9 muted">159995 · 规模 210 亿</text><text x="606" y="570" text-anchor="end" class="num t11 ink">81</text>
+  <line x1="194" y1="600" x2="634" y2="600" class="hair"/>
+  <text x="210" y="632" class="cn t13 ink bold">科创芯片 ETF</text><text x="210" y="652" class="mono t9 muted">示例 · 规模 24 亿</text><text x="606" y="642" text-anchor="end" class="cn t10 ochre">流动性不足</text>
+  <line x1="194" y1="672" x2="634" y2="672" class="hair"/>
+  <text x="210" y="704" class="cn t13 ink bold">半导体增强 ETF</text><text x="210" y="724" class="mono t9 muted">示例 · 规模 9 亿</text><text x="606" y="714" text-anchor="end" class="cn t10 ochre">误差/费率</text>
+  <rect x="194" y="752" width="440" height="46" rx="8" fill="#f8faf9"/><text x="210" y="780" class="cn t9 muted">选中候选只更新图表；不会创建目标或订单。</text>
+
+  <!-- ETF chart -->
+  <rect x="674" y="296" width="810" height="520" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="696" y="326" class="cn t16 ink bold">半导体 ETF · 512480</text><text x="696" y="348" class="cn t10 muted">日线 120 根 · 截止 2026-07-24</text>
+  <rect x="1238" y="312" width="58" height="30" rx="7" fill="#edf3f6"/><text x="1255" y="332" class="cn t10 blue bold">日 K</text><text x="1314" y="332" class="cn t10 muted">周 K</text><text x="1370" y="332" class="cn t10 muted">月 K</text>
+  <rect x="696" y="366" width="766" height="38" rx="7" fill="#f8faf9"/>
+  <text x="712" y="390" class="cn t9 muted">07-24</text><text x="770" y="390" class="cn t9 muted">开 1.036</text><text x="850" y="390" class="cn t9 muted">高 1.052</text><text x="930" y="390" class="cn t9 muted">低 1.031</text><text x="1010" y="390" class="cn t9 rise">收 1.049</text>
+  <text x="1090" y="390" class="cn t9 muted">额 8.4 亿</text><circle cx="1220" cy="385" r="4" fill="#b47a22"/><text x="1230" y="390" class="cn t9 muted">MA5</text><circle cx="1290" cy="385" r="4" fill="#2e5e84"/><text x="1300" y="390" class="cn t9 muted">MA20</text>
+  <line x1="718" y1="440" x2="1438" y2="440" class="grid"/><line x1="718" y1="500" x2="1438" y2="500" class="grid"/><line x1="718" y1="560" x2="1438" y2="560" class="grid"/><line x1="718" y1="620" x2="1438" y2="620" class="grid"/>
+  <text x="1446" y="444" class="num t9 muted">1.08</text><text x="1446" y="504" class="num t9 muted">1.04</text><text x="1446" y="564" class="num t9 muted">1.00</text><text x="1446" y="624" class="num t9 muted">0.96</text>
+  <g stroke-width="2">
+    <line x1="738" y1="600" x2="738" y2="642" class="down"/><rect x="732" y="612" width="12" height="18" class="down"/>
+    <line x1="766" y1="590" x2="766" y2="632" class="up"/><rect x="760" y="600" width="12" height="20" class="up"/>
+    <line x1="794" y1="578" x2="794" y2="622" class="up"/><rect x="788" y="590" width="12" height="20" class="up"/>
+    <line x1="822" y1="584" x2="822" y2="630" class="down"/><rect x="816" y="596" width="12" height="22" class="down"/>
+    <line x1="850" y1="566" x2="850" y2="612" class="up"/><rect x="844" y="578" width="12" height="22" class="up"/>
+    <line x1="878" y1="554" x2="878" y2="600" class="up"/><rect x="872" y="566" width="12" height="22" class="up"/>
+    <line x1="906" y1="560" x2="906" y2="608" class="down"/><rect x="900" y="572" width="12" height="24" class="down"/>
+    <line x1="934" y1="542" x2="934" y2="590" class="up"/><rect x="928" y="554" width="12" height="24" class="up"/>
+    <line x1="962" y1="528" x2="962" y2="578" class="up"/><rect x="956" y="542" width="12" height="22" class="up"/>
+    <line x1="990" y1="536" x2="990" y2="584" class="down"/><rect x="984" y="548" width="12" height="24" class="down"/>
+    <line x1="1018" y1="518" x2="1018" y2="566" class="up"/><rect x="1012" y="530" width="12" height="24" class="up"/>
+    <line x1="1046" y1="504" x2="1046" y2="554" class="up"/><rect x="1040" y="518" width="12" height="22" class="up"/>
+    <line x1="1074" y1="512" x2="1074" y2="560" class="down"/><rect x="1068" y="524" width="12" height="24" class="down"/>
+    <line x1="1102" y1="494" x2="1102" y2="544" class="up"/><rect x="1096" y="508" width="12" height="22" class="up"/>
+    <line x1="1130" y1="480" x2="1130" y2="532" class="up"/><rect x="1124" y="494" width="12" height="24" class="up"/>
+    <line x1="1158" y1="488" x2="1158" y2="538" class="down"/><rect x="1152" y="500" width="12" height="26" class="down"/>
+    <line x1="1186" y1="470" x2="1186" y2="522" class="up"/><rect x="1180" y="484" width="12" height="24" class="up"/>
+    <line x1="1214" y1="456" x2="1214" y2="508" class="up"/><rect x="1208" y="470" width="12" height="24" class="up"/>
+    <line x1="1242" y1="464" x2="1242" y2="516" class="down"/><rect x="1236" y="478" width="12" height="24" class="down"/>
+    <line x1="1270" y1="448" x2="1270" y2="500" class="up"/><rect x="1264" y="462" width="12" height="24" class="up"/>
+    <line x1="1298" y1="438" x2="1298" y2="490" class="up"/><rect x="1292" y="452" width="12" height="24" class="up"/>
+    <line x1="1326" y1="446" x2="1326" y2="498" class="down"/><rect x="1320" y="460" width="12" height="24" class="down"/>
+    <line x1="1354" y1="430" x2="1354" y2="482" class="up"/><rect x="1348" y="444" width="12" height="24" class="up"/>
+    <line x1="1382" y1="420" x2="1382" y2="472" class="up"/><rect x="1376" y="434" width="12" height="24" class="up"/>
+    <line x1="1410" y1="428" x2="1410" y2="480" class="down"/><rect x="1404" y="442" width="12" height="24" class="down"/>
+  </g>
+  <path d="M738 620 C850 602 930 570 1018 544 S1160 510 1242 486 S1340 460 1410 448" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <path d="M738 628 C880 612 980 590 1074 560 S1220 520 1300 492 S1370 474 1410 466" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <line x1="718" y1="654" x2="1438" y2="654" class="hair"/>
+  <g opacity=".42">
+    <rect x="732" y="752" width="12" height="34" class="down"/><rect x="760" y="744" width="12" height="42" class="up"/><rect x="788" y="738" width="12" height="48" class="up"/><rect x="816" y="750" width="12" height="36" class="down"/>
+    <rect x="844" y="730" width="12" height="56" class="up"/><rect x="872" y="722" width="12" height="64" class="up"/><rect x="900" y="742" width="12" height="44" class="down"/><rect x="928" y="714" width="12" height="72" class="up"/>
+    <rect x="956" y="706" width="12" height="80" class="up"/><rect x="984" y="736" width="12" height="50" class="down"/><rect x="1012" y="698" width="12" height="88" class="up"/><rect x="1040" y="692" width="12" height="94" class="up"/>
+    <rect x="1068" y="728" width="12" height="58" class="down"/><rect x="1096" y="686" width="12" height="100" class="up"/><rect x="1124" y="678" width="12" height="108" class="up"/><rect x="1152" y="718" width="12" height="68" class="down"/>
+    <rect x="1180" y="670" width="12" height="116" class="up"/><rect x="1208" y="664" width="12" height="122" class="up"/><rect x="1236" y="712" width="12" height="74" class="down"/><rect x="1264" y="656" width="12" height="130" class="up"/>
+    <rect x="1292" y="650" width="12" height="136" class="up"/><rect x="1320" y="706" width="12" height="80" class="down"/><rect x="1348" y="646" width="12" height="140" class="up"/><rect x="1376" y="640" width="12" height="146" class="up"/><rect x="1404" y="698" width="12" height="88" class="down"/>
+  </g>
+  <text x="724" y="804" class="mono t9 muted">06-17</text><text x="948" y="804" class="mono t9 muted">07-01</text><text x="1186" y="804" class="mono t9 muted">07-15</text><text x="1390" y="804" class="mono t9 muted">07-24</text>
+
+  <!-- target inspector -->
+  <rect x="1504" y="296" width="348" height="520" rx="12" fill="#f8faf9" stroke="#d8e0dd"/>
+  <text x="1526" y="326" class="cn t16 ink bold">价格结构核验</text>
+  <rect x="1526" y="344" width="304" height="70" rx="9" fill="#edf3f6"/>
+  <text x="1546" y="370" class="cn t10 blue">结论</text><text x="1546" y="396" class="cn t14 blue bold">趋势确认，未过热</text>
+  <text x="1526" y="446" class="cn t10 muted">近 20 日</text><text x="1808" y="446" text-anchor="end" class="num t13 rise bold">+8.3%</text>
+  <text x="1526" y="482" class="cn t10 muted">成交额分位</text><text x="1808" y="482" text-anchor="end" class="num t13 ink bold">82%</text>
+  <text x="1526" y="518" class="cn t10 muted">跟踪误差</text><text x="1808" y="518" text-anchor="end" class="num t13 green bold">0.18%</text>
+  <text x="1526" y="554" class="cn t10 muted">最差滑点预算</text><text x="1808" y="554" text-anchor="end" class="num t13 ink bold">8 bp</text>
+  <line x1="1526" y1="576" x2="1830" y2="576" class="hair"/>
+  <text x="1526" y="608" class="cn t13 ink bold">目标草案</text>
+  <text x="1526" y="642" class="cn t10 muted">当前</text><text x="1808" y="642" text-anchor="end" class="num t12 ink">0%</text>
+  <text x="1526" y="674" class="cn t10 muted">目标</text><text x="1808" y="674" text-anchor="end" class="num t14 blue bold">30%</text>
+  <text x="1526" y="706" class="cn t10 muted">示意金额</text><text x="1808" y="706" text-anchor="end" class="num t12 ink">¥15,000</text>
+  <rect x="1526" y="732" width="304" height="44" rx="8" fill="#fff7e9"/><text x="1544" y="759" class="cn t10 ochre">资金边界待后续冻结</text>
+
+  <!-- footer -->
+  <rect x="174" y="836" width="1678" height="178" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="868" class="cn t14 ink bold">研究事实 → ETF 判断 → 组合目标</text>
+  <text x="194" y="900" class="cn t10 muted">行业生命周期</text><text x="194" y="927" class="cn t13 ink bold">半导体 · 扩张</text><text x="194" y="952" class="cn t9 muted">上游证据，不直接下单</text>
+  <path d="M410 924 H470" stroke="#89a9ba" stroke-width="2"/><path d="M462 917 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <text x="492" y="900" class="cn t10 muted">ETF 判断</text><text x="492" y="927" class="cn t13 ink bold">512480 · 价格确认</text><text x="492" y="952" class="cn t9 muted">流动性、跟踪、成本通过</text>
+  <path d="M758 924 H818" stroke="#89a9ba" stroke-width="2"/><path d="M810 917 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <text x="840" y="900" class="cn t10 muted">组合目标</text><text x="840" y="927" class="cn t13 ink bold">目标 30% · 现金约束</text><text x="840" y="952" class="cn t9 muted">尚未生成订单数量</text>
+  <rect x="1338" y="886" width="200" height="54" rx="9" fill="#fff" stroke="#b9cbd4"/><text x="1378" y="918" class="cn t11 blue">查看完整策略证据</text>
+  <rect x="1554" y="886" width="276" height="54" rx="9" fill="#2e5e84"/><text x="1618" y="918" class="cn t11" fill="#fff">送入组合目标（不下单）</text>
+  <text x="1338" y="970" class="cn t9 muted">蜡烛图没有独立的“买入”按钮。</text>
+</svg>

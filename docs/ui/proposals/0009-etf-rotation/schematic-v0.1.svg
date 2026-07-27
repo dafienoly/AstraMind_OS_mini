@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#17313d" flood-opacity=".12"/></filter>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.red{fill:#c34b43}.green{fill:#238267}.ochre{fill:#b47a22}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t18{font-size:18px}.t22{font-size:22px;font-weight:700}.t26{font-size:26px;font-weight:700}.bold{font-weight:700}.hair{stroke:#d6dfdc;stroke-width:1}.grid{stroke:#e5ebe8;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="38" y="35" class="cn t22 ink">UI-PROP-0009 · 行业 ETF 轮动研究与目标</text>
+  <text x="38" y="58" class="cn t12 muted">v0.1 · 待用户批准 · 行业信号先映射为可交易 ETF，再进入统一组合与订单层</text>
+  <rect x="1710" y="22" width="175" height="34" rx="17" fill="#f7eddb"/><circle cx="1731" cy="39" r="5" fill="#b47a22"/>
+  <text x="1744" y="44" class="cn t12 ochre bold">禁止实施</text>
+
+  <rect x="30" y="78" width="1860" height="970" rx="22" fill="#fff" filter="url(#shadow)"/>
+  <path d="M52 78 H132 Q154 78 154 100 V1026 Q154 1048 132 1048 H52 Q30 1048 30 1026 V100 Q30 78 52 78Z" fill="#172129"/>
+  <text x="57" y="116" class="num t18 bold" fill="#fff">ASTRA</text><text x="57" y="136" class="mono t10" fill="#91a1aa">MIND MINI</text>
+  <line x1="50" y1="154" x2="134" y2="154" stroke="#344650"/>
+  <text x="62" y="204" class="cn t13" fill="#91a0a8">今日</text>
+  <rect x="46" y="236" width="94" height="42" rx="7" fill="#2a5067"/><rect x="46" y="236" width="3" height="42" fill="#82b9d9"/><text x="62" y="262" class="cn t13" fill="#fff">市场</text>
+  <text x="62" y="326" class="cn t13" fill="#91a0a8">策略竞技场</text><text x="62" y="384" class="cn t13" fill="#91a0a8">组合</text><text x="62" y="442" class="cn t13" fill="#91a0a8">系统</text>
+  <rect x="47" y="960" width="91" height="64" rx="10" fill="#20313b"/><circle cx="62" cy="978" r="5" fill="#b47a22"/>
+  <text x="73" y="982" class="cn t11" fill="#d8e0e3">研究模式</text><text x="57" y="1003" class="cn t10" fill="#82939c">不直接下单</text>
+
+  <text x="182" y="112" class="cn t12 muted">市场 / ETF 轮动 · 2026-07-24 收盘</text><text x="182" y="143" class="cn t26 ink">行业方向到 ETF 目标</text>
+  <text x="462" y="141" class="cn t12 muted">周度评估 · 每日监控偏离</text>
+  <rect x="1670" y="103" width="182" height="38" rx="19" fill="#edf3f6"/><text x="1708" y="127" class="cn t12 blue bold">下次评估：周五</text>
+
+  <!-- funnel -->
+  <rect x="174" y="166" width="1678" height="132" rx="12" fill="#eef5f7" stroke="#d6e3e8"/>
+  <text x="194" y="194" class="cn t14 ink bold">方向漏斗</text><text x="1816" y="194" text-anchor="end" class="cn t10 muted">每一步都保留淘汰原因</text>
+  <rect x="194" y="218" width="210" height="54" rx="9" fill="#fff"/><text x="214" y="239" class="cn t9 muted">1 · 行业状态</text><text x="214" y="260" class="cn t12 ink bold">31 → 8 个方向</text>
+  <path d="M412 245 H454" stroke="#89a9ba" stroke-width="2"/><path d="M446 238 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="464" y="218" width="210" height="54" rx="9" fill="#fff"/><text x="484" y="239" class="cn t9 muted">2 · 相对强弱</text><text x="484" y="260" class="cn t12 ink bold">8 → 4 个方向</text>
+  <path d="M682 245 H724" stroke="#89a9ba" stroke-width="2"/><path d="M716 238 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="734" y="218" width="210" height="54" rx="9" fill="#fff"/><text x="754" y="239" class="cn t9 muted">3 · ETF 映射</text><text x="754" y="260" class="cn t12 ink bold">4 → 11 只 ETF</text>
+  <path d="M952 245 H994" stroke="#89a9ba" stroke-width="2"/><path d="M986 238 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="1004" y="218" width="252" height="54" rx="9" fill="#fff"/><text x="1024" y="239" class="cn t9 muted">4 · 流动性/跟踪/成本</text><text x="1024" y="260" class="cn t12 ink bold">11 → 5 只候选</text>
+  <path d="M1264 245 H1306" stroke="#89a9ba" stroke-width="2"/><path d="M1298 238 l10 7 -10 7" fill="none" stroke="#89a9ba" stroke-width="2"/>
+  <rect x="1316" y="218" width="256" height="54" rx="9" fill="#fff"/><text x="1336" y="239" class="cn t9 muted">5 · 组合约束</text><text x="1336" y="260" class="cn t12 ink bold">3 个目标 · 现金 20%</text>
+  <rect x="1594" y="218" width="238" height="54" rx="9" fill="#2e5e84"/><text x="1614" y="239" class="cn t9" fill="#d9e8f0">输出</text><text x="1614" y="260" class="cn t12 bold" fill="#fff">目标草案，不是订单</text>
+
+  <!-- direction ranking -->
+  <rect x="174" y="318" width="732" height="366" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="348" class="cn t16 ink bold">行业方向</text><text x="870" y="348" text-anchor="end" class="cn t10 blue">相对轮动图 →</text>
+  <rect x="194" y="366" width="692" height="38" rx="7" fill="#f5f7f6"/>
+  <text x="210" y="390" class="cn t10 muted">方向</text><text x="392" y="390" class="cn t10 muted">生命周期</text><text x="522" y="390" class="cn t10 muted">相对强度</text><text x="642" y="390" class="cn t10 muted">动量</text><text x="750" y="390" class="cn t10 muted">结论</text>
+  <rect x="194" y="416" width="692" height="58" rx="8" fill="#edf3f6"/>
+  <text x="210" y="442" class="cn t13 ink bold">半导体</text><text x="392" y="442" class="cn t11 blue">扩张</text><text x="522" y="442" class="num t11 red bold">+1.42σ</text><text x="642" y="442" class="num t11 red">+8.3%</text><rect x="750" y="428" width="112" height="30" rx="15" fill="#2e5e84"/><text x="780" y="448" class="cn t10" fill="#fff">首选方向</text>
+  <text x="210" y="491" class="cn t13 ink bold">有色金属</text><text x="392" y="491" class="cn t11 ochre">繁荣</text><text x="522" y="491" class="num t11 red bold">+1.08σ</text><text x="642" y="491" class="num t11 red">+5.7%</text><text x="750" y="491" class="cn t10 blue">候选</text>
+  <line x1="194" y1="508" x2="886" y2="508" class="hair"/>
+  <text x="210" y="538" class="cn t13 ink bold">能源</text><text x="392" y="538" class="cn t11 ochre">繁荣后段</text><text x="522" y="538" class="num t11 red">+0.62σ</text><text x="642" y="538" class="num t11 red">+3.1%</text><text x="750" y="538" class="cn t10 ochre">降权候选</text>
+  <line x1="194" y1="555" x2="886" y2="555" class="hair"/>
+  <text x="210" y="585" class="cn t13 ink bold">交通运输</text><text x="392" y="585" class="cn t11 green">复苏</text><text x="522" y="585" class="num t11">+0.31σ</text><text x="642" y="585" class="num t11 red">+1.8%</text><text x="750" y="585" class="cn t10 muted">观察</text>
+  <line x1="194" y1="602" x2="886" y2="602" class="hair"/>
+  <text x="210" y="632" class="cn t13 ink bold">食品饮料</text><text x="392" y="632" class="cn t11 muted">衰退</text><text x="522" y="632" class="num t11 green">-0.48σ</text><text x="642" y="632" class="num t11 green">-2.0%</text><text x="750" y="632" class="cn t10 muted">排除</text>
+  <text x="194" y="666" class="cn t9 muted">行业生命周期是解释与过滤信号之一，不单独决定买卖。</text>
+
+  <!-- candidate mapping -->
+  <rect x="926" y="318" width="926" height="366" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="946" y="348" class="cn t16 ink bold">选中方向：半导体</text><text x="1816" y="348" text-anchor="end" class="cn t10 muted">映射 4 只 → 通过 2 只</text>
+  <rect x="946" y="366" width="886" height="38" rx="7" fill="#f5f7f6"/>
+  <text x="962" y="390" class="cn t10 muted">ETF</text><text x="1162" y="390" class="cn t10 muted">规模/日均额</text><text x="1350" y="390" class="cn t10 muted">跟踪误差</text><text x="1498" y="390" class="cn t10 muted">费率</text><text x="1608" y="390" class="cn t10 muted">综合分</text><text x="1752" y="390" class="cn t10 muted">处理</text>
+  <rect x="946" y="416" width="886" height="64" rx="8" fill="#edf3f6"/>
+  <text x="962" y="441" class="cn t12 ink bold">半导体 ETF · 512480</text><text x="962" y="461" class="cn t9 muted">覆盖主流半导体指数</text><text x="1162" y="447" class="num t10">¥286 亿 / ¥8.4 亿</text><text x="1350" y="447" class="num t10 green">0.18%</text><text x="1498" y="447" class="num t10">0.50%</text><text x="1608" y="447" class="num t12 blue bold">86</text><text x="1752" y="447" class="cn t10 blue bold">首选</text>
+  <text x="962" y="510" class="cn t12 ink bold">芯片 ETF · 159995</text><text x="1162" y="510" class="num t10">¥210 亿 / ¥6.9 亿</text><text x="1350" y="510" class="num t10 green">0.22%</text><text x="1498" y="510" class="num t10">0.50%</text><text x="1608" y="510" class="num t12 ink bold">81</text><text x="1752" y="510" class="cn t10 blue">备选</text>
+  <line x1="946" y1="528" x2="1832" y2="528" class="hair"/>
+  <text x="962" y="558" class="cn t12 ink bold">科创芯片 ETF · 示例</text><text x="1162" y="558" class="num t10">¥24 亿 / ¥0.5 亿</text><text x="1350" y="558" class="num t10">0.41%</text><text x="1498" y="558" class="num t10">0.60%</text><text x="1608" y="558" class="num t12 muted">54</text><text x="1752" y="558" class="cn t10 ochre">流动性不足</text>
+  <line x1="946" y1="576" x2="1832" y2="576" class="hair"/>
+  <text x="962" y="606" class="cn t12 ink bold">半导体增强 ETF · 示例</text><text x="1162" y="606" class="num t10">¥9 亿 / ¥0.2 亿</text><text x="1350" y="606" class="num t10 ochre">0.76%</text><text x="1498" y="606" class="num t10">0.80%</text><text x="1608" y="606" class="num t12 muted">43</text><text x="1752" y="606" class="cn t10 ochre">误差/费率</text>
+  <rect x="946" y="632" width="886" height="34" rx="7" fill="#f8faf9"/>
+  <text x="962" y="653" class="cn t10 muted">首选与备选不能同时占满同一方向风险预算；优先选择综合分最高且成交成本可控者。</text>
+
+  <!-- targets -->
+  <rect x="174" y="704" width="1110" height="310" rx="12" fill="#fff" stroke="#d8e0dd"/>
+  <text x="194" y="734" class="cn t16 ink bold">ETF 轮动目标草案</text><text x="1248" y="734" text-anchor="end" class="cn t10 muted">示意资金 ¥50,000 · 仅验证布局，资金边界待冻结</text>
+  <rect x="194" y="752" width="1070" height="36" rx="6" fill="#f5f7f6"/>
+  <text x="210" y="775" class="cn t9 muted">方向 / ETF</text><text x="450" y="775" class="cn t9 muted">当前</text><text x="570" y="775" class="cn t9 muted">目标</text><text x="700" y="775" class="cn t9 muted">金额</text><text x="850" y="775" class="cn t9 muted">依据</text><text x="1134" y="775" class="cn t9 muted">状态</text>
+  <text x="210" y="818" class="cn t11 ink bold">半导体 / 512480</text><text x="450" y="818" class="num t10">0%</text><text x="570" y="818" class="num t10 blue">30%</text><text x="700" y="818" class="num t10">¥15,000</text><text x="850" y="818" class="cn t10">扩张 + 强势 + 低误差</text><text x="1134" y="818" class="cn t10 blue">新增</text>
+  <line x1="194" y1="836" x2="1264" y2="836" class="hair"/>
+  <text x="210" y="866" class="cn t11 ink bold">有色 / 512400</text><text x="450" y="866" class="num t10">20%</text><text x="570" y="866" class="num t10 blue">25%</text><text x="700" y="866" class="num t10">¥12,500</text><text x="850" y="866" class="cn t10">繁荣 + 强势延续</text><text x="1134" y="866" class="cn t10 red">加仓</text>
+  <line x1="194" y1="884" x2="1264" y2="884" class="hair"/>
+  <text x="210" y="914" class="cn t11 ink bold">交通 / 159666</text><text x="450" y="914" class="num t10">30%</text><text x="570" y="914" class="num t10 blue">25%</text><text x="700" y="914" class="num t10">¥12,500</text><text x="850" y="914" class="cn t10">复苏但强度回落</text><text x="1134" y="914" class="cn t10 green">减仓</text>
+  <line x1="194" y1="932" x2="1264" y2="932" class="hair"/>
+  <text x="210" y="962" class="cn t11 ink bold">现金</text><text x="450" y="962" class="num t10">50%</text><text x="570" y="962" class="num t10 blue">20%</text><text x="700" y="962" class="num t10">¥10,000</text><text x="850" y="962" class="cn t10">缓冲与下周机会</text><text x="1134" y="962" class="cn t10 muted">保留</text>
+  <text x="194" y="994" class="cn t9 muted">目标版本可复现；最终数量、最小单位与价格规则由公共订单计划生成。</text>
+
+  <!-- summary actions -->
+  <rect x="1304" y="704" width="548" height="310" rx="12" fill="#f7faf9" stroke="#cfdad6"/>
+  <text x="1324" y="734" class="cn t16 ink bold">研究结论</text>
+  <rect x="1324" y="752" width="508" height="74" rx="9" fill="#edf3f6"/>
+  <text x="1344" y="779" class="cn t11 blue bold">本周主方向：半导体、有色</text>
+  <text x="1344" y="804" class="cn t10 muted">交通保留但降权；食品饮料因相对弱势排除。</text>
+  <text x="1324" y="858" class="cn t10 muted">预计换手</text><text x="1810" y="858" text-anchor="end" class="num t13 ink bold">35%</text>
+  <text x="1324" y="890" class="cn t10 muted">最差滑点预算</text><text x="1810" y="890" text-anchor="end" class="num t13 ink bold">8 bp</text>
+  <text x="1324" y="922" class="cn t10 muted">单方向上限</text><text x="1810" y="922" text-anchor="end" class="num t13 ink bold">35%</text>
+  <rect x="1324" y="946" width="164" height="44" rx="8" fill="#fff" stroke="#b9cbd4"/><text x="1360" y="973" class="cn t11 blue">查看策略证据</text>
+  <rect x="1502" y="946" width="310" height="44" rx="8" fill="#2e5e84"/><text x="1572" y="973" class="cn t11" fill="#fff">送入组合目标（不下单）</text>
+</svg>

@@ -1,0 +1,10 @@
+{
+  "fixture_version": "golden-v1",
+  "fixture_kind": "synthetic-point-in-time",
+  "as_of": "2026-01-15T15:30:00+08:00",
+  "eligible_observation_count": 1,
+  "eligible_content_hash": "sha256:3cb7adb0d1eaf5dab07661e90b73e6c3606a1fd3f2c7fa21bbff6a2bc2fdfb65",
+  "contains_real_market_data": false,
+  "contains_sensitive_data": false,
+  "selection_reason": "验证公告可用时间晚于决策时点时必须被排除"
+}

@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "constraints_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Constraints Version",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "cost_model_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Cost Model Version",
+      "type": "string"
+    },
+    "optimization_problem_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Optimization Problem Id",
+      "type": "string"
+    },
+    "portfolio_state_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Portfolio State Id",
+      "type": "string"
+    },
+    "prediction_batch_ids": {
+      "items": {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Prediction Batch Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "optimization_problem_id",
+    "prediction_batch_ids",
+    "portfolio_state_id",
+    "constraints_version",
+    "cost_model_version",
+    "as_of",
+    "content_hash"
+  ],
+  "title": "OptimizationProblem",
+  "type": "object"
+}

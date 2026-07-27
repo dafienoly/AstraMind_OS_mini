@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "ExecutionMode": {
+      "enum": [
+        "shadow",
+        "paper",
+        "live"
+      ],
+      "title": "ExecutionMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "event_type": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Event Type",
+      "type": "string"
+    },
+    "execution_event_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Execution Event Id",
+      "type": "string"
+    },
+    "execution_mode": {
+      "$ref": "#/$defs/ExecutionMode"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "order_plan_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Order Plan Id",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "execution_event_id",
+    "order_plan_id",
+    "execution_mode",
+    "event_type",
+    "sequence",
+    "occurred_at",
+    "content_hash"
+  ],
+  "title": "ExecutionEvent",
+  "type": "object"
+}

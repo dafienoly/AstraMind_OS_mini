@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "feature_snapshot_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Feature Snapshot Id",
+      "type": "string"
+    },
+    "horizon_sessions": {
+      "minimum": 1,
+      "title": "Horizon Sessions",
+      "type": "integer"
+    },
+    "prediction_batch_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Prediction Batch Id",
+      "type": "string"
+    },
+    "strategy_version_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Strategy Version Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "prediction_batch_id",
+    "strategy_version_id",
+    "feature_snapshot_id",
+    "as_of",
+    "horizon_sessions",
+    "content_hash"
+  ],
+  "title": "PredictionBatch",
+  "type": "object"
+}
