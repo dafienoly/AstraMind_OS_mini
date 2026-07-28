@@ -1,6 +1,6 @@
 """Imports allowed for consumers of the Data context."""
 
-from .application import DataSnapshotBuilder
+from .application import DataSnapshotBuilder, SnapshotShadowMarketReader
 from .contracts import (
     DatasetRef,
     DataSnapshot,
@@ -8,6 +8,7 @@ from .contracts import (
     FeedSessionReport,
     QuoteMicroBatch,
     RealtimeQuoteObservation,
+    ShadowMarketObservation,
 )
 from .ports import SnapshotStore
 
@@ -19,5 +20,7 @@ __all__ = [
     "FeedSessionReport",
     "QuoteMicroBatch",
     "RealtimeQuoteObservation",
+    "ShadowMarketObservation",
+    "SnapshotShadowMarketReader",
     "SnapshotStore",
 ]

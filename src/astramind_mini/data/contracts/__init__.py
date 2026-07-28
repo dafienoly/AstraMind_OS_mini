@@ -34,6 +34,7 @@ from .realtime import (
     QuoteMicroBatch,
     RealtimeQuoteObservation,
 )
+from .shadow_market import ShadowMarketObservation
 
 __all__ = [
     "AdjustedMarketObservation",
@@ -62,6 +63,7 @@ __all__ = [
     "RealtimeQuoteObservation",
     "SecurityMasterObservation",
     "SecurityNameHistoryObservation",
+    "ShadowMarketObservation",
     "ShareholderCountObservation",
     "SuspensionEventObservation",
     "TradeCalendarObservation",

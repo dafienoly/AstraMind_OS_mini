@@ -62,6 +62,61 @@ make dev
 
 历史重建、模型训练、Shadow 和券商探查都不属于这些默认命令。
 
+## 本地运行、备份与恢复
+
+WP-0015 使用显式命令，不启动常驻调度器。盘后窗口决策示例：
+
+```bash
+make ops-plan \
+  TRADING_DATE=2026-07-28 \
+  NEXT_TRADING_DATE=2026-07-29 \
+  OPS_AT=2026-07-28T16:35:00+08:00 \
+  PROVIDER_COMPLETE=true
+```
+
+实际备份前，在 `.env.local` 或进程环境设置一个仓库与 `var/` 之外的目录：
+
+```text
+ASTRAMIND_BACKUP_DIR=<仓库外的本机私有目录>
+```
+
+然后执行：
+
+```bash
+make ops-backup BACKUP_REASON=daily_close LOGICAL_DATE=YYYY-MM-DD
+make ops-recovery-drill BACKUP_ID=local-backup:<identity>
+```
+
+备份复制控制、Shadow 和晋级 SQLite 以及当前数据指针，保留最近 30 日和 12 个月末
+恢复点。恢复演练只写入 `var/recovery-drills/`，不会覆盖运行状态。未配置目录、目录在
+仓库内、文件篡改或 SQLite 损坏时均失败关闭，且不打印实际备份路径、Token 或账户
+标识。备份和恢复健康也不授权 Paper 或 Live。
+
+WP-0023A 增加不连接券商的持续 Paper 离线守护。它自动发现当前持续 Shadow 决策链、
+最新健康备份/恢复和本地 Paper 投影：
+
+```bash
+make paper-offline-guard LOGICAL_DATE=YYYY-MM-DD
+make paper-offline-fault-drill LOGICAL_DATE=YYYY-MM-DD
+```
+
+守护使用 `var/control/local-ops.sqlite3` 的 SQLite/WAL 租约和检查点，重复启动不会重复
+任务，中断后从已完成步骤恢复。故障命令覆盖陈旧数据、外来挂单、Mandate 过期、
+`submission_unknown`、回调乱序、重启、重复实例和控制库故障。两个命令都固定输出
+`broker_actions_allowed=false`，不启动 Windows runner，也不调用 MiniQMT。
+
+## Paper 离线合同
+
+WP-0016 的 Paper 状态机只通过合成测试运行：
+
+```bash
+uv run pytest tests/unit/test_paper_execution_offline.py
+```
+
+它不读取 `.env.local` 或账户配置，不启动 Windows 进程，也不连接 MiniQMT。未知提交
+只能通过事实查询端口恢复，不能直接重提；离线命令适配器会拒绝所有提交和撤单尝试。
+下一步 WP-0017 的模拟盘只读握手仍需单独授权。
+
 ## 生产数据快照
 
 生产快照发布是显式联网动作，不属于 `make check`：
@@ -175,6 +230,93 @@ userdata 路径均按秘密处理，不要放在命令行或日志中。未配�
 真实只读验收；对账因券商资金、持仓与合成 Shadow 起点不同而按预期保持阻断。该命令
 只允许资产、持仓、委托和成交查询；Paper、Live、下单、撤单、订阅和交易回调仍禁止。
 
+WP-0017 已单独获准建立一次短时模拟盘只读回调会话：
+
+```bash
+make miniqmt-paper-readonly-handshake
+```
+
+该命令在启动前锁定 `simulation`，核对券商精确账号、账户类型和状态，读取完整账户
+基线并完成回调订阅与退订。闭市或账户无变化时 `callback_status=quiet` 是有效结果。
+本机 `xtquant_250516` 没有返回 `account_classification`，证据会明确记录该缺口。命令
+始终冻结新委托，不提供下单或撤单入口。
+
+## 首笔 Paper 金丝雀运行
+
+WP-0021 已实现首笔金丝雀的真实预检与运行命令，但命令不会自动运行。首先只能在已
+批准的 2026-07-29 09:35～09:45 窗口内建立新鲜只读基线和准确限价：
+
+WP-0022 提供推荐的简化入口。Windows QMT 登录准确模拟盘且行情连接正常后，在09:20
+以前不要启动；09:20～09:45 运行：
+
+```bash
+make paper-canary-run
+```
+
+命令最多等待至09:35，自动建立账户基线和限价提案，然后要求逐字输入类似
+`批准 605208.SH 买入100股 限价12.34，仅提交一次` 的动态确认文本。确认通过后自动
+创建2分钟批准、执行唯一提交并每5秒查询状态。重启同一命令会发现既有意图并只恢复
+监控；不会重新提案或提交。09:44仍有剩余委托时命令提示准确撤单文本，直接回车表示
+不撤单。
+
+15:00 后无需复制任何身份：
+
+```bash
+make paper-canary-settle
+```
+
+命令自动发现唯一 Approval/Intent，查询最终券商事实并生成盘后收敛报告。以下分步
+命令继续保留作诊断和异常恢复工具，不作为首选日常入口。
+
+```bash
+make paper-canary-stage-limit
+```
+
+输出必须完整展示 `605208.SH`、买入、100股、确切限价、最大金额、行情时间、账户
+基线、Mandate、PortfolioTarget 和撤单范围。用户明确批准这一准确摘要后，才可记录
+一个不超过3分钟且不晚于09:45的本地批准：
+
+```bash
+make paper-canary-approve \
+  PROPOSAL_ID=paper-limit-proposal:<identity> \
+  EXACT_LIMIT_PRICE=<用户看到并批准的准确两位小数> \
+  APPROVED_AT=<带时区ISO时间> \
+  EFFECTIVE_TO=<不晚于09:45且不超过3分钟>
+```
+
+该命令仍不连接 MiniQMT。只有准确批准 ID 存在时，以下命令才可能调用一次
+`order_stock`：
+
+```bash
+make paper-canary-submit APPROVAL_ID=paper-submission-approval:<identity>
+```
+
+提交入口在 Windows runner 内再次核对 simulation、准确账户、幂等备注、其他未完成
+委托、可用现金和不超过3秒的卖一。卖一高于批准价格时禁止追价；任何超时或不确定结果
+进入 `submission_unknown`，只能查询：
+
+```bash
+make paper-canary-status APPROVAL_ID=<identity> INTENT_ID=<可选>
+make paper-canary-recover APPROVAL_ID=<identity> INTENT_ID=<可选>
+```
+
+不能用 `paper-canary-submit` 恢复未知状态。若准确金丝雀处于已确认或部分成交状态，
+已批准范围内可且仅可撤销这一笔：
+
+```bash
+make paper-canary-cancel APPROVAL_ID=<identity> INTENT_ID=<可选>
+```
+
+15:00 后生成盘后收敛报告：
+
+```bash
+make paper-canary-converge APPROVAL_ID=<identity> INTENT_ID=<可选>
+```
+
+报告只有在本地投影、券商成交、现金、挂单和证券数量一致时才为 `converged`，并把
+启动前数量保留为 `inherited`、本单确认增量记为 `managed`。阻断报告会冻结未来订单，
+不得通过重跑提交命令绕过。
+
 WP-0012 使用 WP-0011 已保存的准确证据身份初始化纯本地持续 Shadow，不重新查询
 券商：
 
@@ -193,6 +335,19 @@ make continuous-shadow-initialize \
 `FeatureSnapshot → PredictionBatch → PortfolioTarget` 前，实际状态为
 `waiting_for_fresh_feature_snapshot_and_portfolio_target`，不得用旧快照直接启动
 当日 Shadow。
+
+WP-0014 用准确的完成交易日日线推进已经启动的周期：
+
+```bash
+make continuous-shadow-advance \
+  CYCLE_ARTIFACT=var/research/continuous-shadow/<identity>/cycle.json \
+  SNAPSHOT_ID=snapshot:sha256:<包含观察日的准确快照> \
+  THROUGH_DATE=YYYY-MM-DD
+```
+
+该命令不连接 MiniQMT。它在盘后以原始开盘价做延迟 Shadow 回放，逐日保存估值和
+检查点，第 10 个观察交易日尝试退出；停牌或无可卖状态会顺延。`THROUGH_DATE` 早于
+计划执行日时只返回 `waiting_next_open`，不生成未来成交。
 
 ## 战术研究管线烟测
 

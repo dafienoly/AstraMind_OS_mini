@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { UiLab } from "./UiLab";
 import { MarketRotation } from "./market/MarketRotation";
+import { OperationsShell } from "./operations/OperationsShell";
 
 type ApiState =
   | { kind: "loading" }
@@ -16,6 +17,18 @@ export function App() {
   }
   if (window.location.pathname === "/market") {
     return <MarketRotation />;
+  }
+  if (window.location.pathname === "/today") {
+    return <OperationsShell destination="today" />;
+  }
+  if (window.location.pathname === "/portfolio") {
+    return <OperationsShell destination="portfolio" />;
+  }
+  if (window.location.pathname === "/execution") {
+    return <OperationsShell destination="execution" />;
+  }
+  if (window.location.pathname === "/system") {
+    return <OperationsShell destination="system" />;
   }
   return <FoundationDiagnostic />;
 }

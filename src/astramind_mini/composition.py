@@ -11,6 +11,8 @@ from pydantic import BaseModel, ConfigDict
 from . import __version__
 from .config import Settings, get_settings
 from .market_regime.public import FilesystemRotationStore, MarketRotationSnapshot
+from .trading_execution.adapters.paper_operations_reader import PaperOperationsReader
+from .trading_execution.contracts.paper_continuous import PaperOperationsSnapshot
 
 
 class DependencyStatus(BaseModel):
@@ -79,6 +81,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(
                 status_code=503,
                 detail={"code": "rotation_snapshot_invalid"},
+            ) from error
+
+    @app.get(
+        "/api/execution/paper-operations",
+        response_model=PaperOperationsSnapshot,
+        responses={503: {"description": "Paper 本地投影不可用"}},
+    )
+    def paper_operations() -> PaperOperationsSnapshot:
+        try:
+            return PaperOperationsReader(resolved.shadow_db_path).current()
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "paper_operations_projection_unavailable"},
             ) from error
 
     return app

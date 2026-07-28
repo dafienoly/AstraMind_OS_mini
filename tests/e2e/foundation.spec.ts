@@ -72,3 +72,28 @@ test("UI Lab inspects a point-in-time chart range without future data", async ({
     fullPage: true,
   });
 });
+
+test("Paper operations stays blocked until the exact limit is approved", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto("/execution");
+  await expect(page.getByRole("heading", { name: "一笔金丝雀，一条恢复路径" })).toBeVisible();
+  await expect(page.getByText("605208.SH")).toBeVisible();
+  await expect(page.getByText("等待窗口内确认")).toBeVisible();
+  await expect(page.getByText("未确认时只查询恢复，不自动重提。")).toBeVisible();
+  await expect(page.getByRole("button", { name: /提交|买入/ })).toHaveCount(0);
+
+  mkdirSync("var/evidence", { recursive: true });
+  await page.screenshot({
+    path: "var/evidence/wp-0020-paper-operations.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("heading", { name: "一笔金丝雀，一条恢复路径" })).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBe(true);
+  await page.screenshot({
+    path: "var/evidence/wp-0020-paper-operations-mobile.png",
+    fullPage: true,
+  });
+});

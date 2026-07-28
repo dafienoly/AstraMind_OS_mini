@@ -1,9 +1,9 @@
 # UI-PROP-0007：订单计划、异常、执行与对账
 
 - 版本：0.1
-- 状态：`awaiting_user_approval`
+- 状态：`approved`
 - 创建：2026-07-27
-- 实现：阻断
+- 实现：WP-0020 已完成 Paper 计划、阻断、执行与对账工作面
 
 ## 唯一任务
 
@@ -66,8 +66,8 @@
 ## 批准记录
 
 ```text
-approved_version:
-approved_by:
-approved_at:
-source_message:
+approved_version: 0.1
+approved_by: user
+approved_at: 2026-07-28
+source_message: “继续完成：→ WP-0019 持续 Paper → 批准相关 UI 提案 → WP-0020 操作界面与正式验收”
 ```

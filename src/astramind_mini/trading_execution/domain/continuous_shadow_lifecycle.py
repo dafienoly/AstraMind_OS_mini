@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date, datetime
 
 from ..contracts.continuous_shadow import ContinuousShadowState, ShadowStatePosition
@@ -90,6 +91,36 @@ def roll_shadow_trading_day(
     )
 
 
+def mark_shadow_to_market(
+    state: ContinuousShadowState,
+    close_prices: Mapping[str, float],
+    *,
+    trading_date: date,
+    as_of: datetime,
+) -> ContinuousShadowState:
+    if trading_date != state.trading_date:
+        raise ValueError("Shadow 估值交易日必须与当前状态一致")
+    missing = sorted(
+        item.instrument_id
+        for item in state.positions
+        if item.instrument_id not in close_prices or close_prices[item.instrument_id] <= 0
+    )
+    if missing:
+        raise ValueError("Shadow 持仓缺少有效收盘估值：" + ",".join(missing))
+    equity = state.cash_cny + sum(
+        item.quantity * close_prices[item.instrument_id] for item in state.positions
+    )
+    return _state(
+        previous=state,
+        trading_date=trading_date,
+        as_of=as_of,
+        cash_cny=state.cash_cny,
+        positions=state.positions,
+        realized_profit_cny=state.realized_profit_cny,
+        equity_cny=equity,
+    )
+
+
 def _state(
     *,
     previous: ContinuousShadowState,
@@ -131,4 +162,4 @@ def _state(
     )
 
 
-__all__ = ["apply_shadow_fills", "roll_shadow_trading_day"]
+__all__ = ["apply_shadow_fills", "mark_shadow_to_market", "roll_shadow_trading_day"]

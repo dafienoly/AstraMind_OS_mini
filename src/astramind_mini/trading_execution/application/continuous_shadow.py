@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import date, datetime, timedelta
 
-from astramind_mini.contracts import PortfolioTarget
+from astramind_mini.contracts import ExecutionEvent, PortfolioTarget
 from astramind_mini.portfolio_risk.public import TacticalTargetDetails
 
 from ..contracts.account import (
@@ -28,7 +28,7 @@ from ..domain.continuous_shadow import (
     start_continuous_shadow_cycle,
 )
 from ..domain.continuous_shadow_lifecycle import apply_shadow_fills
-from ..domain.shadow import OrderSide, ShadowOrderLine, ShadowQuote
+from ..domain.shadow import OrderSide, ShadowFill, ShadowOrderLine, ShadowQuote
 from ..ports.continuous_shadow import ContinuousShadowRepository
 from .shadow import simulate_shadow
 
@@ -84,6 +84,24 @@ class ContinuousShadowService:
         now: datetime,
         stale_after: timedelta = timedelta(seconds=10),
     ) -> ContinuousShadowState:
+        next_state, _, _ = self.execute_plan_with_result(
+            plan=plan,
+            state=state,
+            quotes=quotes,
+            now=now,
+            stale_after=stale_after,
+        )
+        return next_state
+
+    def execute_plan_with_result(
+        self,
+        *,
+        plan: ContinuousShadowOrderPlan,
+        state: ContinuousShadowState,
+        quotes: Mapping[str, ShadowQuote],
+        now: datetime,
+        stale_after: timedelta = timedelta(seconds=10),
+    ) -> tuple[ContinuousShadowState, tuple[ShadowFill, ...], tuple[ExecutionEvent, ...]]:
         if plan.status != "ready":
             raise ValueError("只有无阻断的持续 Shadow 订单计划可以执行")
         lines = tuple(
@@ -112,7 +130,7 @@ class ContinuousShadowService:
             trading_date=state.trading_date,
         )
         self._store.publish_state(next_state)
-        return next_state
+        return next_state, fills, events
 
     def start_cycle(
         self,

@@ -13,7 +13,9 @@ from ..contracts.continuous_shadow import (
     ContinuousShadowState,
     ReconciliationDisposition,
 )
+from ..contracts.shadow_cycle import ShadowCycleCheckpoint, ShadowCycleResult
 from ..domain.reconciliation import canonical_hash
+from .shadow_cycle_identity import checkpoint_identity, result_identity
 from .shadow_ledger import ShadowLedger
 
 
@@ -147,6 +149,98 @@ class ContinuousShadowStore:
             self._payload("continuous_shadow_cycles", identity)
         )
 
+    def read_order_plan(self, identity: str) -> ContinuousShadowOrderPlan:
+        return ContinuousShadowOrderPlan.model_validate_json(
+            self._payload("continuous_shadow_order_plans", identity)
+        )
+
+    def publish_checkpoint(self, value: ShadowCycleCheckpoint) -> None:
+        expected = checkpoint_identity(value)
+        self._verify(
+            value.content_hash,
+            value.checkpoint_id,
+            "shadow-cycle-checkpoint:",
+            expected,
+        )
+        self._insert(
+            "continuous_shadow_checkpoints",
+            (
+                value.checkpoint_id,
+                value.cycle_id,
+                value.trading_date.isoformat(),
+                value.status,
+                value.state_id,
+                value.model_dump_json(),
+                value.recorded_at.isoformat(),
+            ),
+        )
+
+    def latest_checkpoint(self, cycle_id: str) -> ShadowCycleCheckpoint | None:
+        self.migrate()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload_json FROM continuous_shadow_checkpoints "
+                "WHERE cycle_id = ? ORDER BY trading_date DESC, created_at DESC LIMIT 1",
+                (cycle_id,),
+            ).fetchone()
+        return ShadowCycleCheckpoint.model_validate_json(row[0]) if row else None
+
+    def checkpoints_for(self, cycle_id: str) -> tuple[ShadowCycleCheckpoint, ...]:
+        self.migrate()
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT payload_json FROM continuous_shadow_checkpoints "
+                "WHERE cycle_id = ? ORDER BY trading_date, created_at",
+                (cycle_id,),
+            ).fetchall()
+        return tuple(ShadowCycleCheckpoint.model_validate_json(row[0]) for row in rows)
+
+    def publish_result(self, value: ShadowCycleResult) -> None:
+        self._verify(
+            value.content_hash,
+            value.result_id,
+            "shadow-cycle-result:",
+            result_identity(value),
+        )
+        self._insert(
+            "continuous_shadow_results",
+            (
+                value.result_id,
+                value.cycle_id,
+                value.status,
+                value.model_dump_json(),
+                value.completed_at.isoformat(),
+            ),
+        )
+
+    def read_result_for_cycle(self, cycle_id: str) -> ShadowCycleResult | None:
+        self.migrate()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload_json FROM continuous_shadow_results WHERE cycle_id = ?",
+                (cycle_id,),
+            ).fetchone()
+        return ShadowCycleResult.model_validate_json(row[0]) if row else None
+
+    def event_count_for_cycle(self, cycle_id: str) -> int:
+        self.migrate()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT count(*)
+                FROM shadow_events e
+                WHERE e.order_plan_id IN (
+                    SELECT json_extract(payload_json, '$.entry_order_plan_id')
+                    FROM continuous_shadow_checkpoints WHERE cycle_id = ?
+                    UNION
+                    SELECT json_extract(payload_json, '$.exit_order_plan_id')
+                    FROM continuous_shadow_checkpoints WHERE cycle_id = ?
+                )
+                """,
+                (cycle_id, cycle_id),
+            ).fetchone()
+        return int(row[0])
+
     def counts(self) -> tuple[int, int, int]:
         self.migrate()
         with self._connect() as connection:
@@ -192,6 +286,8 @@ class ContinuousShadowStore:
             "continuous_shadow_states": 4,
             "continuous_shadow_order_plans": 5,
             "continuous_shadow_cycles": 4,
+            "continuous_shadow_checkpoints": 5,
+            "continuous_shadow_results": 3,
         }[table]
         encoded = str(values[payload_index])
         with self._connect() as connection:

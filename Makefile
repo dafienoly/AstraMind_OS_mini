@@ -1,4 +1,4 @@
-.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe miniqmt-l1-capture miniqmt-account-reconcile continuous-shadow-initialize continuous-shadow-start tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation contracts-generate contracts-check
+.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe miniqmt-l1-capture miniqmt-account-reconcile miniqmt-paper-readonly-handshake paper-canary-authorize paper-canary-run paper-canary-settle paper-canary-stage-limit paper-canary-approve paper-canary-submit paper-canary-status paper-canary-recover paper-canary-cancel paper-canary-converge paper-offline-guard paper-offline-fault-drill continuous-shadow-initialize continuous-shadow-start continuous-shadow-advance ops-plan ops-backup ops-recovery-drill tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation contracts-generate contracts-check
 
 bootstrap:
 	uv sync --locked
@@ -40,6 +40,85 @@ miniqmt-l1-capture:
 miniqmt-account-reconcile:
 	uv run python scripts/reconcile_miniqmt_account.py
 
+miniqmt-paper-readonly-handshake:
+	uv run python scripts/handshake_miniqmt_paper_readonly.py
+
+paper-canary-authorize:
+	@test -n "$(CYCLE_ARTIFACT)" || (echo "请设置 CYCLE_ARTIFACT=var/.../cycle.json" && exit 2)
+	@test -n "$(APPROVED_AT)" || (echo "请设置 APPROVED_AT=带时区ISO时间" && exit 2)
+	uv run python scripts/prepare_paper_canary.py \
+		--cycle-artifact "$(CYCLE_ARTIFACT)" \
+		--instrument "605208.SH" \
+		--quantity 100 \
+		--max-notional 50000 \
+		--mandate-start "2026-07-29T09:30:00+08:00" \
+		--mandate-end "2026-07-29T10:00:00+08:00" \
+		--submission-start "2026-07-29T09:35:00+08:00" \
+		--submission-end "2026-07-29T09:45:00+08:00" \
+		--approved-at "$(APPROVED_AT)"
+
+paper-canary-run:
+	uv run python scripts/run_paper_canary.py
+
+paper-canary-settle:
+	uv run python scripts/settle_paper_canary.py
+
+paper-canary-stage-limit:
+	uv run python scripts/handshake_miniqmt_paper_readonly.py
+	uv run python scripts/stage_paper_canary_limit.py
+
+paper-canary-approve:
+	@test -n "$(PROPOSAL_ID)" || (echo "请设置 PROPOSAL_ID" && exit 2)
+	@test -n "$(EXACT_LIMIT_PRICE)" || (echo "请设置 EXACT_LIMIT_PRICE" && exit 2)
+	@test -n "$(APPROVED_AT)" || (echo "请设置 APPROVED_AT=带时区ISO时间" && exit 2)
+	@test -n "$(EFFECTIVE_TO)" || (echo "请设置 EFFECTIVE_TO=不超过3分钟且不晚于09:45" && exit 2)
+	uv run python scripts/approve_paper_canary_limit.py \
+		--proposal-id "$(PROPOSAL_ID)" \
+		--confirm-limit-price "$(EXACT_LIMIT_PRICE)" \
+		--approved-at "$(APPROVED_AT)" \
+		--effective-to "$(EFFECTIVE_TO)" \
+		--confirm "APPROVE_EXACT_PAPER_CANARY"
+
+paper-canary-submit:
+	@test -n "$(APPROVAL_ID)" || (echo "请设置 APPROVAL_ID" && exit 2)
+	uv run python scripts/submit_paper_canary.py \
+		--approval-id "$(APPROVAL_ID)" \
+		--confirm "SUBMIT_ONE_APPROVED_PAPER_CANARY"
+
+paper-canary-status:
+	@test -n "$(APPROVAL_ID)" || (echo "请设置 APPROVAL_ID" && exit 2)
+	uv run python scripts/control_paper_canary.py \
+		--action status --approval-id "$(APPROVAL_ID)" \
+		$(if $(INTENT_ID),--intent-id "$(INTENT_ID)",)
+
+paper-canary-recover:
+	@test -n "$(APPROVAL_ID)" || (echo "请设置 APPROVAL_ID" && exit 2)
+	uv run python scripts/control_paper_canary.py \
+		--action recover --approval-id "$(APPROVAL_ID)" \
+		$(if $(INTENT_ID),--intent-id "$(INTENT_ID)",)
+
+paper-canary-cancel:
+	@test -n "$(APPROVAL_ID)" || (echo "请设置 APPROVAL_ID" && exit 2)
+	uv run python scripts/control_paper_canary.py \
+		--action cancel --approval-id "$(APPROVAL_ID)" \
+		--confirm "CANCEL_THIS_PAPER_CANARY_ONLY" \
+		$(if $(INTENT_ID),--intent-id "$(INTENT_ID)",)
+
+paper-canary-converge:
+	@test -n "$(APPROVAL_ID)" || (echo "请设置 APPROVAL_ID" && exit 2)
+	uv run python scripts/converge_paper_canary.py \
+		--approval-id "$(APPROVAL_ID)" \
+		$(if $(INTENT_ID),--intent-id "$(INTENT_ID)",)
+
+paper-offline-guard:
+	uv run python scripts/run_offline_paper_guard.py \
+		$(if $(LOGICAL_DATE),--logical-date "$(LOGICAL_DATE)",) \
+		$(if $(CYCLE_ARTIFACT),--cycle-artifact "$(CYCLE_ARTIFACT)",)
+
+paper-offline-fault-drill:
+	uv run python scripts/drill_offline_paper_faults.py \
+		$(if $(LOGICAL_DATE),--logical-date "$(LOGICAL_DATE)",)
+
 continuous-shadow-initialize:
 	@test -n "$(ACCOUNT_SNAPSHOT_ID)" || (echo "请设置 ACCOUNT_SNAPSHOT_ID" && exit 2)
 	@test -n "$(RECONCILIATION_REPORT_ID)" || (echo "请设置 RECONCILIATION_REPORT_ID" && exit 2)
@@ -55,6 +134,36 @@ continuous-shadow-start:
 		--snapshot-id "$(SNAPSHOT_ID)" \
 		--signal-date "$(SIGNAL_DATE)" \
 		--provider-env-file "$(PROVIDER_ENV_FILE)"
+
+continuous-shadow-advance:
+	@test -n "$(CYCLE_ARTIFACT)" || (echo "请设置 CYCLE_ARTIFACT=var/.../cycle.json" && exit 2)
+	@test -n "$(SNAPSHOT_ID)" || (echo "请设置 SNAPSHOT_ID=包含观察日的准确快照" && exit 2)
+	@test -n "$(THROUGH_DATE)" || (echo "请设置 THROUGH_DATE=YYYY-MM-DD" && exit 2)
+	uv run python scripts/advance_continuous_shadow_cycle.py \
+		--cycle-artifact "$(CYCLE_ARTIFACT)" \
+		--snapshot-id "$(SNAPSHOT_ID)" \
+		--through-date "$(THROUGH_DATE)"
+
+ops-plan:
+	@test -n "$(TRADING_DATE)" || (echo "请设置 TRADING_DATE=YYYY-MM-DD" && exit 2)
+	@test -n "$(NEXT_TRADING_DATE)" || (echo "请设置 NEXT_TRADING_DATE=YYYY-MM-DD" && exit 2)
+	@test -n "$(OPS_AT)" || (echo "请设置 OPS_AT=带时区 ISO 时间" && exit 2)
+	uv run python scripts/plan_local_operations.py \
+		--trading-date "$(TRADING_DATE)" \
+		--next-trading-date "$(NEXT_TRADING_DATE)" \
+		--at "$(OPS_AT)" \
+		$(if $(filter true,$(PROVIDER_COMPLETE)),--provider-complete,) \
+		$(if $(filter true,$(PIPELINE_COMPLETED)),--pipeline-completed,) \
+		$(if $(filter true,$(BACKUP_READY)),--backup-ready,)
+
+ops-backup:
+	uv run python scripts/backup_local_state.py \
+		--reason "$(or $(BACKUP_REASON),manual)" \
+		$(if $(LOGICAL_DATE),--logical-date "$(LOGICAL_DATE)",)
+
+ops-recovery-drill:
+	@test -n "$(BACKUP_ID)" || (echo "请设置 BACKUP_ID=local-backup:..." && exit 2)
+	uv run python scripts/drill_local_recovery.py --backup-id "$(BACKUP_ID)"
 
 tactical-research-smoke:
 	@test -n "$(SNAPSHOT_ID)" || (echo "请设置 SNAPSHOT_ID" && exit 2)

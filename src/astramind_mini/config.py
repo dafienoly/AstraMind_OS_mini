@@ -40,8 +40,12 @@ class Settings(BaseSettings):
     miniqmt_account_mode: Literal["simulation", "live"] | None = None
     miniqmt_userdata_path: SecretStr | None = None
     miniqmt_account_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    miniqmt_callback_wait_seconds: float = Field(default=2.0, ge=0, le=10)
     account_reconciliation_dir: Path = Path("var/control/account-reconciliation")
     shadow_db_path: Path = Path("var/control/shadow.sqlite3")
+    backup_dir: Path | None = None
+    recovery_drill_dir: Path = Path("var/recovery-drills")
+    local_ops_db_path: Path = Path("var/control/local-ops.sqlite3")
 
     @field_validator(
         "tushare_token",
@@ -54,6 +58,11 @@ class Settings(BaseSettings):
         if value == "":
             return None
         return value
+
+    @field_validator("backup_dir", mode="before")
+    @classmethod
+    def empty_path_is_none(cls, value: object) -> object:
+        return None if value == "" else value
 
 
 @lru_cache(maxsize=1)

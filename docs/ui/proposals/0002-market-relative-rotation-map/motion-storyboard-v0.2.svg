@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="15" flood-color="#17313d" flood-opacity=".12"/>
+    </filter>
+    <style>
+      .cn { font-family:"Noto Sans SC","Microsoft YaHei",sans-serif; }
+      .mono { font-family:"IBM Plex Mono",monospace; }
+      .title { fill:#172129; font-size:28px; font-weight:700; }
+      .h2 { fill:#172129; font-size:18px; font-weight:700; }
+      .body { fill:#46545d; font-size:14px; }
+      .small { fill:#68747c; font-size:12px; }
+      .tiny { fill:#7f8a91; font-size:10px; }
+      .grid { stroke:#dce4e1; stroke-width:1; stroke-dasharray:4 6; }
+      .axis { stroke:#88979e; stroke-width:1.3; }
+      .path { fill:none; stroke:#2e5e84; stroke-width:4; stroke-linecap:round; }
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="#e9eeec"/>
+  <text x="60" y="66" class="cn title">行业相对轮动 · 相邻交易日插值故事板</text>
+  <text x="60" y="94" class="cn body">连续运动只服务方向感知；逻辑日期、象限和证据在抵达下一帧时一次切换</text>
+  <rect x="1640" y="46" width="220" height="38" rx="19" fill="#f7eddb"/>
+  <text x="1672" y="70" class="cn small" fill="#8b5e1b" font-weight="700">UI-PROP-0002 v0.2</text>
+
+  <!-- shared timeline -->
+  <line x1="230" y1="930" x2="1690" y2="930" stroke="#aab9bb" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="310" cy="930" r="10" fill="#2e5e84"/><circle cx="960" cy="930" r="10" fill="#fff" stroke="#2e5e84" stroke-width="3"/>
+  <circle cx="1610" cy="930" r="10" fill="#2e5e84"/>
+  <text x="275" y="960" class="mono small">p=0.00</text>
+  <text x="925" y="960" class="mono small">p=0.50</text>
+  <text x="1575" y="960" class="mono small">p=1.00</text>
+
+  <!-- three frame panels -->
+  <g transform="translate(60,145)">
+    <rect width="560" height="700" rx="18" fill="#fff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">逻辑帧 T</text>
+    <text x="28" y="72" class="cn h2">2026-07-27</text>
+    <text x="425" y="64" class="cn small">证据已同步</text>
+    <g transform="translate(28,102)">
+      <rect width="504" height="480" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+      <rect x="30" y="30" width="444" height="420" fill="#fff" stroke="#aebbc0" stroke-dasharray="5 4"/>
+      <line x1="252" y1="30" x2="252" y2="450" class="axis"/><line x1="30" y1="240" x2="474" y2="240" class="axis"/>
+      <line x1="141" y1="30" x2="141" y2="450" class="grid"/><line x1="363" y1="30" x2="363" y2="450" class="grid"/>
+      <path d="M156 338 C225 315 284 276 332 218" class="path"/>
+      <circle cx="332" cy="218" r="12" fill="#172129" stroke="#8dbbd5" stroke-width="3"/>
+      <rect x="347" y="200" width="85" height="34" rx="7" fill="#172129"/>
+      <text x="362" y="222" class="cn small" fill="#fff">电子</text>
+    </g>
+    <rect x="28" y="610" width="504" height="60" rx="9" fill="#eef5f7"/>
+    <text x="46" y="636" class="cn small">日期、象限、统计、详情：T</text>
+    <text x="46" y="657" class="cn tiny">屏幕位置等于正式快照坐标</text>
+  </g>
+
+  <g transform="translate(680,145)">
+    <rect width="560" height="700" rx="18" fill="#fff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">可视过渡帧 · requestAnimationFrame</text>
+    <text x="28" y="72" class="cn h2">2026-07-27</text>
+    <text x="402" y="64" class="mono small">p = 0.50</text>
+    <g transform="translate(28,102)">
+      <rect width="504" height="480" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+      <rect x="30" y="30" width="444" height="420" fill="#fff" stroke="#aebbc0" stroke-dasharray="5 4"/>
+      <line x1="252" y1="30" x2="252" y2="450" class="axis"/><line x1="30" y1="240" x2="474" y2="240" class="axis"/>
+      <line x1="141" y1="30" x2="141" y2="450" class="grid"/><line x1="363" y1="30" x2="363" y2="450" class="grid"/>
+      <path d="M156 338 C225 315 284 276 332 218 C350 196 364 174 382 150" class="path"/>
+      <circle cx="382" cy="150" r="12" fill="#172129" stroke="#8dbbd5" stroke-width="3"/>
+      <rect x="397" y="133" width="85" height="34" rx="7" fill="#172129"/>
+      <text x="412" y="155" class="cn small" fill="#fff">电子</text>
+      <path d="M332 218 L432 82" fill="none" stroke="#9eb4bf" stroke-width="2" stroke-dasharray="5 5"/>
+      <text x="336" y="255" class="cn tiny">只插值屏幕坐标</text>
+    </g>
+    <rect x="28" y="610" width="504" height="60" rx="9" fill="#fff8e9"/>
+    <text x="46" y="636" class="cn small" fill="#76501c">逻辑日期仍为 T，不混合两日事实</text>
+    <text x="46" y="657" class="cn tiny">暂停可吸附或从同一进度继续；不请求 API</text>
+  </g>
+
+  <g transform="translate(1300,145)">
+    <rect width="560" height="700" rx="18" fill="#fff" filter="url(#shadow)"/>
+    <text x="28" y="42" class="cn tiny">逻辑帧 T+1</text>
+    <text x="28" y="72" class="cn h2">2026-07-28</text>
+    <text x="425" y="64" class="cn small">一次性切换</text>
+    <g transform="translate(28,102)">
+      <rect width="504" height="480" rx="10" fill="#fbfcfc" stroke="#d7e0dd"/>
+      <rect x="30" y="30" width="444" height="420" fill="#fff" stroke="#aebbc0" stroke-dasharray="5 4"/>
+      <line x1="252" y1="30" x2="252" y2="450" class="axis"/><line x1="30" y1="240" x2="474" y2="240" class="axis"/>
+      <line x1="141" y1="30" x2="141" y2="450" class="grid"/><line x1="363" y1="30" x2="363" y2="450" class="grid"/>
+      <path d="M156 338 C225 315 284 276 332 218 C368 174 398 124 432 82" class="path"/>
+      <circle cx="432" cy="82" r="12" fill="#172129" stroke="#8dbbd5" stroke-width="3"/>
+      <rect x="332" y="65" width="85" height="34" rx="7" fill="#172129"/>
+      <text x="347" y="87" class="cn small" fill="#fff">电子</text>
+      <text x="42" y="48" class="cn tiny">标签向内翻转，不超出安全绘图区</text>
+    </g>
+    <rect x="28" y="610" width="504" height="60" rx="9" fill="#eef5f7"/>
+    <text x="46" y="636" class="cn small">日期、象限、统计、详情：T+1</text>
+    <text x="46" y="657" class="cn tiny">正式证据同步完成后才能进入本帧</text>
+  </g>
+
+  <rect x="60" y="998" width="1800" height="50" rx="10" fill="#172129"/>
+  <text x="86" y="1029" class="cn small" fill="#fff">Reduced Motion：取消中间帧，只保留上一日 / 下一日 / 时间轴；页面初次进入与刷新仍保持暂停。</text>
+</svg>

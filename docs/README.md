@@ -15,6 +15,7 @@
 - [REQ-2026-0007：周度长线研究与核心组合](./requirements/REQ-2026-0007-core-weekly-portfolio.md)
 - [REQ-2026-0008：市场状态、行业生命周期与 ETF 研究](./requirements/REQ-2026-0008-market-regime-etf-research.md)
 - [REQ-2026-0009：本地日常运行与恢复](./requirements/REQ-2026-0009-local-operations-recovery.md)
+- [REQ-2026-0010：MiniQMT 模拟盘执行与恢复](./requirements/REQ-2026-0010-miniqmt-paper-execution-recovery.md)
 
 ## 领域与架构
 
@@ -24,6 +25,7 @@
 - [ADR-0002：券商执行前必须跑通本地 Shadow](./adr/0002-shadow-before-broker-execution.md)
 - [ADR-0003：行业生命周期是上游市场状态证据](./adr/0003-industry-lifecycle-upstream-signal.md)
 - [ADR-0004：MiniQMT 行情与交易使用独立端口](./adr/0004-miniqmt-split-market-data-and-trading-ports.md)
+- [ADR-0005：Paper 接管完整模拟盘账户事实](./adr/0005-paper-adopts-complete-simulation-account.md)
 
 ## 数据
 
@@ -70,6 +72,19 @@
 - [WP-0011：MiniQMT 只读账户快照与启动对账](./planning/work-packages/WP-0011-miniqmt-readonly-account-reconciliation.md)
 - [WP-0012：账户差异处置与持续 OrderPlan/Shadow](./planning/work-packages/WP-0012-reconciliation-disposition-continuous-shadow.md)
 - [WP-0013：晋级策略新鲜目标与首个持续 Shadow 周期](./planning/work-packages/WP-0013-promoted-target-first-continuous-shadow-cycle.md)
+- [WP-0014：持续 Shadow 周期闭环](./planning/work-packages/WP-0014-continuous-shadow-cycle-completion.md)
+- [WP-0015：本地日常调度、备份与恢复基线](./planning/work-packages/WP-0015-local-operations-backup-recovery.md)
+- [WP-0016：Paper 执行状态机、幂等与离线端口合同](./planning/work-packages/WP-0016-paper-offline-state-machine.md)
+- [WP-0017：模拟盘模式锁、完整账户基线与只读回调握手](./planning/work-packages/WP-0017-miniqmt-paper-readonly-handshake.md)
+- [WP-0018：首份 Paper StandingMandate 与金丝雀委托](./planning/work-packages/WP-0018-paper-canary-order.md)
+- [WP-0019：持续 Paper、幂等恢复与盘后收敛](./planning/work-packages/WP-0019-continuous-paper.md)
+- [WP-0020：Paper 操作界面与正式验收](./planning/work-packages/WP-0020-paper-operations-ui.md)
+- [WP-0021：Paper 金丝雀真实预检、一次性提交与盘后收敛](./planning/work-packages/WP-0021-paper-canary-real-runtime.md)
+- [WP-0022：Paper 金丝雀运行编排器](./planning/work-packages/WP-0022-paper-canary-orchestrator.md)
+- [WP-0023A：持续 Paper 离线运行守护、备份恢复与故障演练](./planning/work-packages/WP-0023A-offline-paper-guard-recovery-drills.md)
+- [WP-0024：行业相对轮动体验修订](./planning/work-packages/WP-0024-market-rotation-experience-revision.md)
+- [WP-0025：日度数据增量与派生快照编排](./planning/work-packages/WP-0025-daily-data-derived-snapshot-orchestration.md)
+- [WP-0026：申万二级行业“半导体”下钻](./planning/work-packages/WP-0026-semiconductor-l2-drilldown.md)
 - [本地开发指南](./development/local-development.md)
 - [Vibe Coding 规范（Agent 内部英文文档）](./development/vibe-coding.md)
 - [工作包模板（Agent 内部英文文档）](./development/work-package-template.md)

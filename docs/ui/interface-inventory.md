@@ -21,7 +21,7 @@
 | 需要你处理 | 全局抽屉 | 只处理超授权、失败和异常 | UI-PROP-0003/0007 | 待批准 |
 | 大盘 | `/market?tab=overview` | 用所选宽基指数价格结构与市场广度判断环境 | UI-PROP-0001 v0.3 | 已批准 |
 | 行业热力 | `/market?tab=industries&view=heatmap` | 比较行业参与与生命周期 | UI-PROP-0001 v0.2 | 已批准 |
-| 相对轮动 | `/market?tab=industries&view=rotation` | 观察行业相对位置和迁移轨迹 | UI-PROP-0002 v0.1 | 已批准 |
+| 相对轮动 | `/market?tab=industries&view=rotation` | 观察行业相对位置和迁移轨迹 | UI-PROP-0002 v0.1 已实现；v0.2 已批准 | 体验修订待实施 |
 | 生命周期结构与行业研究 | `/market?tab=industries&view=lifecycle` | 解释行业结构位置，并在选定行业内确定研究优先级 | UI-PROP-0011 v0.1 | 已批准 |
 | ETF 轮动 | `/market?tab=etf` | 解释 ETF 候选、价格核验、拒绝和目标变化 | UI-PROP-0009 v0.2 | 已批准 |
 | 短线竞技场 | `/strategies?view=tactical` | 公平比较多类短线逻辑 | UI-PROP-0004 v0.2 | 已批准 |
