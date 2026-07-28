@@ -31,6 +31,35 @@ def event_attention_signal(
     )
 
 
+def lhb_event_attention_signal(
+    history: Sequence[ResearchBar],
+    horizon_sessions: int,
+) -> CandidateSignal | None:
+    if len(history) < 2:
+        return None
+    latest = history[-1]
+    if latest.lhb_event_count <= 0:
+        return None
+    net_rate = latest.lhb_net_rate or 0.0
+    institutional_net = latest.institutional_net_buy_cny or 0.0
+    shareholder_context = latest.shareholder_change_rate
+    score = abs(net_rate) + min(abs(institutional_net) / 10_000_000, 10.0)
+    reasons = [
+        f"lhb_event_count={latest.lhb_event_count}",
+        f"lhb_net_rate={net_rate:.4f}",
+        f"institutional_net_buy_cny={institutional_net:.2f}",
+    ]
+    if shareholder_context is not None:
+        reasons.append(f"shareholder_change_rate={shareholder_context:.6f}")
+    return _signal(
+        latest,
+        "event_attention",
+        horizon_sessions,
+        score,
+        tuple(reasons),
+    )
+
+
 def momentum_breakout_signal(
     history: Sequence[ResearchBar],
     horizon_sessions: int,
@@ -97,6 +126,7 @@ def _signal(
 
 __all__ = [
     "event_attention_signal",
+    "lhb_event_attention_signal",
     "momentum_breakout_signal",
     "reversal_volume_price_signal",
 ]

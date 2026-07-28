@@ -12,7 +12,11 @@ def test_environment_overrides_env_file_and_secret_is_masked(
 ) -> None:
     env_file = tmp_path / ".env.local"
     env_file.write_text(
-        "ASTRAMIND_API_PORT=8100\nASTRAMIND_TUSHARE_TOKEN=local-placeholder\n",
+        "ASTRAMIND_API_PORT=8100\n"
+        "ASTRAMIND_TUSHARE_TOKEN=local-placeholder\n"
+        "ASTRAMIND_MINIQMT_ACCOUNT_MODE=simulation\n"
+        "ASTRAMIND_MINIQMT_ACCOUNT_ID=account-placeholder\n"
+        "ASTRAMIND_MINIQMT_USERDATA_PATH=userdata-placeholder\n",
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
@@ -23,6 +27,8 @@ def test_environment_overrides_env_file_and_secret_is_masked(
     assert settings.api_port == 8200
     assert settings.tushare_token is not None
     assert "local-placeholder" not in repr(settings)
+    assert "account-placeholder" not in repr(settings)
+    assert "userdata-placeholder" not in repr(settings)
 
 
 def test_non_loopback_host_is_rejected() -> None:

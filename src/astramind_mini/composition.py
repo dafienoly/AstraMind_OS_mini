@@ -4,12 +4,13 @@ import platform
 import sqlite3
 
 import duckdb
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 
 from . import __version__
 from .config import Settings, get_settings
+from .market_regime.public import FilesystemRotationStore, MarketRotationSnapshot
 
 
 class DependencyStatus(BaseModel):
@@ -60,6 +61,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ),
             broker_enabled=False,
         )
+
+    @app.get(
+        "/api/market/industry-rotation",
+        response_model=MarketRotationSnapshot,
+        responses={404: {"description": "尚无正式轮动快照"}},
+    )
+    def industry_rotation() -> MarketRotationSnapshot:
+        try:
+            return FilesystemRotationStore(resolved.rotation_data_dir).get_current()
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "rotation_snapshot_not_available"},
+            ) from error
+        except (ValueError, OSError) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "rotation_snapshot_invalid"},
+            ) from error
 
     return app
 

@@ -24,6 +24,10 @@ class ResearchBar:
     has_daily_bar: bool = True
     upper_limit_locked: bool | None = None
     lower_limit_locked: bool | None = None
+    lhb_event_count: int = 0
+    lhb_net_rate: float | None = None
+    institutional_net_buy_cny: float | None = None
+    shareholder_change_rate: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,7 +110,9 @@ class BacktestMetrics:
     annualized_return: float
     annualized_volatility: float
     sharpe: float
+    sortino: float
     max_drawdown: float
+    calmar: float
     win_rate: float
     payoff_ratio: float
     turnover: float

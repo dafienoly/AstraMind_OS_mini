@@ -147,6 +147,17 @@ class CorporateActionProjector(Protocol):
     ) -> dict[str, int]: ...
 
 
+class EventDatasetCompactor(Protocol):
+    def compact(
+        self,
+        *,
+        source_files: tuple[Path, ...],
+        output: Path,
+        order_by: tuple[str, ...],
+        date_column: str,
+    ) -> dict[str, object]: ...
+
+
 class DataArtifactLedger(Protocol):
     def record_dataset(self, manifest: DatasetManifest, manifest_path: Path) -> None: ...
 
@@ -209,6 +220,7 @@ __all__ = [
     "CorporateActionProjector",
     "DataArtifactLedger",
     "DatasetStore",
+    "EventDatasetCompactor",
     "FileDatasetStore",
     "HistoricalMarketDataProvider",
     "HistoricalStatusProjector",

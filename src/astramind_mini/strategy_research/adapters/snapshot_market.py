@@ -38,6 +38,7 @@ class SnapshotMarketReader:
     ) -> tuple[str, ...]:
         paths = self._paths
         with duckdb.connect(":memory:") as connection:
+            self._event_views(connection)
             rows = connection.execute(
                 """
                 WITH listed AS (
@@ -111,11 +112,24 @@ class SnapshotMarketReader:
                        d.amount_thousand_cny * 1000 AS amount_cny,
                        b.turnover_rate, s.listed_sessions, s.risk_status,
                        s.buy_state, s.sell_state, s.has_daily_bar,
-                       s.upper_limit_locked, s.lower_limit_locked
+                       s.upper_limit_locked, s.lower_limit_locked,
+                       coalesce(e.event_count, 0), e.net_rate,
+                       e.institutional_net_buy_cny, h.holder_change_rate
                 FROM read_parquet(?) d
                 JOIN read_parquet(?) a USING (instrument_id, trade_date)
                 JOIN states s USING (instrument_id, trade_date)
                 LEFT JOIN read_parquet(?) b USING (instrument_id, trade_date)
+                LEFT JOIN lhb_context e USING (instrument_id, trade_date)
+                LEFT JOIN LATERAL (
+                  SELECT holder_change_rate FROM shareholder_context x
+                  WHERE x.instrument_id = d.instrument_id
+                    AND x.available_at <= timezone(
+                      'Asia/Shanghai',
+                      CAST(d.trade_date AS TIMESTAMP) + INTERVAL '18 hours'
+                    )
+                  ORDER BY x.available_at DESC, x.reporting_period DESC
+                  LIMIT 1
+                ) h ON true
                 WHERE d.instrument_id IN (SELECT unnest(?))
                   AND d.trade_date BETWEEN ? AND ?
                 ORDER BY d.trade_date, d.instrument_id
@@ -133,6 +147,86 @@ class SnapshotMarketReader:
                 ],
             ).fetchall()
         return tuple(ResearchBar(*row) for row in rows)
+
+    def _event_views(self, connection: duckdb.DuckDBPyConnection) -> None:
+        event_paths = self._optional_paths("lhb_event")
+        seat_paths = self._optional_paths("lhb_seat")
+        holder_paths = self._optional_paths("shareholder_count")
+        if event_paths:
+            connection.execute(
+                """
+                CREATE TEMP TABLE lhb_event_source AS
+                SELECT * FROM read_parquet(?)
+                """,
+                [event_paths],
+            )
+        else:
+            connection.execute(
+                """
+                CREATE TEMP TABLE lhb_event_source (
+                  instrument_id VARCHAR, trade_date DATE, net_rate DOUBLE
+                )
+                """
+            )
+        if seat_paths:
+            connection.execute(
+                """
+                CREATE TEMP TABLE lhb_seat_source AS
+                SELECT * FROM read_parquet(?)
+                """,
+                [seat_paths],
+            )
+        else:
+            connection.execute(
+                """
+                CREATE TEMP TABLE lhb_seat_source (
+                  instrument_id VARCHAR, trade_date DATE, net_buy_cny DOUBLE
+                )
+                """
+            )
+        connection.execute(
+            """
+            CREATE TEMP VIEW lhb_context AS
+            WITH events AS (
+              SELECT instrument_id, trade_date, count(*) AS event_count,
+                     sum(net_rate) AS net_rate
+              FROM lhb_event_source GROUP BY instrument_id, trade_date
+            ), seats AS (
+              SELECT instrument_id, trade_date, sum(net_buy_cny) AS institutional_net_buy_cny
+              FROM lhb_seat_source GROUP BY instrument_id, trade_date
+            )
+            SELECT e.*, s.institutional_net_buy_cny
+            FROM events e LEFT JOIN seats s USING (instrument_id, trade_date)
+            """
+        )
+        if holder_paths:
+            connection.execute(
+                """
+                CREATE TEMP TABLE shareholder_source AS
+                SELECT * FROM read_parquet(?)
+                """,
+                [holder_paths],
+            )
+            connection.execute(
+                """
+                CREATE TEMP VIEW shareholder_context AS
+                SELECT instrument_id, reporting_period, available_at,
+                       holder_count / nullif(lag(holder_count) OVER (
+                         PARTITION BY instrument_id
+                         ORDER BY available_at, reporting_period
+                       ), 0) - 1 AS holder_change_rate
+                FROM shareholder_source
+                """
+            )
+        else:
+            connection.execute(
+                """
+                CREATE TEMP VIEW shareholder_context AS
+                SELECT NULL::VARCHAR instrument_id, NULL::DATE reporting_period,
+                       NULL::TIMESTAMPTZ available_at, NULL::DOUBLE holder_change_rate
+                WHERE false
+                """
+            )
 
     def _load_manifest(self, name: str, version: str) -> dict[str, object]:
         digest = version.rsplit(":", 1)[-1]
@@ -161,6 +255,11 @@ class SnapshotMarketReader:
         if not paths or any(not Path(path).is_file() for path in paths):
             raise ValueError(f"数据集声明的精确 Parquet 不完整：{name}")
         return paths
+
+    def _optional_paths(self, name: str) -> list[str]:
+        if name not in self._manifests:
+            return []
+        return self._paths(name)
 
 
 __all__ = ["SnapshotMarketReader"]

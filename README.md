@@ -11,12 +11,21 @@ Silver，并只补一个缺失交易日，形成覆盖 2000-01-04 至 2026-07-24
 WP-0002B-H3 已发布历史名称/ST 区间和 1770 万行逐日可交易状态；WP-0002B-H4
 已发布公司行为、标准前/后复权兼容价和连续研究价格指数。WP-0002C 至 WP-0006
 又建立了真实 MiniQMT L1 微批、统一价格 UI Lab、点时股票池与回测引擎、三类短线
-候选，以及最多两只的战术目标与本地 Shadow 事件账本。封存期有效性证据、持续
-Shadow、券商账户/交易连接和产品业务页面仍未完成。
+候选，以及最多两只的战术目标与本地 Shadow 事件账本。WP-0008 至 WP-0010 又完成
+封存期证据、行业数据基础和正式只读行业相对轮动。WP-0011 已完成 MiniQMT 模拟盘
+只读账户快照与启动对账真实验收；券商资金、持仓与本地合成 Shadow 起点的差异按设计
+阻断未来券商动作。WP-0012 已把该模拟盘状态隔离为外部状态，保留合成账本权威，并
+完成确定性 OrderPlan、三级回撤门和跨日 Shadow 恢复核心。REQ-2026-0005 已将
+反转/量价 10 日版晋级为纯本地 Shadow 诊断挑战者，但其最大回撤 58.811%，不能视为
+交易证明。WP-0013 已用 2026-07-27 最近完成交易日生成新鲜 FeatureSnapshot、
+PredictionBatch、PortfolioTarget 和 OrderPlan，并启动首个持续 Shadow 周期；当前
+等待 2026-07-29 开盘，券商动作仍为 false。
+交易连接和其余产品业务页面仍未完成。
 
 用户已确认本机东莞证券 MiniQMT 可读取实盘/模拟盘账户，并可通过本地行情 RPC
 接收 L1 全推。WP-0002C 已在明确授权下完成一次真实、短时、自动退订的 SH/SZ/BJ
-全推采集；没有读取账户，也未获得账户查询、Paper、Live 或首单授权。
+全推采集。WP-0011 已在授权边界内完成真实模拟盘只读账户验收；Paper、Live、真实
+常设授权实例和首单仍未授权。
 
 ## 产品方向
 
@@ -30,9 +39,9 @@ Shadow、券商账户/交易连接和产品业务页面仍未完成。
 
 入口：
 
-- [新会话开发交接](./handoff.md)
+- [需求索引与唯一追踪表](./docs/requirements/README.md)
+- [分阶段实施计划](./docs/planning/phased-implementation-plan.md)
 - [文档总览](./docs/README.md)
 - [本地开发指南](./docs/development/local-development.md)
 - [MiniQMT 能力接入路线](./docs/requirements/REQ-2026-0004-dongguan-miniqmt-capability-roadmap.md)
-- [分阶段实施计划](./docs/planning/phased-implementation-plan.md)
 - [产品基线](./docs/product/product-baseline.md)

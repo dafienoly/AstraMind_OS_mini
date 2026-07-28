@@ -5,11 +5,16 @@
 ## 产品与需求
 
 - [产品基线](./product/product-baseline.md)
-- [需求索引](./requirements/README.md)
+- [需求索引与唯一追踪表](./requirements/README.md)
 - [REQ-2026-0001：初始产品基线](./requirements/REQ-2026-0001-initial-product-baseline.md)
 - [REQ-2026-0002：行业资金相对轮动图](./requirements/REQ-2026-0002-market-relative-rotation-map.md)
 - [REQ-2026-0003：完整界面示意图](./requirements/REQ-2026-0003-complete-interface-schematics.md)
 - [REQ-2026-0004：东莞证券 MiniQMT 能力接入路线](./requirements/REQ-2026-0004-dongguan-miniqmt-capability-roadmap.md)
+- [REQ-2026-0005：短线研究证据与策略晋级](./requirements/REQ-2026-0005-tactical-evidence-promotion.md)
+- [REQ-2026-0006：订单计划、组合风险与持续 Shadow](./requirements/REQ-2026-0006-order-plan-risk-shadow.md)
+- [REQ-2026-0007：周度长线研究与核心组合](./requirements/REQ-2026-0007-core-weekly-portfolio.md)
+- [REQ-2026-0008：市场状态、行业生命周期与 ETF 研究](./requirements/REQ-2026-0008-market-regime-etf-research.md)
+- [REQ-2026-0009：本地日常运行与恢复](./requirements/REQ-2026-0009-local-operations-recovery.md)
 
 ## 领域与架构
 
@@ -58,6 +63,17 @@
 - [WP-0004：点时正确股票池与统一回测引擎](./planning/work-packages/WP-0004-point-in-time-universe-backtest.md)
 - [WP-0005：首批三类短线候选](./planning/work-packages/WP-0005-first-tactical-families.md)
 - [WP-0006：短线目标组合与本地 Shadow](./planning/work-packages/WP-0006-tactical-target-local-shadow.md)
+- [WP-0007：REQ-0001 规划基线收口与后续需求拆分](./planning/work-packages/WP-0007-requirement-baseline-closure.md)
+- [WP-0008：短线事件数据、封存证据与手动晋级](./planning/work-packages/WP-0008-tactical-sealed-evidence-promotion.md)
+- [WP-0009：REQ-0008 行业数据基础](./planning/work-packages/WP-0009-industry-data-foundation.md)
+- [WP-0010：REQ-0002 正式行业资金轮动](./planning/work-packages/WP-0010-formal-industry-rotation.md)
+- [WP-0011：MiniQMT 只读账户快照与启动对账](./planning/work-packages/WP-0011-miniqmt-readonly-account-reconciliation.md)
+- [WP-0012：账户差异处置与持续 OrderPlan/Shadow](./planning/work-packages/WP-0012-reconciliation-disposition-continuous-shadow.md)
+- [WP-0013：晋级策略新鲜目标与首个持续 Shadow 周期](./planning/work-packages/WP-0013-promoted-target-first-continuous-shadow-cycle.md)
 - [本地开发指南](./development/local-development.md)
 - [Vibe Coding 规范（Agent 内部英文文档）](./development/vibe-coding.md)
 - [工作包模板（Agent 内部英文文档）](./development/work-package-template.md)
+
+## 归档
+
+- [非权威历史材料](./archive/README.md)

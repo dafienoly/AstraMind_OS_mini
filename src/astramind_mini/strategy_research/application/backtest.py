@@ -98,7 +98,7 @@ class DailyBacktestEngine:
                 position.quantity * position.last_close for position in positions.values()
             )
             curve.append(EquityPoint(trade_date, equity, cash, len(positions)))
-        metrics = _metrics(
+        metrics = calculate_metrics(
             curve,
             trades,
             events,
@@ -270,7 +270,7 @@ def _reject(
     )
 
 
-def _metrics(
+def calculate_metrics(
     curve: Sequence[EquityPoint],
     trades: Sequence[ClosedTrade],
     events: Sequence[BacktestEvent],
@@ -284,6 +284,9 @@ def _metrics(
     annualized = (max(equity[-1], 0.01) / initial_cash) ** (1 / years) - 1
     volatility = pstdev(returns) * math.sqrt(252) if len(returns) > 1 else 0.0
     sharpe = mean(returns) / pstdev(returns) * math.sqrt(252) if volatility > 0 else 0.0
+    downside = [value for value in returns if value < 0]
+    downside_deviation = pstdev(downside) * math.sqrt(252) if len(downside) > 1 else 0.0
+    sortino = mean(returns) * 252 / downside_deviation if downside_deviation > 0 else 0.0
     peak = equity[0]
     max_drawdown = 0.0
     for value in equity:
@@ -296,7 +299,9 @@ def _metrics(
         annualized_return=annualized,
         annualized_volatility=volatility,
         sharpe=sharpe,
+        sortino=sortino,
         max_drawdown=max_drawdown,
+        calmar=annualized / abs(max_drawdown) if max_drawdown < 0 else 0.0,
         win_rate=len(winners) / len(trades) if trades else 0.0,
         payoff_ratio=mean(winners) / mean(losers) if winners and losers else 0.0,
         turnover=turnover_amount / initial_cash,
@@ -305,4 +310,4 @@ def _metrics(
     )
 
 
-__all__ = ["DailyBacktestEngine", "SignalFunction"]
+__all__ = ["DailyBacktestEngine", "SignalFunction", "calculate_metrics"]

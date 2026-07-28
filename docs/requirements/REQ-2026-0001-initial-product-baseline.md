@@ -4,7 +4,9 @@
 - 状态：已批准（规划）
 - 来源：截至 2026-07-26 的用户规划对话
 - 本次澄清：2026-07-27，MiniQMT 当前能力转由 REQ-2026-0004 记录
-- 实现状态：未开始
+- 实现状态：规划基线已完成；WP-0007 已完成收口
+- 开发队列：已退出；继续作为产品、架构、数据、授权和开发治理的持续约束
+- 追踪：见[需求索引唯一追踪表](./README.md#唯一追踪表)
 - 目标：仓库基础与分阶段路线图
 
 ## 目标
@@ -90,3 +92,22 @@ Given 未来订单超出常设授权，When 进入执行计划，Then 它必须�
 - 本需求批准时 MiniQMT 账户、安装和连通信息尚未进入项目；当前已验证能力与后续
   授权边界见 [REQ-2026-0004](./REQ-2026-0004-dongguan-miniqmt-capability-roadmap.md)。
 - UI-PROP-0001 v0.2 与 UI-PROP-0002 v0.1 已于 2026-07-27 获得视觉批准；其余界面仍须逐份批准。
+
+## 规划收尾
+
+WP-0007 已确认本需求的职责是冻结产品与规划基线，不是作为所有后续功能的总实施需求。
+原需求明确排除应用源代码、实际界面和券商连接，因此这些能力未完成不阻塞规划收口。
+
+后续开发分别由独立需求承接：
+
+- [REQ-2026-0005](./REQ-2026-0005-tactical-evidence-promotion.md)：短线研究证据与策略晋级；
+- [REQ-2026-0006](./REQ-2026-0006-order-plan-risk-shadow.md)：订单计划、组合风险与持续 Shadow；
+- [REQ-2026-0007](./REQ-2026-0007-core-weekly-portfolio.md)：周度长线研究与核心组合；
+- [REQ-2026-0008](./REQ-2026-0008-market-regime-etf-research.md)：市场状态、行业生命周期与 ETF 研究；
+- [REQ-2026-0009](./REQ-2026-0009-local-operations-recovery.md)：本地日常运行与恢复。
+
+这些后续需求的草案登记不代表批准实施。MiniQMT 相关能力继续由
+[REQ-2026-0004](./REQ-2026-0004-dongguan-miniqmt-capability-roadmap.md) 管理，资金轮动
+功能继续由 [REQ-2026-0002](./REQ-2026-0002-market-relative-rotation-map.md) 管理，
+界面批准边界继续由
+[REQ-2026-0003](./REQ-2026-0003-complete-interface-schematics.md) 管理。

@@ -187,6 +187,89 @@ class AdjustedMarketObservation(ObservationSource):
     has_implemented_action_evidence: bool
 
 
+class LhbEventObservation(ObservationSource):
+    instrument_id: Identifier
+    trade_date: date
+    name: str
+    close: float | None = None
+    percent_change: float | None = None
+    turnover_rate: float | None = None
+    amount_ten_thousand_cny: float | None = None
+    list_sell_ten_thousand_cny: float | None = None
+    list_buy_ten_thousand_cny: float | None = None
+    list_amount_ten_thousand_cny: float | None = None
+    net_amount_ten_thousand_cny: float | None = None
+    net_rate: float | None = None
+    amount_rate: float | None = None
+    float_value_ten_thousand_cny: float | None = None
+    reason: str
+
+
+class LhbSeatObservation(ObservationSource):
+    instrument_id: Identifier
+    trade_date: date
+    seat_name: str
+    side: Literal["0", "1"]
+    buy_cny: float | None = None
+    buy_rate: float | None = None
+    sell_cny: float | None = None
+    sell_rate: float | None = None
+    net_buy_cny: float | None = None
+    reason: str
+
+
+class ShareholderCountObservation(ObservationSource):
+    instrument_id: Identifier
+    announced_on: date
+    reporting_period: date
+    holder_count: int | None = None
+
+
+class IndustryTaxonomyObservation(ObservationSource):
+    taxonomy: Literal["SW"]
+    taxonomy_version: Literal["SW2021"]
+    level: Literal["L1"]
+    industry_code: Identifier
+    industry_name: str
+    provider_industry_code: str | None = None
+    is_published: bool
+    parent_code: str | None = None
+
+
+class IndustryMembershipObservation(ObservationSource):
+    taxonomy: Literal["SW"]
+    taxonomy_version: Literal["SW2021"]
+    level: Literal["L1"]
+    industry_code: Identifier
+    industry_name: str
+    instrument_id: Identifier
+    instrument_name: str
+    effective_from: date
+    effective_to: date | None = None
+    is_current: bool
+
+
+class IndustryIndexDailyObservation(ObservationSource):
+    taxonomy: Literal["SW"]
+    taxonomy_version: Literal["SW2021"]
+    level: Literal["L1"]
+    industry_code: Identifier
+    industry_name: str
+    trade_date: date
+    open: float
+    high: float
+    low: float
+    close: float
+    change: float | None = None
+    percent_change: float | None = None
+    volume_provider_native: float | None = None
+    amount_provider_native: float | None = None
+    price_earnings: float | None = None
+    price_book: float | None = None
+    float_market_value_provider_native: float | None = None
+    total_market_value_provider_native: float | None = None
+
+
 __all__ = [
     "AdjustedMarketObservation",
     "AdjustmentFactorObservation",
@@ -195,10 +278,16 @@ __all__ = [
     "DailyBasicObservation",
     "DailyTradabilityObservation",
     "HistoricalRiskStatus",
+    "IndustryIndexDailyObservation",
+    "IndustryMembershipObservation",
+    "IndustryTaxonomyObservation",
+    "LhbEventObservation",
+    "LhbSeatObservation",
     "ObservationSource",
     "PriceLimitObservation",
     "SecurityMasterObservation",
     "SecurityNameHistoryObservation",
+    "ShareholderCountObservation",
     "SuspensionEventObservation",
     "TradeCalendarObservation",
 ]

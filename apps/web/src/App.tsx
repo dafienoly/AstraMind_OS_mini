@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { UiLab } from "./UiLab";
+import { MarketRotation } from "./market/MarketRotation";
 
 type ApiState =
   | { kind: "loading" }
@@ -12,6 +13,9 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
 export function App() {
   if (window.location.pathname === "/dev/ui-lab") {
     return <UiLab />;
+  }
+  if (window.location.pathname === "/market") {
+    return <MarketRotation />;
   }
   return <FoundationDiagnostic />;
 }
@@ -47,9 +51,10 @@ function FoundationDiagnostic() {
 
   return (
     <main>
-      <p className="eyebrow">WP-0001 开发诊断</p>
-      <h1>产品界面尚未实现</h1>
-      <p>当前页面只验证本地 API、React/Vite 与浏览器工具链。</p>
+      <p className="eyebrow">ASTRAMIND OS MINI</p>
+      <h1>本地量化交易工作台</h1>
+      <p>行业相对轮动已经进入正式只读研究，其余产品界面仍按批准顺序实施。</p>
+      <a href="/market?tab=industries&view=rotation">进入市场 · 行业相对轮动</a>
       <section aria-live="polite">
         <strong>API 状态：</strong>
         {apiState.kind === "loading" && "检查中"}

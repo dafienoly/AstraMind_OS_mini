@@ -2,4 +2,22 @@
 
 from astramind_mini.contracts import PredictionBatch, StrategyVersion
 
-__all__ = ["PredictionBatch", "StrategyVersion"]
+from .evidence import (
+    EvidenceBundle,
+    EvidenceMetrics,
+    FailureEvidence,
+    PromotionDecision,
+    SealedReplayEvidence,
+    YearEvidence,
+)
+
+__all__ = [
+    "EvidenceBundle",
+    "EvidenceMetrics",
+    "FailureEvidence",
+    "PredictionBatch",
+    "PromotionDecision",
+    "SealedReplayEvidence",
+    "StrategyVersion",
+    "YearEvidence",
+]

@@ -3,8 +3,36 @@ import { mkdirSync } from "node:fs";
 
 test("development diagnostic reports the API and protected boundary", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "产品界面尚未实现" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "本地量化交易工作台" })).toBeVisible();
   await expect(page.getByText(/API 状态：.*已连接.*券商关闭/)).toBeVisible();
+});
+
+test("formal industry rotation replays locally without business refetch", async ({ page }) => {
+  let rotationRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/market/industry-rotation")) rotationRequests += 1;
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/market?tab=industries&view=rotation&trail=20");
+  await expect(page.getByText("研究观察，不是买卖信号")).toBeVisible();
+  await expect(page.getByRole("region", { name: "行业相对轮动四象限" })).toBeVisible();
+  await page.getByRole("button", { name: "上一日" }).click();
+  await page.getByRole("combobox", { name: "尾迹长度" }).selectOption("10");
+  await page.getByRole("button", { name: /合成行业乙/ }).click();
+  await expect(page.getByRole("heading", { name: "合成行业乙" })).toBeVisible();
+  expect(rotationRequests).toBe(1);
+
+  mkdirSync("var/evidence", { recursive: true });
+  await page.screenshot({
+    path: "var/evidence/wp-0010-market-rotation.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText("研究观察，不是买卖信号")).toBeVisible();
+  await page.screenshot({
+    path: "var/evidence/wp-0010-market-rotation-mobile.png",
+    fullPage: true,
+  });
 });
 
 test("UI Lab inspects a point-in-time chart range without future data", async ({ page }) => {

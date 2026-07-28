@@ -2,6 +2,7 @@
 
 from .control_ledger import DataControlLedger
 from .duckdb_query import DuckDBSnapshotQuery
+from .event_parquet import DuckDBEventDatasetCompactor
 from .filesystem import (
     FilesystemDatasetStore,
     FilesystemRawRecordStore,
@@ -21,6 +22,7 @@ from .tushare_probe import TushareCapabilityProbe
 __all__ = [
     "DataControlLedger",
     "DuckDBCorporateActionProjector",
+    "DuckDBEventDatasetCompactor",
     "DuckDBHistoricalStatusProjector",
     "DuckDBParquetEncoder",
     "DuckDBSnapshotQuery",

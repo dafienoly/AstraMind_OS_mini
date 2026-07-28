@@ -12,6 +12,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from e2e_rotation_fixture import prepare  # type: ignore[import-not-found]
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -52,6 +54,13 @@ def wait_until_closed(port: int, timeout: float = 5.0) -> None:
 
 
 def main() -> int:
+    rotation_fixture = ROOT / "var/e2e/rotation"
+    prepare(rotation_fixture)
+    api_environment = {
+        **os.environ,
+        "ASTRAMIND_ENVIRONMENT": "test",
+        "ASTRAMIND_ROTATION_DATA_DIR": str(rotation_fixture),
+    }
     processes = [
         subprocess.Popen(
             [
@@ -63,6 +72,7 @@ def main() -> int:
                 "8010",
             ],
             cwd=ROOT,
+            env=api_environment,
             start_new_session=True,
         ),
         subprocess.Popen(

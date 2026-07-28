@@ -1,7 +1,8 @@
 # 本地开发指南
 
 - 适用工作包：WP-0001、WP-0002A、WP-0002B
-- 当前状态：阶段 1A/1B、2A 和 2B 历史行情快照已建立，阶段 1C/1D 未开始
+- 当前状态：阶段 1A/1B、1C 价格检查器基线、2A 和 2B 历史行情快照已建立；
+  阶段 1D 未开始
 
 ## 已验证环境
 
@@ -146,7 +147,8 @@ make provider-probe PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env
 
 ## MiniQMT L1 有界采集
 
-WP-0002C 已获授权调用 MiniQMT 行情 RPC，但账户和交易仍未授权：
+WP-0002C 已获授权调用 MiniQMT 行情 RPC；该命令仍只允许行情，不得因 WP-0011
+账户读取授权而扩大自身范围：
 
 ```bash
 make miniqmt-l1-capture CAPTURE_SECONDS=5
@@ -159,6 +161,39 @@ Git 忽略的 `var/data/realtime/miniqmt/`。超时或异常会终止 runner；�
 UI Lab 位于 `http://127.0.0.1:5174/dev/ui-lab`。它只使用合成 Fixture，不读取
 实时行情或账户。
 
+WP-0011 已实现 MiniQMT 有界只读账户与启动对账：
+
+```bash
+make miniqmt-account-reconcile
+```
+
+先在 Git 忽略的 `.env.local` 中准确配置
+`ASTRAMIND_MINIQMT_ACCOUNT_MODE=simulation|live`、
+`ASTRAMIND_MINIQMT_ACCOUNT_ID` 和 `ASTRAMIND_MINIQMT_USERDATA_PATH`；账户选择和
+userdata 路径均按秘密处理，不要放在命令行或日志中。未配置、模式不明确、任一查询
+失败或超时时，命令失败关闭且不发布部分快照。2026-07-28 已用模拟盘配置完成一次
+真实只读验收；对账因券商资金、持仓与合成 Shadow 起点不同而按预期保持阻断。该命令
+只允许资产、持仓、委托和成交查询；Paper、Live、下单、撤单、订阅和交易回调仍禁止。
+
+WP-0012 使用 WP-0011 已保存的准确证据身份初始化纯本地持续 Shadow，不重新查询
+券商：
+
+```bash
+make continuous-shadow-initialize \
+  ACCOUNT_SNAPSHOT_ID=account-snapshot:<sha256> \
+  RECONCILIATION_REPORT_ID=reconciliation-report:<sha256>
+```
+
+该命令把模拟盘未归属资金/持仓分类为隔离外部状态，保留合成 50,000 元空仓 Shadow
+账本；只设置 `local_shadow_allowed=true`，始终输出
+`broker_actions_allowed=false`。初始化后若没有准确晋级的 `PortfolioTarget`，状态
+必须为 `waiting_for_promoted_portfolio_target`。
+
+当前反转/量价 10 日版已经完成准确晋级，但生产数据截止 2026-07-24；在形成新鲜
+`FeatureSnapshot → PredictionBatch → PortfolioTarget` 前，实际状态为
+`waiting_for_fresh_feature_snapshot_and_portfolio_target`，不得用旧快照直接启动
+当日 Shadow。
+
 ## 战术研究管线烟测
 
 下面的命令只证明生产快照到三类策略和统一回测引擎的技术贯通：
@@ -170,6 +205,60 @@ make tactical-research-smoke \
 ```
 
 结果写入 `var/research/`，明确标记为小样本管线证明，不得用作封存期结论或策略晋级。
+
+## REQ-0005 事件回填与封存回放
+
+WP-0008 的真实只读事件回填按交易日保存进度，可中断后重跑：
+
+```bash
+make tactical-event-backfill \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  BASE_SNAPSHOT_ID=snapshot:sha256:b0542da9ed6ea9d23f6827612002cbba19d2c99eb76224ebb2cf619e757dec2d
+```
+
+默认区间是 2023-01-01 至 2025-12-31。命令读取 `top_list`、`top_inst` 和
+`stk_holdernumber`，不调用 MiniQMT，不读取账户；原始响应、分区进度和发布快照均在
+Git 忽略的 `var/data/`。
+
+事件快照完整发布后，显式运行九个冻结版本的全市场封存回放：
+
+```bash
+make tactical-sealed-replay SNAPSHOT_ID=<事件回填输出的 snapshot_id>
+```
+
+该命令固定开发截止 2022-12-31 和封存窗口 2023–2025，只读取快照清单中的精确
+Parquet，结果写入 `var/research/sealed/`。两条命令都是长任务，不属于 `make check`；
+生成证据不会自动晋级策略，也不会改变 `broker_enabled: false`。
+
+## REQ-0008 行业数据基础
+
+WP-0009 的显式联网命令固化 SW2021 一级行业、当前与退出成员区间，以及 2000 年以来
+提供方实际可得的行业指数日线：
+
+```bash
+make industry-data-foundation \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  BASE_SNAPSHOT_ID=<准确基础快照> \
+  END_DATE=<基础快照市场截止日>
+```
+
+命令按行业和不超过五年的日期窗口保存进度，可在中断后重跑。它不调用 MiniQMT、
+不读取账户、不计算生命周期或 ETF 信号；真实原始响应和发布物只进入 Git 忽略的
+`var/data/`，不属于 `make check`。
+
+## REQ-0002 正式行业相对轮动
+
+WP-0010 只读取 WP-0009 的准确生产快照，生成内容寻址的正式轮动证据：
+
+```bash
+make market-rotation \
+  SNAPSHOT_ID=snapshot:sha256:607680ae4f1a626ae9166696fa72ea03d70846273cd28cd9e3a852e2442a6af0
+```
+
+产物进入 `var/research/market-rotation/`，重复运行身份稳定。随后运行 `make dev`，
+从首页可见入口进入 `/market?tab=industries&view=rotation`。API 为
+`GET /api/market/industry-rotation`：没有当前快照返回 404，内容身份损坏返回 503，
+不会回退到旧快照。该命令不联网、不接 MiniQMT、不读取账户，也不产生交易信号。
 
 纯合成、无券商副作用的 Shadow 生命周期可单独运行：
 

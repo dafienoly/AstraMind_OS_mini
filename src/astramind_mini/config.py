@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     web_port: int = Field(default=5174, ge=1024, le=65535)
     data_dir: Path = Path("var/data")
     control_db_path: Path = Path("var/control/astramind.db")
+    rotation_data_dir: Path = Path("var/research/market-rotation")
     tushare_token: SecretStr | None = None
     tushare_api_url: str = "https://api.tushare.pro"
     tushare_rate_limit_per_minute: int = Field(default=120, ge=1, le=500)
@@ -35,8 +36,19 @@ class Settings(BaseSettings):
     miniqmt_xtquant_path: Path | None = None
     miniqmt_quote_port: int | None = Field(default=None, ge=1024, le=65535)
     miniqmt_probe_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    miniqmt_account_id: SecretStr | None = None
+    miniqmt_account_mode: Literal["simulation", "live"] | None = None
+    miniqmt_userdata_path: SecretStr | None = None
+    miniqmt_account_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    account_reconciliation_dir: Path = Path("var/control/account-reconciliation")
+    shadow_db_path: Path = Path("var/control/shadow.sqlite3")
 
-    @field_validator("tushare_token", mode="before")
+    @field_validator(
+        "tushare_token",
+        "miniqmt_account_id",
+        "miniqmt_userdata_path",
+        mode="before",
+    )
     @classmethod
     def empty_secret_is_none(cls, value: object) -> object:
         if value == "":

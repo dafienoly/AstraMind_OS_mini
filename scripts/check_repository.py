@@ -32,7 +32,7 @@ def repository_files() -> list[Path]:
         capture_output=True,
         text=True,
     )
-    return [ROOT / item for item in result.stdout.splitlines() if item]
+    return [ROOT / item for item in result.stdout.splitlines() if item and (ROOT / item).exists()]
 
 
 def check_markdown_links(files: list[Path]) -> list[str]:

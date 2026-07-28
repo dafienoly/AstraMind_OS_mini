@@ -3,7 +3,7 @@
 - 版本：0.1
 - 状态：`approved`
 - 创建：2026-07-27
-- 实现：阻断
+- 实现：已由 WP-0010 完成
 - 对应需求：[REQ-2026-0002](../../../requirements/REQ-2026-0002-market-relative-rotation-map.md)
 
 ## 参考来源
@@ -206,3 +206,18 @@ source_message: "批准 UI-PROP-0001 v0.2 和 UI-PROP-0002 v0.1。"
 ```
 
 0.1 已获得视觉批准，可以在对应实施阶段作为准确基线；该批准不冻结相对轮动公式，也不授权策略或交易。
+
+## 实现核对
+
+- 实施工作包：[WP-0010](../../../planning/work-packages/WP-0010-formal-industry-rotation.md)；
+- 产品路径：`/market?tab=industries&view=rotation`；
+- 桌面结果保持主画布约 72%、右侧检查器约 28%，尾迹是唯一强视觉元素；
+- 窄屏保留数据截止日、公式、只读声明，并允许受控横向查看完整四象限；
+- 页面实现 Loading、Empty、Data Corrupt、Provider Error 与 Success；不完整输入在发布侧
+  失败关闭，不把部分节点交给页面；
+- 浏览器烟测验证可见入口、行业选择、日期移动、URL 状态及回放期间无逐帧请求；
+- 实际截图位于本地忽略目录 `var/evidence/wp-0010-market-rotation.png` 和
+  `var/evidence/wp-0010-market-rotation-mobile.png`，不提交其中的运行时证据。
+
+实现与批准示意图的信息结构一致。正式公式由 REQ-2026-0002 v1.1.0 冻结，仍不构成
+策略或交易授权。
