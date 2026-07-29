@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0013 v0.1 系统方法与状态</title>
+  <desc id="desc">桌面与窄屏示意。用五类模型索引和方法谱系尺解释规则模型、数据门、生产训练、样本外证据、只读激活与回退。</desc>
+  <rect width="1600" height="1080" fill="#F2F4F3"/>
+  <style>
+    .t{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#172129}
+    .m{font-family:"IBM Plex Mono","Consolas",monospace;fill:#68747C}
+    .s{font-size:14px}.xs{font-size:12px}.b{font-size:18px;font-weight:700}.h{font-size:26px;font-weight:700}
+    .muted{fill:#68747C}.blue{fill:#2E5E84}.amber{fill:#B47A22}.danger{fill:#8E3B36}.white{fill:#FFFFFF}
+    .line{stroke:#D7DDDA;stroke-width:1}.blue-line{stroke:#2E5E84;stroke-width:3}.amber-line{stroke:#B47A22;stroke-width:3}
+  </style>
+
+  <text x="48" y="48" class="t h">系统 · 方法与状态 · v0.1</text>
+  <text x="48" y="76" class="t s muted">只读解释五类市场模型为何停在 V1、等待 V2 或已回退；不训练、不激活、不交易</text>
+
+  <rect x="48" y="104" width="1084" height="914" rx="10" fill="#FFFFFF"/>
+  <rect x="48" y="104" width="1084" height="52" rx="10" fill="#172129"/>
+  <text x="72" y="137" class="t s white">今日</text>
+  <text x="138" y="137" class="t s white">市场</text>
+  <text x="204" y="137" class="t s white">策略竞技场</text>
+  <text x="312" y="137" class="t s white">组合</text>
+  <text x="374" y="137" class="t s white" font-weight="700">系统</text>
+  <text x="850" y="137" class="m s white">完成日 2026-07-29 · 只读</text>
+
+  <rect x="48" y="156" width="1084" height="44" fill="#FAFBFA"/>
+  <text x="72" y="184" class="t s muted">数据与作业</text>
+  <text x="174" y="184" class="t s blue" font-weight="700">方法与状态</text>
+  <text x="284" y="184" class="t s muted">执行与恢复</text>
+  <line x1="166" y1="199" x2="264" y2="199" class="blue-line"/>
+
+  <text x="72" y="240" class="t h">当前为什么使用这个方法？</text>
+  <text x="72" y="268" class="t s muted">先选模型，再沿谱系尺定位下一道未通过的门。示意状态不代表真实训练结果。</text>
+
+  <rect x="72" y="292" width="260" height="602" fill="#FBFCFB" stroke="#D7DDDA"/>
+  <text x="94" y="326" class="t b">五类模型</text>
+
+  <rect x="88" y="348" width="228" height="82" rx="5" fill="#EEF3F6" stroke="#2E5E84"/>
+  <text x="104" y="375" class="t b">行业热力</text>
+  <text x="104" y="400" class="t s amber">生产训练功能尚未接通</text>
+  <text x="104" y="419" class="m xs">当前：规则模型 V1</text>
+
+  <text x="104" y="468" class="t b">相对轮动</text>
+  <text x="104" y="492" class="t s amber">已训练但证据不足</text>
+  <line x1="88" y1="516" x2="316" y2="516" class="line"/>
+
+  <text x="104" y="552" class="t b">生命周期</text>
+  <text x="104" y="576" class="t s amber">训练数据条件未满足</text>
+  <line x1="88" y1="600" x2="316" y2="600" class="line"/>
+
+  <text x="104" y="636" class="t b">行业内研究顺序</text>
+  <text x="104" y="660" class="t s amber">历史行业归属缺失</text>
+  <line x1="88" y1="684" x2="316" y2="684" class="line"/>
+
+  <text x="104" y="720" class="t b">ETF 轮动</text>
+  <text x="104" y="744" class="t s danger">制品不兼容 · 已回退</text>
+  <line x1="88" y1="768" x2="316" y2="768" class="line"/>
+
+  <text x="104" y="806" class="t s muted">状态不是交易资格</text>
+  <text x="104" y="832" class="t s muted">V2 激活也不自动晋级策略</text>
+  <rect x="96" y="852" width="196" height="30" rx="4" fill="#FFFFFF" stroke="#CBD4D0"/>
+  <text x="127" y="872" class="t s blue">查看全部业务说明</text>
+
+  <rect x="354" y="292" width="754" height="602" fill="#FFFFFF" stroke="#D7DDDA"/>
+  <text x="378" y="326" class="t b">行业热力 · 未来 1/5 日行业超额收益</text>
+  <text x="378" y="352" class="t s muted">V1：相对强弱、上涨广度和成交结构规则评分　　V2：学习模型</text>
+
+  <text x="378" y="394" class="t s muted">方法谱系尺</text>
+  <line x1="410" y1="446" x2="1042" y2="446" stroke="#CBD4D0" stroke-width="4"/>
+  <line x1="410" y1="446" x2="690" y2="446" class="blue-line"/>
+  <circle cx="410" cy="446" r="13" fill="#2E5E84"/>
+  <circle cx="550" cy="446" r="13" fill="#2E5E84"/>
+  <circle cx="690" cy="446" r="14" fill="#FFFFFF" stroke="#B47A22" stroke-width="4"/>
+  <circle cx="850" cy="446" r="11" fill="#FFFFFF" stroke="#CBD4D0" stroke-width="3"/>
+  <circle cx="1042" cy="446" r="11" fill="#FFFFFF" stroke="#CBD4D0" stroke-width="3"/>
+  <text x="384" y="482" class="t s">规则 V1</text>
+  <text x="523" y="482" class="t s">数据门</text>
+  <text x="653" y="482" class="t s amber">生产训练</text>
+  <text x="807" y="482" class="t s muted">样本外证据</text>
+  <text x="1000" y="482" class="t s muted">只读激活</text>
+  <text x="634" y="514" class="t s amber">下一道门：生产特征矩阵与月度编排尚未接通</text>
+
+  <rect x="378" y="542" width="334" height="124" rx="5" fill="#F8FAF9" stroke="#D7DDDA"/>
+  <text x="396" y="570" class="t s muted">准确主方法</text>
+  <text x="396" y="599" class="t b">行业热力规则模型 V1</text>
+  <text x="396" y="626" class="t s">数据可用，但不能推断 V2 已训练。</text>
+  <text x="396" y="649" class="m xs">数据日期 2026-07-29</text>
+
+  <rect x="732" y="542" width="352" height="124" rx="5" fill="#F8FAF9" stroke="#D7DDDA"/>
+  <text x="750" y="570" class="t s muted">时间语义</text>
+  <text x="750" y="598" class="m xs">行情日期　2026-07-29</text>
+  <text x="750" y="621" class="m xs">市场时间　15:00:00</text>
+  <text x="750" y="644" class="m xs">接收时间　15:00:02</text>
+
+  <rect x="378" y="688" width="706" height="114" rx="5" fill="#F5F2EC" stroke="#B47A22"/>
+  <text x="396" y="718" class="t b">为什么还不能使用 V2？</text>
+  <text x="396" y="746" class="t s">算法内核已存在，但生产历史特征矩阵、定时训练和预测发布尚未形成完整链路。</text>
+  <text x="396" y="773" class="t s">下一步由 WP-0062 接通；训练只能读取通过完整性复核的不可变快照。</text>
+
+  <rect x="378" y="822" width="226" height="40" rx="4" fill="#FFFFFF" stroke="#2E5E84"/>
+  <text x="414" y="848" class="t s blue">前往数据与作业</text>
+  <rect x="620" y="822" width="190" height="40" rx="4" fill="#FFFFFF" stroke="#CBD4D0"/>
+  <text x="668" y="848" class="t s">技术详情⌄</text>
+  <text x="826" y="848" class="t s muted">默认折叠：状态码、完整哈希、输入版本</text>
+
+  <rect x="72" y="916" width="1036" height="70" rx="5" fill="#EEF3F6" stroke="#CBD4D0"/>
+  <text x="94" y="945" class="t b">只读边界</text>
+  <text x="94" y="970" class="t s">模型激活不等于策略晋级、组合授权或券商授权；本页没有训练、激活或交易动作。</text>
+
+  <rect x="1160" y="104" width="392" height="914" rx="22" fill="#FFFFFF" stroke="#CBD4D0"/>
+  <text x="1186" y="144" class="t b">窄屏 390 × 844</text>
+  <rect x="1182" y="166" width="348" height="46" rx="5" fill="#172129"/>
+  <text x="1200" y="195" class="t s white">今日　市场　策略　组合　系统</text>
+  <text x="1190" y="250" class="t h">方法与状态</text>
+  <text x="1190" y="275" class="t s muted">行业热力 · 当前规则模型 V1</text>
+  <rect x="1190" y="298" width="330" height="72" rx="5" fill="#F5F2EC" stroke="#B47A22"/>
+  <text x="1206" y="326" class="t b">生产训练功能尚未接通</text>
+  <text x="1206" y="351" class="t s">数据可用 ≠ V2 已训练</text>
+
+  <text x="1190" y="407" class="t s muted">模型族（横向选择）</text>
+  <text x="1190" y="438" class="t s blue">热力　轮动　生命周期　行业排序　ETF →</text>
+  <line x1="1200" y1="492" x2="1506" y2="492" stroke="#CBD4D0" stroke-width="4"/>
+  <line x1="1200" y1="492" x2="1326" y2="492" class="blue-line"/>
+  <circle cx="1200" cy="492" r="11" fill="#2E5E84"/>
+  <circle cx="1264" cy="492" r="11" fill="#2E5E84"/>
+  <circle cx="1326" cy="492" r="12" fill="#FFFFFF" stroke="#B47A22" stroke-width="4"/>
+  <circle cx="1412" cy="492" r="9" fill="#FFFFFF" stroke="#CBD4D0" stroke-width="3"/>
+  <circle cx="1506" cy="492" r="9" fill="#FFFFFF" stroke="#CBD4D0" stroke-width="3"/>
+  <text x="1190" y="528" class="t xs">V1　 数据　 训练　　证据　　激活</text>
+  <text x="1190" y="559" class="t s amber">阻断：生产矩阵与编排未接通</text>
+
+  <rect x="1190" y="590" width="330" height="146" rx="5" fill="#F8FAF9" stroke="#D7DDDA"/>
+  <text x="1206" y="620" class="t b">时间不是一个“更新时间”</text>
+  <text x="1206" y="650" class="m xs">数据日期　2026-07-29</text>
+  <text x="1206" y="674" class="m xs">行情日期　2026-07-29</text>
+  <text x="1206" y="698" class="m xs">市场时间　15:00:00</text>
+  <text x="1206" y="722" class="m xs">接收时间　15:00:02</text>
+
+  <rect x="1190" y="760" width="330" height="92" rx="5" fill="#FFFFFF" stroke="#CBD4D0"/>
+  <text x="1206" y="790" class="t s blue">查看缺口说明</text>
+  <text x="1206" y="817" class="t s muted">技术详情⌄　完整哈希默认隐藏</text>
+  <text x="1190" y="882" class="t s danger">模型状态不代表交易资格</text>
+  <text x="1190" y="909" class="t s">无训练、激活、晋级或下单动作</text>
+</svg>

@@ -36,6 +36,7 @@
 | 订单计划 | `/orders?view=plan` | 把目标转换为可理解的订单计划 | UI-PROP-0007 | 待批准 |
 | 执行与对账 | `/orders?view=execution` | 解释提交、成交、拒绝和差异 | UI-PROP-0007 | 待批准 |
 | 数据与作业 | `/system?tab=data` | 操作数据更新、覆盖和失败恢复 | UI-PROP-0008 | 待批准 |
+| 方法与状态 | `/system?tab=methods` | 解释五类市场模型当前方法、生命周期门与回退原因 | UI-PROP-0013 v0.1 | 等待用户批准 |
 | 执行设置 | `/system?tab=execution` | 查看 Research Shadow、MiniQMT Paper/Live、授权、Local Replay 与恢复 | UI-PROP-0008 新版本待提案 | 旧界面未表达新分层 |
 
 除 `/stocks/{instrument_id}` 是 ADR-0011 冻结的唯一完整个股详情路由外，其余路由是
@@ -56,6 +57,7 @@
 | [UI-PROP-0009](./proposals/0009-etf-rotation/proposal.md) | ETF 轮动、候选 ETF 蜡烛图与目标 | [v0.2 已批准](./proposals/0009-etf-rotation/schematic-v0.2.png) · [v0.1](./proposals/0009-etf-rotation/schematic-v0.1.png) |
 | [UI-PROP-0010](./proposals/0010-full-interface-atlas/proposal.md) | 完整界面总览，仅作索引，不单独授权实现 | [v0.2](./proposals/0010-full-interface-atlas/interface-atlas-v0.2.png) |
 | [UI-PROP-0011](./proposals/0011-industry-lifecycle-research/proposal.md) | 行业生命周期结构地图、行业内研究排序与联动个股蜡烛图 | [结构地图 v0.1 已批准](./proposals/0011-industry-lifecycle-research/structure-map-v0.1.png) · [研究排序 v0.1 已批准](./proposals/0011-industry-lifecycle-research/industry-ranking-v0.1.png) |
+| [UI-PROP-0013](./proposals/0013-method-status/proposal.md) | 系统内五类市场模型的方法定义、生产状态、数据门和回退解释 | [v0.1 等待用户批准](./proposals/0013-method-status/schematic-v0.1.svg) |
 
 ## 三条核心用户路径
 

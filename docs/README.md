@@ -61,6 +61,7 @@
 - [UI-PROP-0010：完整界面总览](./ui/proposals/0010-full-interface-atlas/proposal.md)
 - [UI-PROP-0011：行业生命周期结构地图与行业内研究排序](./ui/proposals/0011-industry-lifecycle-research/proposal.md)
 - [UI-PROP-0012 v0.1：市场模型方法与证据带（已批准）](./ui/proposals/0012-market-model-evidence-overlay/proposal.md)
+- [UI-PROP-0013 v0.1：系统“方法与状态”（等待用户批准）](./ui/proposals/0013-method-status/proposal.md)
 
 ## 规划与开发
 
