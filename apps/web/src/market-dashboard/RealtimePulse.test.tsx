@@ -23,6 +23,16 @@ describe("RealtimePulse market-session semantics", () => {
 
     expect(screen.getByText(label)).toBeInTheDocument();
   });
+
+  it("keeps session identities out of the primary status surface", () => {
+    const projection = realtimeProjection();
+    render(<RealtimePulse view={view("updating")} />);
+
+    expect(screen.getByText("实时会话已建立")).toBeVisible();
+    expect(screen.getByLabelText("技术详情")).not.toHaveAttribute("open");
+    expect(screen.getByText(projection.session_id)).not.toBeVisible();
+    expect(screen.getByText(projection.projection_id)).not.toBeVisible();
+  });
 });
 
 function view(state: RealtimeOperationalState): RealtimeMarketView {

@@ -15,6 +15,10 @@ describe("market business language facade", () => {
     ["CURRENT", "正在更新"],
     ["STALE", "更新延迟"],
     ["DISCONNECTED", "实时连接中断"],
+    ["lunch_break", "午间休市 · 上午行情已保存"],
+    ["closed", "今日已收盘 · 日线数据最新"],
+    ["non_trading_day", "市场休市 · 最近交易日数据最新"],
+    ["unknown", "行情状态待确认"],
     [
       "historical_membership_not_then_known",
       "缺少当时可知的历史行业归属，暂不能进行严格历史验证",

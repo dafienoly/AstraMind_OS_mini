@@ -1,3 +1,6 @@
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessText } from "../business-language/marketBusinessText";
+
 import type { RealtimeMarketView } from "./useRealtimeMarket";
 
 export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
@@ -36,8 +39,14 @@ export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
         value={projection ? `${projection.granularity_ms / 1000} 秒` : "—"}
       />
       <PulseValue label="覆盖" value={coverage(projection)} />
-      <PulseValue label="会话" value={shortIdentity(projection?.session_id)} mono />
+      <PulseValue label="会话" value={projection ? "实时会话已建立" : "待确认"} />
     </dl>
+    <TechnicalDetails entries={[
+      { label: "会话身份", value: projection?.session_id },
+      { label: "投影身份", value: projection?.projection_id },
+      { label: "提供方路由", value: projection?.provider },
+      { label: "缺口代码", value: projection?.known_gaps },
+    ]} />
     {view.message ? <p>{view.message}</p> : null}
   </section>;
 }
@@ -61,16 +70,7 @@ function stateLabel(view: RealtimeMarketView) {
   if (view.phase === "loading") return "正在连接";
   if (view.phase === "empty") return "等待 MiniQMT 会话";
   if (view.phase === "error") return "实时区域不可用";
-  const state = semanticState(view);
-  if (state === "updating") return "正在更新";
-  if (state === "update_delayed") return "行情更新延迟";
-  if (state === "pre_open") return "开盘前 · 最近交易日数据最新";
-  if (state === "lunch_break") return "午间休市 · 上午行情已保存";
-  if (state === "closed") return "今日已收盘 · 日线数据最新";
-  if (state === "non_trading_day") return "市场休市 · 最近交易日数据最新";
-  if (state === "disconnected") return "实时连接中断";
-  if (state === "daily_lagging") return "日线数据待更新";
-  return "行情状态待确认";
+  return marketBusinessText(semanticState(view));
 }
 
 function semanticState(view: RealtimeMarketView) {
@@ -109,9 +109,4 @@ function formatTime(value: string | null | undefined, milliseconds = false) {
     second: "2-digit",
     ...(milliseconds ? { fractionalSecondDigits: 3 } : {}),
   }).format(new Date(value));
-}
-
-function shortIdentity(value: string | null | undefined) {
-  if (!value) return "—";
-  return value.length > 20 ? `${value.slice(0, 11)}…${value.slice(-6)}` : value;
 }
