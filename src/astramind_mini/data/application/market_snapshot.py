@@ -223,7 +223,10 @@ class ProductionSnapshotService:
                 calendars,
                 TRADE_CALENDAR_COLUMNS,
                 calendar_tables,
-                (date(1990, 1, 1), trade_date),
+                (
+                    min(row.calendar_date for row in calendars),
+                    max(row.calendar_date for row in calendars),
+                ),
                 ("bse_uses_common_a_share_calendar",),
                 {"rows": len(calendars), "exchanges": 2},
                 ("SSE", "SZSE"),

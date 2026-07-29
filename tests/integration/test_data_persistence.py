@@ -67,8 +67,9 @@ def test_file_backed_partition_publication_and_exact_set_query(tmp_path: Path) -
         with duckdb.connect(":memory:") as connection:
             output = str(path).replace("'", "''")
             connection.execute(
-                f"COPY (SELECT ? AS instrument_id, ? AS close) TO '{output}' (FORMAT PARQUET)",
-                ["000001.SZ", close],
+                f"COPY (SELECT ? AS instrument_id, ?::DATE AS trade_date, ? AS close) "
+                f"TO '{output}' (FORMAT PARQUET)",
+                ["000001.SZ", date(year, 1, 1), close],
             )
         parts[f"daily-market-{year}.parquet"] = (path, file_hash(path))
     manifest = build_dataset_manifest_from_hashes(
@@ -79,9 +80,9 @@ def test_file_backed_partition_publication_and_exact_set_query(tmp_path: Path) -
         request_identity=content_hash({"parts": 2}),
         retrieved_at=datetime(2026, 1, 15, tzinfo=UTC),
         market_timezone="Asia/Shanghai",
-        date_range=(date(2000, 1, 1), date(2001, 12, 31)),
+        date_range=(date(2000, 1, 1), date(2001, 1, 1)),
         universe=("000001.SZ",),
-        primary_key=("instrument_id",),
+        primary_key=("instrument_id", "trade_date"),
         availability_rule="fixture",
         units=("close:CNY",),
         row_count=2,

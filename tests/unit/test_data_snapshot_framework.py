@@ -25,7 +25,7 @@ def manifest(
     critical_gaps: tuple[str, ...] = (),
     known_gaps: tuple[str, ...] = (),
 ) -> tuple[DatasetManifest, dict[str, bytes]]:
-    artifacts = {"data.parquet": payload}
+    artifacts = {"data.bin": payload}
     return (
         build_dataset_manifest(
             dataset_name="security_master",

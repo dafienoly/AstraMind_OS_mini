@@ -6,7 +6,6 @@ import fcntl
 import gzip
 import json
 import os
-import shutil
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
@@ -15,10 +14,12 @@ from astramind_mini.contracts import DataSnapshot
 
 from ..application.identity import bytes_hash, canonical_json, content_hash, file_hash
 from ..contracts import DatasetManifest, RawRecordEnvelope
-
-
-class ImmutableConflictError(RuntimeError):
-    """Raised when an immutable identity already points at different bytes."""
+from .immutable_artifacts import (
+    ImmutableConflictError,
+    inspect_source_artifacts,
+    publish_dataset_directory,
+    verify_dataset_directory,
+)
 
 
 class SnapshotPointerAdvancedError(RuntimeError):
@@ -58,31 +59,6 @@ def _write_immutable(path: Path, payload: bytes) -> None:
             raise ImmutableConflictError(f"不可变身份内容冲突：{path.name}")
         return
     _atomic_write(path, payload)
-
-
-def _write_immutable_file(path: Path, source: Path, expected_hash: str) -> None:
-    if file_hash(source) != expected_hash:
-        raise ImmutableConflictError(f"源文件内容哈希不匹配：{source.name}")
-    if path.exists():
-        if file_hash(path) != expected_hash:
-            raise ImmutableConflictError(f"不可变身份内容冲突：{path.name}")
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    os.close(descriptor)
-    temporary = Path(temporary_name)
-    temporary.unlink()
-    try:
-        try:
-            os.link(source, temporary)
-        except OSError:
-            with source.open("rb") as input_stream, temporary.open("wb") as output_stream:
-                shutil.copyfileobj(input_stream, output_stream, 1024 * 1024)
-                output_stream.flush()
-                os.fsync(output_stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 class FilesystemRawRecordStore:
@@ -133,10 +109,19 @@ class FilesystemDatasetStore:
             / _safe_segment(manifest.dataset_name)
             / _digest(manifest.dataset_version)
         )
-        for name, payload in artifacts.items():
-            _write_immutable(directory / _safe_segment(name), payload)
-        manifest_path = directory / "manifest.json"
-        _write_immutable(manifest_path, canonical_json(manifest.model_dump(mode="json")))
+        with tempfile.TemporaryDirectory(prefix="dataset-publish-") as temporary_name:
+            temporary = Path(temporary_name)
+            sources: dict[str, Path] = {}
+            for name, payload in artifacts.items():
+                safe_name = _safe_segment(name)
+                source = temporary / safe_name
+                source.write_bytes(payload)
+                sources[safe_name] = source
+            manifest_path = publish_dataset_directory(
+                directory=directory,
+                manifest=manifest,
+                sources=sources,
+            )
         self.activate(manifest, manifest_path)
         return manifest_path
 
@@ -156,17 +141,32 @@ class FilesystemDatasetStore:
             / _safe_segment(manifest.dataset_name)
             / _digest(manifest.dataset_version)
         )
-        for name, (source, expected_hash) in artifacts.items():
-            _write_immutable_file(
-                directory / _safe_segment(name),
-                source,
-                expected_hash,
-            )
-        manifest_path = directory / "manifest.json"
-        _write_immutable(manifest_path, canonical_json(manifest.model_dump(mode="json")))
-        return manifest_path
+        sources = {_safe_segment(name): source for name, (source, _) in artifacts.items()}
+        expected = {name: expected_hash for name, (_, expected_hash) in artifacts.items()}
+        actual = {name: file_hash(source) for name, source in sources.items()}
+        if actual != expected:
+            raise ImmutableConflictError("源文件内容哈希不匹配")
+        inspect_source_artifacts(manifest, sources)
+        return publish_dataset_directory(
+            directory=directory,
+            manifest=manifest,
+            sources=sources,
+        )
 
     def activate(self, manifest: DatasetManifest, manifest_path: Path) -> None:
+        directory = (
+            self._root
+            / "datasets"
+            / _safe_segment(manifest.dataset_name)
+            / _digest(manifest.dataset_version)
+        )
+        verified_path = verify_dataset_directory(
+            directory,
+            manifest,
+            require_independent=True,
+        )
+        if manifest_path.resolve() != verified_path.resolve():
+            raise ImmutableConflictError("待激活数据集清单路径不匹配")
         pointer = self._root / "current" / f"{_safe_segment(manifest.dataset_name)}.json"
         _atomic_write(
             pointer,
@@ -211,6 +211,29 @@ class FilesystemSnapshotStore:
         lock.parent.mkdir(parents=True, exist_ok=True)
         with lock.open("a+b") as stream:
             fcntl.flock(stream, fcntl.LOCK_EX)
+            published_snapshot = self.get(snapshot.snapshot_id)
+            if _snapshot_identity(published_snapshot) != _snapshot_identity(snapshot):
+                raise ImmutableConflictError("待激活 DataSnapshot 身份内容冲突")
+            for reference in snapshot.datasets:
+                dataset_directory = (
+                    self._root
+                    / "datasets"
+                    / _safe_segment(reference.dataset_name)
+                    / _digest(reference.dataset_version)
+                )
+                dataset_manifest = DatasetManifest.model_validate_json(
+                    (dataset_directory / "manifest.json").read_text(encoding="utf-8")
+                )
+                if (
+                    dataset_manifest.dataset_version != reference.dataset_version
+                    or dataset_manifest.content_hash != reference.content_hash
+                ):
+                    raise ImmutableConflictError(f"快照数据集引用冲突：{reference.dataset_name}")
+                verify_dataset_directory(
+                    dataset_directory,
+                    dataset_manifest,
+                    require_independent=True,
+                )
             if expected_snapshot_id is not None and pointer.exists():
                 current = json.loads(pointer.read_text(encoding="utf-8"))
                 current_id = current.get("snapshot_id") if isinstance(current, dict) else None

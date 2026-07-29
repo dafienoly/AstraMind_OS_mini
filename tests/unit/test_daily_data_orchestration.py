@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Literal, TypedDict
 
+import duckdb
 import pytest
 
 from astramind_mini.data.adapters import (
@@ -167,7 +168,15 @@ def test_daily_pipeline_atomically_includes_dataset_extensions(tmp_path: Path) -
     rotation_root = tmp_path / "rotation"
     control_db = tmp_path / "control.sqlite3"
     base_snapshot, target, names = _base_snapshot(data_root)
-    payload = b"etf-daily-extension"
+    extension_source = tmp_path / "etf-daily-extension.parquet"
+    output = str(extension_source).replace("'", "''")
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "COPY (SELECT '159825.SZ' AS instrument_id, ?::DATE AS trade_date) "
+            f"TO '{output}' (FORMAT PARQUET)",
+            [target],
+        )
+    payload = extension_source.read_bytes()
     manifest = build_dataset_manifest(
         dataset_name="etf_daily",
         schema_version="test-v1",

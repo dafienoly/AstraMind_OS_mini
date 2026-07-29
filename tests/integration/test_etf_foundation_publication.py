@@ -4,6 +4,8 @@ from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+import duckdb
+
 from astramind_mini.data.adapters import (
     DataControlLedger,
     DuckDBParquetEncoder,
@@ -222,7 +224,14 @@ def test_etf_foundation_publishes_four_immutable_datasets_and_snapshot(
 
 
 def _publish_base_snapshot(root: Path) -> str:
-    artifacts = {"base.parquet": b"bounded-base-snapshot"}
+    path = root / "base-source.parquet"
+    output = str(path).replace("'", "''")
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            f"COPY (SELECT ?::DATE AS calendar_date) TO '{output}' (FORMAT PARQUET)",
+            [END_DATE],
+        )
+    artifacts = {"base.parquet": path.read_bytes()}
     manifest = build_dataset_manifest(
         dataset_name="trade_calendar",
         schema_version="test-v1",

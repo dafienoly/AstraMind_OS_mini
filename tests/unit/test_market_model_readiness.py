@@ -77,7 +77,7 @@ def _manifest(
     *,
     gaps: tuple[str, ...],
 ) -> DatasetManifest:
-    artifacts = {f"{name}.parquet": name.encode()}
+    artifacts = {f"{name}.bin": name.encode()}
     manifest = build_dataset_manifest(
         dataset_name=name,
         schema_version="test-v1",
