@@ -25,7 +25,7 @@ export function describeHierarchyBlock(
   if (missingDatasets) {
     return {
       title: "当前快照缺少层级数据",
-      detail: `层级查询所需数据集不完整：${missingDatasets.slice("missing_datasets:".length)}。请检查日度管线并重新发布完整快照。`,
+      detail: "层级查询所需数据集不完整。请检查日度管线并重新发布完整快照。",
     };
   }
   if (gaps.includes("same_level_history_incomplete")) {
@@ -36,6 +36,6 @@ export function describeHierarchyBlock(
   }
   return {
     title: "行业层级证据已阻断",
-    detail: "当前快照无法形成完整的层级研究证据，请查看阻断代码和系统运行状态。",
+    detail: "当前快照无法形成完整的层级研究证据，请查看技术详情和系统运行状态。",
   };
 }

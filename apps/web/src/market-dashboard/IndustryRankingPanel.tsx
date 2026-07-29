@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessTexts } from "../business-language/marketBusinessText";
 import { stockWorkbenchHref } from "../stock-workbench/focus";
 import { fetchIndustryRanking } from "./marketDashboardClient";
 import type {
@@ -71,7 +73,10 @@ export function IndustryRankingPanel({
   if (state.value.status === "blocked" || state.value.rows.length === 0) {
     return <section className="ranking-state">
       <strong>当前行业没有可比较的点时样本</strong>
-      <code>{state.value.known_gaps.join(" · ")}</code>
+      <span>{marketBusinessTexts(state.value.known_gaps).join(" · ")}</span>
+      <TechnicalDetails entries={[
+        { label: "缺口代码", value: state.value.known_gaps },
+      ]} />
     </section>;
   }
   return <RankingWorkspace
@@ -135,10 +140,15 @@ function RankingWorkspace({
           industryCode: value.industry_code,
         })}>打开通用个股工作面 →</a>
         <details><summary>方法与缺口</summary>
-          <code>{value.scoring_definition_version}</code>
-          <p>{selected.known_gaps.join(" · ") || "分项覆盖完整"}</p>
+          <p>{selected.known_gaps.length
+            ? marketBusinessTexts(selected.known_gaps).join(" · ")
+            : "分项覆盖完整"}</p>
           <p>排序用于安排研究顺序，不是买卖、组合或订单。</p>
         </details>
+        <TechnicalDetails entries={[
+          { label: "评分定义", value: value.scoring_definition_version },
+          { label: "缺口代码", value: selected.known_gaps },
+        ]} />
       </aside>
     </div>
   </section>;

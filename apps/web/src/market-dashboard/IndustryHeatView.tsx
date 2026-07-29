@@ -1,5 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessTexts } from "../business-language/marketBusinessText";
 import type {
   IndustryHeatRow,
   MarketDashboardProjection,
@@ -118,7 +120,12 @@ function IndustryInspector({
       <p>{row.leading_instrument_name ?? "覆盖不足"} {row.leading_instrument_id ?? ""}</p>
       <strong>{row.leading_percent_change === null ? "—" : `${signed(row.leading_percent_change)}%`}</strong>
     </section>
-    {row.known_gaps.length ? <p className="heat-gap">覆盖提示：{row.known_gaps.join(" · ")}</p> : null}
+    {row.known_gaps.length ? <>
+      <p className="heat-gap">
+        覆盖提示：{marketBusinessTexts(row.known_gaps).join(" · ")}
+      </p>
+      <TechnicalDetails entries={[{ label: "缺口代码", value: row.known_gaps }]} />
+    </> : null}
     <a href={`/market?tab=industries&view=rotation&industry=${encodeURIComponent(row.industry_code)}`}>
       查看相对轮动 →
     </a>

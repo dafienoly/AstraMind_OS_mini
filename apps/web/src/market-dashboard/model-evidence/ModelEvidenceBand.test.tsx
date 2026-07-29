@@ -30,7 +30,7 @@ describe("ModelEvidenceBand", () => {
     const band = await screen.findByRole("region", { name: "行业热力方法与证据" });
     expect(band).toHaveAttribute("data-state", "fallback_v1");
     expect(screen.getByText("industry-heat-v1.0.0")).toBeInTheDocument();
-    expect(screen.getByText(/v2 尚未训练/)).toBeInTheDocument();
+    expect(screen.getByText(/学习模型尚未形成生产结果/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "未来 1 日" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "原始结构" })).toHaveAttribute(
       "aria-pressed",
@@ -50,6 +50,7 @@ describe("ModelEvidenceBand", () => {
     expect(screen.getByText("尚无支持性证据包")).toBeInTheDocument();
     expect(screen.getByText(/不创建组合、订单或券商动作/)).toBeInTheDocument();
     expect(screen.getAllByText(/真实 L1 价差已累计 0\/60/)).toHaveLength(2);
+    expect(screen.getByLabelText("技术详情")).not.toHaveAttribute("open");
   });
 
   it("keeps the raw page usable and offers retry when status is unknown", async () => {

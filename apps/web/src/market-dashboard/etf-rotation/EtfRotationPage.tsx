@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useRouteLoadPhase } from "../../app-shell/routeProgress";
+import { marketBusinessText } from "../../business-language/marketBusinessText";
 import { SecurityMarketInspector } from "../../stock-workbench/SecurityMarketInspector";
 import {
   fetchEtfRotation,
@@ -177,9 +178,7 @@ function latestEvidenceDate(value: EtfRotationProjection) {
 }
 
 function realtimeStateLabel(state: string) {
-  if (state === "current") return "当前";
-  if (state === "stale") return "行情陈旧";
-  return "连接断开";
+  return marketBusinessText(state);
 }
 
 function useEtfRoutePhase(state: LoadState) {

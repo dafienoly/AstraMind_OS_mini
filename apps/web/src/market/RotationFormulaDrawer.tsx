@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
 import type { RotationSnapshot } from "./rotationTypes";
 
 export function RotationFormulaDrawer({
@@ -46,7 +47,11 @@ export function RotationFormulaDrawer({
         <div><dt>覆盖</dt><dd>{snapshot.covered_industry_count}/{snapshot.industry_count}</dd></div>
         <div><dt>事件</dt><dd>中性带 ±{formula.neutral_band} · 连续 {formula.confirmation_sessions} 日</dd></div>
       </dl>
-      <p className="formula-identity">快照身份 <code>{snapshot.content_hash}</code></p>
+      <p className="formula-identity">数据版本 · 更新至 {snapshot.date_range[1]}</p>
+      <TechnicalDetails entries={[
+        { label: "内容身份", value: snapshot.content_hash },
+        { label: "数据快照身份", value: snapshot.data_snapshot_id },
+      ]} />
       <button onClick={onClose} type="button">关闭公式抽屉</button>
     </aside>
   );

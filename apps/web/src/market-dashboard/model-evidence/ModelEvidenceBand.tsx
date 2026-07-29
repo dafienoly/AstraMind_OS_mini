@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { TechnicalDetails } from "../../business-language/TechnicalDetails";
+import { marketBusinessText } from "../../business-language/marketBusinessText";
 import type { MarketModelFamily, MarketModelStatusItem } from "./types";
 import { useMarketModelStatus } from "./useMarketModelStatus";
 
@@ -70,65 +72,44 @@ export function ModelEvidenceBand({
     >{methodOpen ? "收起方法" : "查看方法"}</button>
     {methodOpen ? <div className="model-evidence-detail">
       <div>
-        <small>准确身份</small>
-        <code>{item.manifest_id ?? item.method_version}</code>
-      </div>
-      <div>
-        <small>证据身份</small>
-        <code>{item.evidence_bundle_id ?? "尚无支持性证据包"}</code>
-      </div>
-      <div>
         <small>回退 / 阻断原因</small>
         <p>{item.reason_codes.length
-          ? item.reason_codes.map(reasonLabel).join("；")
+          ? item.reason_codes.map(marketBusinessText).join("；")
           : "当前没有已记录的回退原因"}</p>
       </div>
       <div>
         <small>只读边界</small>
         <p>只解释市场研究，不创建组合、订单或券商动作。</p>
       </div>
+      <TechnicalDetails entries={[
+        { label: "准确模型身份", value: item.manifest_id ?? item.method_version },
+        {
+          label: "证据身份",
+          value: item.evidence_bundle_id ?? "尚无支持性证据包",
+        },
+        { label: "原因代码", value: item.reason_codes },
+      ]} />
     </div> : null}
     {fallback ? <p className="model-evidence-fallback">
-      v2 尚未形成可展示结果，当前准确显示规则式 v1；没有用模拟预测填充。
-      {item.reason_codes.length ? ` 原因：${item.reason_codes.map(reasonLabel).join("；")}` : ""}
+      学习模型尚未形成可展示结果，当前准确显示规则式 V1；没有用模拟预测填充。
+      {item.reason_codes.length
+        ? ` 原因：${item.reason_codes.map(marketBusinessText).join("；")}`
+        : ""}
     </p> : null}
   </section>;
 }
 
 function stateLabel(item: MarketModelStatusItem) {
-  if (item.state === "active_v2") return "支持性证据通过";
-  if (item.state === "unvalidated_v2") return "未完成封存验证";
-  if (item.state === "blocked") return "证据门阻断";
-  return "已回退规则式 v1";
+  return marketBusinessText(item.state);
 }
 
 function evidenceLabel(item: MarketModelStatusItem) {
-  if (item.evidence_state === "supported") return "支持性证据通过";
-  if (item.evidence_state === "unvalidated") return "正确性通过 · OOS 待完成";
-  if (item.evidence_state === "unsupported") return "封存证据不支持";
-  if (item.evidence_state === "development_only") return "仅开发证据";
-  return "支持性证据尚未形成";
+  return marketBusinessText(item.evidence_state);
 }
 
 function trainingCutoff(item: MarketModelStatusItem) {
   if (item.state === "fallback_v1") return "规则式 · 不适用";
   return item.effective_at ? `${item.effective_at.slice(0, 10)} 前已生效` : "未由状态接口发布";
-}
-
-const reasonLabels: Record<string, string> = {
-  v2_not_trained: "v2 尚未训练",
-  v2_activation_invalid: "v2 激活记录无效",
-  v2_referenced_artifact_invalid: "v2 产物或内容身份损坏",
-  historical_breadth_membership_not_then_known: "历史行业广度成员并非当时已知",
-  historical_membership_not_then_known: "历史行业成员并非当时已知",
-  official_benchmark_mapping_not_then_known: "ETF 官方基准映射缺少历史可用时点",
-};
-
-function reasonLabel(value: string) {
-  if (reasonLabels[value]) return reasonLabels[value];
-  const spread = value.match(/^l1_spread_sessions:(\d+)\/60$/);
-  if (spread) return `真实 L1 价差已累计 ${spread[1]}/60 个交易日`;
-  return value.replaceAll("_", " ");
 }
 
 function modelStatusErrorLabel(message: string) {

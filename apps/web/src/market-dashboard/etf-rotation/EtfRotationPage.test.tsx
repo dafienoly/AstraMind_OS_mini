@@ -33,7 +33,7 @@ describe("EtfRotationPage", () => {
     expect(screen.getByText("研究门禁关闭")).toBeInTheDocument();
     expect(screen.getByText("决策截止 2026-07-28")).toBeInTheDocument();
     expect(screen.getByText("ETF 日线最新 2026-06-30")).toBeInTheDocument();
-    expect(screen.getByText("MiniQMT 实时：连接断开")).toBeInTheDocument();
+    expect(screen.getByText("MiniQMT 实时：实时连接中断")).toBeInTheDocument();
     expect(screen.getByText("现金 100%")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "公共组合目标未授权" })).toBeDisabled();
     expect(screen.getByText("候选冻结历史回放不可用于晋级")).toBeInTheDocument();
@@ -69,7 +69,9 @@ describe("EtfRotationPage", () => {
     expect(await screen.findByText(
       "主题相关 ETF，并非行业精确映射，只作背景参考",
     )).toBeInTheDocument();
-    expect(screen.queryByText("mapping_tier:theme_context")).not.toBeInTheDocument();
+    const rawCode = screen.getByText("mapping_tier:theme_context");
+    expect(rawCode).not.toBeVisible();
+    expect(rawCode.closest("details")).not.toHaveAttribute("open");
   });
 });
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
 import { HierarchyRotationWorkbench } from "./HierarchyRotationWorkbench";
 import { StockHierarchyWorkbench } from "./StockHierarchyWorkbench";
 import {
@@ -210,7 +211,10 @@ function BlockedHierarchyState({
     action={<button disabled={refreshing} onClick={onRefresh} type="button">
       {refreshing ? "刷新中…" : "刷新当前快照"}
     </button>}
-    detail={`${message.detail}（阻断代码：${view.known_gaps.join("、")}）`}
+    detail={message.detail}
+    technical={<TechnicalDetails entries={[
+      { label: "缺口代码", value: view.known_gaps },
+    ]} />}
     title={message.title}
   />;
 }
@@ -219,13 +223,16 @@ function HierarchyState({
   title,
   detail,
   action,
+  technical,
 }: {
   title: string;
   detail?: string;
   action?: ReactNode;
+  technical?: ReactNode;
 }) {
   return <div className="hierarchy-state"><h2>{title}</h2>
     <p>{detail ?? "正在读取分类、历史成员、指数和行情证据。"}</p>
     {action}
+    {technical}
     <strong>不会使用 L1 或当前成员替代缺失数据。</strong></div>;
 }

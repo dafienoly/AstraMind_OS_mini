@@ -1,3 +1,5 @@
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessText } from "../business-language/marketBusinessText";
 import type { RotationSnapshot } from "./rotationTypes";
 import { quadrantLabels } from "./rotationTypes";
 import { assessRotationFreshness } from "./rotationFreshness";
@@ -21,7 +23,7 @@ export function RotationHeader({
     ? `${freshness.latestDate} 快照内完整`
     : freshness.kind === "stale"
       ? `${freshness.latestDate} 已过期 · 预期 ${freshness.expectedDate}`
-      : `${freshness.latestDate} 已阻断 · ${freshness.reason}`;
+      : `${freshness.latestDate} 已阻断 · ${marketBusinessText(freshness.reason)}`;
   return <div className="rotation-status" data-state={freshness.kind}>
     <strong>数据</strong> {freshnessText}
     <button disabled={refreshing} onClick={onRefresh} type="button">
@@ -112,7 +114,10 @@ export function Inspector({ point, event, snapshot, onDrill }: {
       <p>基准：31 个一级行业指数日收益等权</p>
       <p>EMA {snapshot.formula.fast_window}/{snapshot.formula.slow_window} · 动量 {snapshot.formula.momentum_window} 日</p>
       <p>这是一种价格相对强弱代理，不是直接资金净流入。</p>
-      <code>{snapshot.content_hash}</code>
+      <TechnicalDetails entries={[
+        { label: "内容身份", value: snapshot.content_hash },
+        { label: "缺口代码", value: snapshot.known_gaps },
+      ]} />
     </details>
   </aside>;
 }

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { useRouteLoadPhase } from "../app-shell/routeProgress";
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import {
+  marketBusinessText,
+  marketBusinessTexts,
+} from "../business-language/marketBusinessText";
 import { useRealtimeInstrumentDetail } from "../market-dashboard/realtime/useRealtimeInstruments";
 import { fetchStockWorkbench } from "./client";
 import { fallbackReturnHref, readStockFocusRequest } from "./focus";
@@ -92,7 +97,7 @@ function StockWorkbenchReady({
       <div className="stock-last" data-state={state}>
         <strong>{price(quote?.last_price)}</strong>
         <span>{signed(quote?.change_percent)}</span>
-        <small>{state === "current" ? "当前 · 1 秒" : state === "stale" ? "行情陈旧" : "连接断开"}</small>
+        <small>{marketBusinessText(state)}{state === "current" ? " · 1 秒" : ""}</small>
       </div>
       <DayRange quote={quote} />
     </header>
@@ -110,7 +115,10 @@ function StockWorkbenchReady({
         <Metric label="总市值" value={amount(value.stock_evidence.fundamental?.total_market_value_cny)} />
       </EvidencePanel>
       <EvidencePanel title="股东户数">
-        <Metric label="状态" value={value.stock_evidence.shareholder_concentration.status} />
+        <Metric
+          label="状态"
+          value={marketBusinessText(value.stock_evidence.shareholder_concentration.status)}
+        />
         <Metric label="户数" value={integer(value.stock_evidence.shareholder_concentration.holder_count)} />
         <Metric label="变化" value={percent(value.stock_evidence.shareholder_concentration.change_rate)} />
         <Metric label="可用时间" value={
@@ -118,15 +126,30 @@ function StockWorkbenchReady({
         } />
       </EvidencePanel>
       <EvidencePanel title="数据证据">
-        <Metric label="完成日提供方" value={value.completed_market_evidence.evidence.provider} />
-        <Metric label="实时提供方" value={value.realtime_market_overlay?.provider ?? "不可用"} />
+        <Metric
+          label="完成日来源"
+          value={marketBusinessText(value.completed_market_evidence.evidence.provider)}
+        />
+        <Metric
+          label="实时来源"
+          value={marketBusinessText(value.realtime_market_overlay?.provider)}
+        />
         <Metric label="证据截止" value={value.focus.as_of} />
-        <code>{value.content_identity}</code>
+        <Metric label="数据版本" value={`更新至 ${value.focus.as_of}`} />
       </EvidencePanel>
     </div>
     {value.known_gaps.length ? <p className="stock-workbench-gaps">
-      已知缺口：{value.known_gaps.join(" · ")}
+      数据说明：{marketBusinessTexts(value.known_gaps).join(" · ")}
     </p> : null}
+    <TechnicalDetails entries={[
+      {
+        label: "完成日提供方路由",
+        value: value.completed_market_evidence.evidence.provider,
+      },
+      { label: "实时提供方路由", value: value.realtime_market_overlay?.provider },
+      { label: "内容身份", value: value.content_identity },
+      { label: "缺口代码", value: value.known_gaps },
+    ]} />
     <footer>只读市场证据，不创建组合目标、委托或订单。</footer>
   </main>;
 }

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessTexts } from "../business-language/marketBusinessText";
 import {
   fetchIndustryLifecycle,
   fetchIndustryLifecycleIntraday,
@@ -280,7 +282,15 @@ function LifecycleBlocked({ gaps }: { gaps: string[] }) {
     <p className="eyebrow">市场 / 行业 / 生命周期结构</p>
     <h1>当前快照不能形成一致的行业结构</h1>
     <p>行业身份仍被保留，但缺失证据不会作为零坐标显示。</p>
-    <code>{gaps.join(" · ") || "lifecycle_projection_blocked"}</code>
+    <p>{marketBusinessTexts(
+      gaps.length ? gaps : ["lifecycle_projection_blocked"],
+    ).join(" · ")}</p>
+    <TechnicalDetails entries={[
+      {
+        label: "缺口代码",
+        value: gaps.length ? gaps : ["lifecycle_projection_blocked"],
+      },
+    ]} />
   </section>;
 }
 

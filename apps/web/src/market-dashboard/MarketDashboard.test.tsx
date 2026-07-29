@@ -67,7 +67,10 @@ describe("MarketDashboard", () => {
     ));
     render(<MarketDashboard view="overview" />);
 
-    expect(await screen.findByText("当前快照不能形成一致的大盘判断")).toBeInTheDocument();
+    const heading = await screen.findByText("当前快照不能形成一致的大盘判断");
+    expect(screen.getByText("当前数据版本缺少必要数据集")).toBeInTheDocument();
+    expect(within(heading.closest("section")!).getByLabelText("技术详情"))
+      .not.toHaveAttribute("open");
     expect(screen.queryByRole("heading", { name: "沪深300" })).not.toBeInTheDocument();
   });
 

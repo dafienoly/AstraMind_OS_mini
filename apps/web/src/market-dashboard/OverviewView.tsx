@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
+import { marketBusinessTexts } from "../business-language/marketBusinessText";
 import {
   aggregateCandles,
   type Candle,
@@ -199,17 +201,22 @@ function MarketInspector({
     <details>
       <summary>数据与方法</summary>
       <p>{regime.definition_version}</p>
-      <code>{projection.data_snapshot_id}</code>
+      <TechnicalDetails entries={[
+        { label: "数据快照身份", value: projection.data_snapshot_id },
+        { label: "缺口代码", value: projection.known_gaps },
+      ]} />
     </details>
   </aside>;
 }
 
 export function DashboardBlocked({ gaps }: { gaps: string[] }) {
+  const reasons = gaps.length ? gaps : ["projection_incomplete"];
   return <section className="market-blocked">
     <p className="eyebrow">市场证据已阻断</p>
     <h1>当前快照不能形成一致的大盘判断</h1>
     <p>缺少宽基、行业或成员覆盖时不显示演示数据。请先恢复日度数据管线。</p>
-    <code>{gaps.join(" · ") || "projection_incomplete"}</code>
+    <p>{marketBusinessTexts(reasons).join(" · ")}</p>
+    <TechnicalDetails entries={[{ label: "缺口代码", value: reasons }]} />
     <a href="/system">查看数据恢复状态</a>
   </section>;
 }

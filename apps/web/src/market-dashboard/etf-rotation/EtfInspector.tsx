@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../../business-language/TechnicalDetails";
 import type { EtfRotationCandidate, EtfRotationProjection } from "../types";
 import { etfRejectionReasonLabel } from "./etfLabels";
 
@@ -36,6 +37,11 @@ export function EtfInspector({
         </li>)}</ul>
         : <p>当前研究代理门禁通过；仍不是组合或订单。</p>}
     </section>
+    <TechnicalDetails entries={[
+      { label: "ETF 映射口径", value: candidate?.mapping_tier },
+      { label: "拒绝原因代码", value: candidate?.rejection_reasons },
+      { label: "研究投影缺口", value: projection.known_gaps },
+    ]} />
     <section className="etf-target-summary">
       <strong>目标草案</strong>
       <span>ETF 暴露 {(1 - projection.target_draft.cash_weight) * 100}%</span>

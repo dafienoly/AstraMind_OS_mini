@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../business-language/TechnicalDetails";
 import type { MarketDashboardProjection } from "./types";
 
 export function MarketStatusStrip({
@@ -17,12 +18,12 @@ export function MarketStatusStrip({
       {refreshing ? "刷新中…" : "刷新快照"}
     </button>
     {projection.status !== "ready" ? <a href="/system">查看恢复状态</a> : null}
-    <i /><strong>快照</strong> {shortIdentity(projection.data_snapshot_id)}
+    <i /><strong>数据版本</strong> 更新至 {projection.evidence_cutoff ?? "未知"}
     <i /><strong>投影</strong> {projection.projection_version}
+    <TechnicalDetails entries={[
+      { label: "数据快照身份", value: projection.data_snapshot_id },
+      { label: "缺口代码", value: projection.known_gaps },
+    ]} />
     <em>市场观察，不是买卖信号</em>
   </div>;
-}
-
-function shortIdentity(value: string) {
-  return value.length > 22 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
