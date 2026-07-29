@@ -36,7 +36,18 @@ class DailyPreparedInputs:
 
 
 @dataclass(frozen=True, slots=True)
+class DailyDatasetExtensions:
+    manifests: dict[str, DatasetManifest]
+    paths: dict[str, Path]
+    retrieved_at: datetime
+    known_gaps: tuple[str, ...] = ()
+    resolved_gaps: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class PublishedDailyDatasets:
+    broad_index: DatasetManifest | None
+    broad_index_path: Path | None
     industry: DatasetManifest
     industry_path: Path
     calendar: DatasetManifest
@@ -47,19 +58,23 @@ class PublishedDailyDatasets:
     event_paths: dict[str, Path]
     references: dict[str, DatasetManifest]
     reference_paths: dict[str, Path]
+    extensions: dict[str, DatasetManifest]
+    extension_paths: dict[str, Path]
+    extension_known_gaps: tuple[str, ...]
+    extension_resolved_gaps: tuple[str, ...]
 
 
 def events_waiting(
     root: Path,
     manifests: dict[str, DatasetManifest],
-    started_at: datetime,
+    evaluated_at: datetime,
     target_date: date,
     enabled: bool,
 ) -> bool:
     if not enabled or not event_base_manifests(root, manifests):
         return False
-    local_started = started_at.astimezone(SHANGHAI)
-    return local_started.date() == target_date and local_started.time() < time(20, 5)
+    local_evaluated = evaluated_at.astimezone(SHANGHAI)
+    return local_evaluated.date() == target_date and local_evaluated.time() < time(20, 5)
 
 
 async def prepare_daily_reference_scope(
@@ -107,15 +122,26 @@ def waiting_reason(
     *,
     expected: tuple[int, int],
     observed: tuple[int, int],
+    broad_index_count: int = 6,
     root: Path,
     manifests: dict[str, DatasetManifest],
-    started_at: datetime,
+    evaluated_at: datetime,
     target_date: date,
     include_events: bool,
-) -> Literal["industry", "events"] | None:
+    include_extensions: bool = False,
+) -> Literal["broad_index", "industry", "events", "extensions"] | None:
+    if broad_index_count != 6:
+        return "broad_index"
     if observed != expected:
         return "industry"
-    if events_waiting(root, manifests, started_at, target_date, include_events):
+    local_evaluated = evaluated_at.astimezone(SHANGHAI)
+    if (
+        include_extensions
+        and local_evaluated.date() == target_date
+        and local_evaluated.time() < time(18, 5)
+    ):
+        return "extensions"
+    if events_waiting(root, manifests, evaluated_at, target_date, include_events):
         return "events"
     return None
 
@@ -126,9 +152,13 @@ def waiting_provider_status(
     updated_at: datetime,
     observed_l1: int,
     observed_l2: int,
-    reason: Literal["industry", "events"],
+    reason: Literal["broad_index", "industry", "events", "extensions"],
 ) -> DailyPipelineStatus:
     blocker, action = {
+        "broad_index": (
+            "broad_index_daily_incomplete",
+            "六个宽基指数数据完整后以相同目标日期重跑",
+        ),
         "industry": (
             "industry_daily_incomplete",
             "提供方数据完整后以相同目标日期重跑",
@@ -136,6 +166,10 @@ def waiting_provider_status(
         "events": (
             "event_publish_window_not_reached",
             "20:05 后以相同目标日期重跑事件增量",
+        ),
+        "extensions": (
+            "etf_publish_window_not_reached",
+            "18:05 后以相同目标日期重跑 ETF 日线增量",
         ),
     }[reason]
     return replace_status(
@@ -206,6 +240,7 @@ async def prepare_daily_inputs(
 
 
 __all__ = [
+    "DailyDatasetExtensions",
     "DailyPreparedInputs",
     "PublishedDailyDatasets",
     "events_waiting",

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0009 v0.3 ETF 实时价格与盘口覆盖</title><desc id="desc">ETF 候选保持周度研究结论，增加盘中报价、真实买卖价差、五档盘口与一分钟K线。</desc>
+  <defs><style>
+    .bg{fill:#F2F4F3}.paper{fill:#fff}.ink{fill:#172129}.muted{fill:#68747C}.blue{fill:#2E5E84}.ochre{fill:#B47A22}.up{fill:#C34B43}.down{fill:#238267}.line{stroke:#D8DEDC}.grid{stroke:#E6ECE9}.sans{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Segoe UI",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",Consolas,monospace}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t16{font-size:16px}.t22{font-size:22px}.bold{font-weight:700}
+  </style></defs>
+  <rect class="bg" width="1440" height="900"/><rect class="paper" x="30" y="24" width="1380" height="852"/>
+  <text class="ink sans bold t22" x="62" y="64">ETF 轮动 · 研究结论与盘中价格分离</text><text class="muted sans t11" x="62" y="87">周度方向漏斗不变；实时报价只用于可交易性和成本观察。</text>
+  <rect x="62" y="106" width="1316" height="58" fill="#F8FAF9" stroke="#CAD4D1"/><text class="blue sans bold t12" x="84" y="132">CURRENT · 14:36:28</text><text class="muted sans t11" x="84" y="153">ETF 覆盖 11 / 11　真实 bid/ask　不提供当前尚不可得的 IOPV/溢价率</text>
+  <rect x="62" y="184" width="344" height="650" fill="#fff" stroke="#D8DEDC"/><rect x="422" y="184" width="610" height="650" fill="#fff" stroke="#D8DEDC"/><rect x="1048" y="184" width="330" height="650" fill="#fff" stroke="#D8DEDC"/>
+  <text class="ink sans bold t16" x="82" y="218">方向与候选</text><text class="muted sans t10" x="82" y="242">正式周度结论 · 2026-07-28</text>
+  <rect x="78" y="260" width="312" height="86" fill="#EDF3F7"/><text class="ink sans bold t12" x="94" y="286">半导体 ETF</text><text class="muted mono t10" x="94" y="306">512480.SH</text><text class="up num bold t12" x="282" y="286">+2.14% ↑</text><text class="blue sans t10" x="282" y="306">连续交易</text><text class="muted sans t10" x="94" y="330">买一 0.982　卖一 0.983　价差 10.2 bp</text>
+  <text class="ink sans bold t12" x="94" y="382">芯片 ETF</text><text class="muted mono t10" x="94" y="402">159995.SZ</text><text class="up num" x="282" y="382">+1.86% ↑</text><line class="line" x1="82" y1="422" x2="386" y2="422"/>
+  <text class="ink sans bold t12" x="94" y="458">科创芯片 ETF</text><text class="muted mono t10" x="94" y="478">示意代码</text><text class="ochre sans t10" x="282" y="458">价差偏宽</text>
+  <rect x="82" y="540" width="304" height="86" fill="#F7F2E8"/><text class="ochre sans bold t11" x="98" y="566">正式研究结论不变</text><text class="muted sans t10" x="98" y="588">盘中价格不会重排周度候选，</text><text class="muted sans t10" x="98" y="607">只更新报价、价差、状态和分钟图。</text>
+  <text class="ink sans bold t16" x="446" y="218">半导体 ETF · 1 分钟</text><text class="up num bold t16" x="780" y="218">0.982 +2.14% ↑</text>
+  <rect x="446" y="238" width="562" height="34" fill="#F8FAF9"/><text class="muted num t10" x="460" y="260">14:35　O 0.980　H 0.983　L 0.979　C 0.982　额 1.24 亿</text>
+  <g class="grid"><line x1="458" y1="330" x2="998" y2="330"/><line x1="458" y1="420" x2="998" y2="420"/><line x1="458" y1="510" x2="998" y2="510"/><line x1="458" y1="600" x2="998" y2="600"/></g>
+  <path d="M466 570 C520 530 574 558 632 492 S746 456 808 474 S924 380 990 402" fill="none" stroke="#2E5E84" stroke-width="2"/>
+  <g><rect class="up" x="492" y="642" width="8" height="40"/><rect class="down" x="522" y="654" width="8" height="28"/><rect class="up" x="552" y="628" width="8" height="54"/><rect class="up" x="582" y="616" width="8" height="66"/></g>
+  <text class="muted sans t10" x="446" y="724">分钟缺口不补零 · 形成中最后一根原位更新</text><text class="muted sans t10" x="446" y="752">切回日/周/月时继续使用正式完成日价格证据</text>
+  <text class="ink sans bold t16" x="1070" y="218">实时盘口</text><text class="blue sans bold t11" x="1070" y="246">连续交易</text>
+  <text class="muted sans t10" x="1070" y="276">涨停 1.078　跌停 0.882</text><line class="line" x1="1070" y1="296" x2="1354" y2="296"/>
+  <g class="num t12"><text class="down" x="1080" y="334">卖五　0.987　18,400</text><text class="down" x="1080" y="364">卖四　0.986　21,700</text><text class="down" x="1080" y="394">卖三　0.985　35,100</text><text class="down" x="1080" y="424">卖二　0.984　52,900</text><text class="down bold" x="1080" y="454">卖一　0.983　88,200</text></g>
+  <rect x="1070" y="470" width="284" height="52" fill="#F8FAF9"/><text class="muted sans t10" x="1086" y="491">真实买卖价差</text><text class="ink num bold t16" x="1086" y="513">0.001 · 10.2 bp</text>
+  <g class="num t12"><text class="up bold" x="1080" y="554">买一　0.982　96,600</text><text class="up" x="1080" y="584">买二　0.981　74,300</text><text class="up" x="1080" y="614">买三　0.980　61,100</text><text class="up" x="1080" y="644">买四　0.979　43,800</text><text class="up" x="1080" y="674">买五　0.978　29,600</text></g>
+  <rect x="1070" y="730" width="284" height="72" fill="#F7F2E8"/><text class="ochre sans bold t11" x="1086" y="754">能力边界</text><text class="muted sans t10" x="1086" y="776">无 IOPV 时不显示溢价率；</text><text class="muted sans t10" x="1086" y="793">盘口陈旧时价差同步降级。</text>
+</svg>

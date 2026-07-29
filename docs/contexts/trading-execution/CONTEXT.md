@@ -1,7 +1,8 @@
 # Trading Execution
 
 The Trading Execution context turns portfolio intent into auditable orders while
-keeping local simulation and real-broker effects distinct.
+keeping deterministic local replay, broker simulation, and real-capital effects
+distinct.
 
 ## Language
 
@@ -20,10 +21,11 @@ An order-plan or mandate condition that requires human attention because it is o
 the standing mandate or represents abnormal risk.
 _Avoid_: Manual gate
 
-**Shadow Execution**:
-A local execution against recorded or live market observations that creates no broker
-side effect.
-_Avoid_: Paper, simulated broker
+**Local Replay**:
+A deterministic local execution against recorded observations for tests, sealed
+evidence review, and recovery drills. It creates no broker side effect and is not a
+forward promotion environment.
+_Avoid_: Shadow Execution, Paper, simulated broker
 
 **Broker Gateway**:
 The isolated adapter that translates order plans and broker events without owning
@@ -31,9 +33,10 @@ strategy or portfolio decisions.
 _Avoid_: Execution engine
 
 **Paper Execution**:
-An execution acknowledged by a broker-provided simulated environment, distinct from
-local Shadow.
-_Avoid_: Shadow
+An execution acknowledged by the exact MiniQMT broker-provided simulation account.
+It provides broker execution and operational evidence; Paper evidence does not
+authorize Live.
+_Avoid_: Local Replay, local Shadow
 
 **Paper Order Intent**:
 A broker-neutral, immutable request identity derived from one PAPER order plan line
@@ -54,6 +57,16 @@ _Avoid_: Configuration echo, trading authorization
 The complete simulation-account cash, inherited positions, open orders, and current-day
 trades captured before any managed Paper increment exists.
 _Avoid_: Shadow seed, strategy position
+
+**Managed Lot**:
+A broker-confirmed position increment attributed to one sleeve, exact policy version,
+order intent, trade date, cost, and sellable date inside the single Paper account.
+_Avoid_: Broker net position, inherited position
+
+**Paper Sleeve Conflict**:
+A fail-closed condition where active sleeve intents for the same security cannot both
+be executed without obscuring direction, ownership, or account reconciliation.
+_Avoid_: Silent netting, shared position
 
 **Paper Canary Authorization**:
 An immutable, single-order simulation mandate that binds one instrument, quantity,
@@ -81,17 +94,18 @@ A fail-closed comparison of local execution projections with broker account, pos
 open-order, and trade facts before new broker actions are allowed.
 _Avoid_: Sync, refresh
 
-**Shadow Ledger**:
-An append-only local SQLite/WAL record of Shadow execution events, with idempotent
-replay and no broker side effect.
-_Avoid_: Broker order table
+**Local Replay Ledger**:
+An append-only local SQLite/WAL record retained for deterministic replay and historical
+compatibility. It is not a broker order table or a source of formal forward maturity.
+_Avoid_: Shadow Ledger, Broker order table
 
-**Shadow Cycle Checkpoint**:
-An immutable daily record binding one continuous Shadow cycle to an exact data
-snapshot, portfolio state, phase, blockers, and observed-session count.
-_Avoid_: Mutable job status
+**Local Replay Checkpoint**:
+An immutable record binding one deterministic replay to an exact data snapshot,
+portfolio state, phase, and blockers. Its observed sessions cannot be counted as Paper
+forward maturity.
+_Avoid_: Shadow Cycle Checkpoint, Mutable job status
 
-**Delayed Daily Shadow Replay**:
+**Delayed Daily Local Replay**:
 A post-close local replay that uses an immutable daily bar to model the market open;
-it is auditable Shadow evidence, not a real-time or broker fill.
+it is auditable test evidence, not a real-time or broker fill.
 _Avoid_: Paper fill, live fill

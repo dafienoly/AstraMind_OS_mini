@@ -20,6 +20,26 @@ The CNY 100,000 sleeve for weekly evaluated individual-stock portfolios, normall
 holding about five names.
 _Avoid_: Long account
 
+**Virtual Horizon Budget**:
+A fixed analytical share of a sleeve assigned to one forecast horizon before both
+horizons are consolidated into one portfolio target; an unusable budget remains cash.
+_Avoid_: Separate account, dynamic model weight
+
+**Core Policy Version**:
+An immutable identity binding exact H20 and H60 strategy versions, their virtual
+budgets, optimizer, costs, constraints, and risk rules into one core-sleeve policy.
+_Avoid_: Model pair, optimizer config
+
+**Active Sleeve Policy**:
+The one exact policy version currently selected to create targets for a named sleeve.
+Research challengers remain candidates and do not share its Paper capital.
+_Avoid_: All active strategies, candidate pool
+
+**Paper Sleeve Projection**:
+An internal budget and managed-position view for one sleeve inside the single broker
+simulation account. It is not a broker subaccount or an independent cash truth.
+_Avoid_: Paper account, subaccount
+
 **Optimization Problem**:
 A versioned set of forecasts, constraints, costs, holdings, and risk budgets submitted
 to an optimizer.

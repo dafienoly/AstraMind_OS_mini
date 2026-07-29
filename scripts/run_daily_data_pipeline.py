@@ -22,10 +22,19 @@ from astramind_mini.data.adapters import (
     FilesystemDatasetStore,
     FilesystemRawRecordStore,
     FilesystemSnapshotStore,
+    MiniQMTBridgeClient,
+    MiniQMTSourceAdapter,
+    RoutedHistoricalProvider,
     TushareHttpClient,
+    TushareSourceAdapter,
     load_tushare_probe_config,
 )
 from astramind_mini.data.application.daily_pipeline import DailyIndustryPipeline
+from astramind_mini.data.application.daily_pipeline_inputs import DailyDatasetExtensions
+from astramind_mini.data.application.source_route_policy import SourceRoutePolicyStore
+from astramind_mini.data.application.source_router import DatasetSourceRouter
+from astramind_mini.data.etf_foundation import EtfFoundationService
+from astramind_mini.data.ports import BatchDataSourceAdapter
 from astramind_mini.market_regime.adapters import FilesystemRotationStore
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
@@ -37,6 +46,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-snapshot-id")
     parser.add_argument("--target-date", type=date.fromisoformat)
     parser.add_argument("--status", action="store_true")
+    parser.add_argument("--recover", action="store_true")
+    parser.add_argument(
+        "--market-only",
+        action="store_true",
+        help="只更新交易日历、行业与宽基市场数据，不刷新股票研究和事件输入",
+    )
     return parser.parse_args()
 
 
@@ -58,24 +73,89 @@ async def run(args: argparse.Namespace) -> int:
     config = load_tushare_probe_config(settings, args.provider_env_file)
     ledger = DataControlLedger(settings.control_db_path)
     ledger.migrate()
+    raw_store = FilesystemRawRecordStore(settings.data_dir)
+    route_store = SourceRoutePolicyStore(settings.data_dir)
+    routes = route_store.load()
+    bridge = None
     async with httpx.AsyncClient(follow_redirects=True) as client:
+        tushare_client = TushareHttpClient(config, client)
+        adapters: dict[str, BatchDataSourceAdapter] = {
+            "tushare": TushareSourceAdapter(tushare_client),
+        }
+        if any("miniqmt" in route.providers for route in routes):
+            if settings.miniqmt_xtquant_path is None or settings.miniqmt_quote_port is None:
+                raise ValueError("已启用 MiniQMT 数据路由，但未固定 XtQuant 路径和行情端口")
+            bridge = MiniQMTBridgeClient(
+                runner=Path("scripts/windows/miniqmt_data_bridge.py"),
+                xtquant_path=settings.miniqmt_xtquant_path,
+                quote_port=settings.miniqmt_quote_port,
+                python_command=settings.miniqmt_python or "py",
+            )
+            adapters["miniqmt"] = MiniQMTSourceAdapter(bridge)
+        routed_provider = RoutedHistoricalProvider(
+            DatasetSourceRouter(
+                adapters=adapters,
+                routes=routes,
+                raw_store=raw_store,
+            )
+        )
+        dataset_store = FilesystemDatasetStore(settings.data_dir)
+        snapshot_store = FilesystemSnapshotStore(settings.data_dir)
+        encoder = DuckDBParquetEncoder()
+        etf_service = EtfFoundationService(
+            data_root=settings.data_dir,
+            provider=tushare_client,
+            raw_store=raw_store,
+            encoder=encoder,
+            dataset_store=dataset_store,
+            snapshot_store=snapshot_store,
+            ledger=ledger,
+        )
+
+        async def prepare_etf_extensions(
+            base_id: str,
+            target_date: date,
+        ) -> DailyDatasetExtensions:
+            prepared = await etf_service.prepare(
+                base_snapshot_id=base_id,
+                start_date=date(2021, 1, 1),
+                end_date=target_date,
+            )
+            return DailyDatasetExtensions(
+                manifests={item.dataset_name: item for item in prepared.manifests},
+                paths=prepared.manifest_paths,
+                retrieved_at=prepared.retrieved_at,
+                known_gaps=prepared.known_gaps,
+                resolved_gaps=prepared.resolved_gaps,
+            )
+
         service = DailyIndustryPipeline(
             data_root=settings.data_dir,
             rotation_root=settings.rotation_data_dir,
-            provider=TushareHttpClient(config, client),
-            encoder=DuckDBParquetEncoder(),
-            raw_store=FilesystemRawRecordStore(settings.data_dir),
-            dataset_store=FilesystemDatasetStore(settings.data_dir),
-            snapshot_store=FilesystemSnapshotStore(settings.data_dir),
+            provider=routed_provider,
+            encoder=encoder,
+            raw_store=raw_store,
+            dataset_store=dataset_store,
+            snapshot_store=snapshot_store,
             rotation_store=FilesystemRotationStore(settings.rotation_data_dir),
             control_store=control,
             ledger=ledger,
+            prepare_extensions=prepare_etf_extensions,
         )
-        publication = await service.run(
-            base_snapshot_id=base_snapshot_id,
-            target_date=args.target_date,
-            started_at=datetime.now(SHANGHAI),
-        )
+        try:
+            publication = await service.run(
+                base_snapshot_id=base_snapshot_id,
+                target_date=args.target_date,
+                started_at=datetime.now(SHANGHAI),
+                recover=args.recover,
+                include_research_inputs=not args.market_only,
+                include_event_inputs=not args.market_only,
+            )
+            for evidence in routed_provider.selection_evidence:
+                route_store.append_selection(evidence)
+        finally:
+            if bridge is not None:
+                await bridge.stop()
     _print_status(publication.status.model_dump(mode="json"))
     if publication.commit:
         print(f"commit_id={publication.commit.commit_id}")

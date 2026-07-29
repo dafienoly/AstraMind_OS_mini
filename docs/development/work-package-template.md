@@ -29,6 +29,17 @@ One observable outcome.
 - Public contracts created or changed:
 - Compatibility impact:
 
+## Reuse and dependency review
+
+- Existing contracts, services, components, and registries inspected:
+- Lowest stable layer reused:
+- Why extension or a new implementation is necessary:
+- Owning module and public API:
+- Real consumers with matching semantics and lifecycle:
+- Cross-context imports added:
+- Temporary adapters and removal work package:
+- Duplicate/god-component checks:
+
 ## Data and point-in-time impact
 
 - Datasets:

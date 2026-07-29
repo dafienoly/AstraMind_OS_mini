@@ -1,9 +1,11 @@
 # REQ-2026-0001：初始产品基线
 
-- 需求版本：1.0.1
+- 需求版本：1.2.0
 - 状态：已批准（规划）
 - 来源：截至 2026-07-26 的用户规划对话
 - 本次澄清：2026-07-27，MiniQMT 当前能力转由 REQ-2026-0004 记录
+- 本次变更：2026-07-29，多候选前向研究采用独立 Research Shadow，MiniQMT Paper
+  只承载显式选择的在位政策
 - 实现状态：规划基线已完成；WP-0007 已完成收口
 - 开发队列：已退出；继续作为产品、架构、数据、授权和开发治理的持续约束
 - 追踪：见[需求索引唯一追踪表](./README.md#唯一追踪表)
@@ -18,7 +20,7 @@
 - 仓库与文档基础。
 - 产品、领域、架构、数据、界面和交付基线。
 - 短线 5 万元、长线 10 万元两个分仓。
-- 个股优先、本地 Shadow、策略手动晋级。
+- 个股优先、多候选 Research Shadow、策略手动晋级和单账户 MiniQMT Paper。
 - 龙虎榜、股东户数、财务数据、市场/行业状态和 ETF 生命周期边界。
 - 包含大盘与行业看板的五入口信息架构。
 - 界面先出示意图、后实施。
@@ -42,8 +44,10 @@
 6. 多类短线策略可以并行运行和比较。
 7. 龙虎榜作为盘后事件输入，股东户数作为点时正确的慢速上下文输入。
 8. 行业生命周期作为市场研究和 ETF 轮动的版本化上游证据。
-9. 本地 Shadow 与未来券商网关必须共享订单计划语义。
-10. 用户可以手动晋级策略，不强制等待固定 20 天 Shadow。
+9. Local Replay、Research Shadow 与券商网关必须共享可执行订单计划语义，但
+   Research Shadow 和 Replay 都不形成 Paper 成熟度。
+10. 多个准确策略候选可以在相互隔离的 Research Shadow 账本中并行比较；用户只把
+    一个在位短线政策和一个在位核心政策送入单账户 Paper。
 11. 策略晋级必须与券商和资金授权分离。
 12. 未来常设授权范围内的例行动作不逐笔审批，异常必须可见。
 13. 初期一级入口只能是今日、市场、策略竞技场、组合和系统。
@@ -80,7 +84,8 @@ Given 已批准的界面提案，When 开始实施，Then 工作包必须引用�
 
 ### 执行
 
-Given 只有文档、回测或本地 Shadow 产物，When 没有独立券商授权，Then 不得发生 MiniQMT 连接或券商副作用。
+Given 只有文档、回测、Local Replay 或 Research Shadow 产物，When 没有独立券商
+授权，Then 不得发生 MiniQMT 连接或券商副作用，也不得累计 Paper 成熟度。
 
 Given 未来订单超出常设授权，When 进入执行计划，Then 它必须进入异常处理，而不是静默执行。
 
@@ -101,13 +106,23 @@ WP-0007 已确认本需求的职责是冻结产品与规划基线，不是作为
 后续开发分别由独立需求承接：
 
 - [REQ-2026-0005](./REQ-2026-0005-tactical-evidence-promotion.md)：短线研究证据与策略晋级；
-- [REQ-2026-0006](./REQ-2026-0006-order-plan-risk-shadow.md)：订单计划、组合风险与持续 Shadow；
+- [REQ-2026-0006](./REQ-2026-0006-order-plan-risk-shadow.md)：订单计划、组合风险与 Local Replay；
 - [REQ-2026-0007](./REQ-2026-0007-core-weekly-portfolio.md)：周度长线研究与核心组合；
 - [REQ-2026-0008](./REQ-2026-0008-market-regime-etf-research.md)：市场状态、行业生命周期与 ETF 研究；
 - [REQ-2026-0009](./REQ-2026-0009-local-operations-recovery.md)：本地日常运行与恢复。
+- [REQ-2026-0014](./REQ-2026-0014-multi-strategy-research-shadow-paper-sleeves.md)：
+  多策略 Research Shadow 与单账户 Paper 分仓。
 
 这些后续需求的草案登记不代表批准实施。MiniQMT 相关能力继续由
 [REQ-2026-0004](./REQ-2026-0004-dongguan-miniqmt-capability-roadmap.md) 管理，资金轮动
 功能继续由 [REQ-2026-0002](./REQ-2026-0002-market-relative-rotation-map.md) 管理，
 界面批准边界继续由
 [REQ-2026-0003](./REQ-2026-0003-complete-interface-schematics.md) 管理。
+
+## 版本历史
+
+| 版本 | 日期 | 变更 | 状态 |
+| --- | --- | --- | --- |
+| 1.0.0 | 2026-07-26 | 建立初始产品和规划基线 | 已批准 |
+| 1.1.0 | 2026-07-29 | 将本地活动执行降级为 Local Replay，Paper 作为正式前向目的地 | 已被替代 |
+| 1.2.0 | 2026-07-29 | 增加并行 Research Shadow，并把单账户 Paper 限定为在位政策运营验证 | 已批准 |

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 
 import { RotationHeader } from "./RotationPanels";
@@ -39,7 +39,7 @@ const snapshot: RotationSnapshot = {
   known_gaps: [],
 };
 
-test("links implemented destinations and marks the unavailable strategy arena", () => {
+test("renders only the rotation status because first-level navigation belongs to AppShell", () => {
   render(
     <RotationHeader
       onRefresh={vi.fn()}
@@ -48,17 +48,7 @@ test("links implemented destinations and marks the unavailable strategy arena", 
     />,
   );
 
-  const navigation = screen.getByRole("navigation", { name: "一级导航" });
-  expect(within(navigation).getByRole("link", { name: "今日" }))
-    .toHaveAttribute("href", "/today");
-  expect(within(navigation).getByText("市场"))
-    .toHaveAttribute("aria-current", "page");
-  expect(within(navigation).getByLabelText("策略竞技场（尚未开放）"))
-    .toHaveAttribute("title", "策略竞技场尚未开放");
-  expect(within(navigation).queryByRole("link", { name: /策略竞技场/ }))
-    .not.toBeInTheDocument();
-  expect(within(navigation).getByRole("link", { name: "组合" }))
-    .toHaveAttribute("href", "/portfolio");
-  expect(within(navigation).getByRole("link", { name: "系统" }))
-    .toHaveAttribute("href", "/system");
+  expect(screen.queryByRole("navigation", { name: "一级导航" })).not.toBeInTheDocument();
+  expect(screen.getByText(/2026-07-28 快照内完整/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "刷新快照" })).toBeInTheDocument();
 });

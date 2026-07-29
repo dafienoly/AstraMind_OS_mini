@@ -1,5 +1,9 @@
 # 本地开发指南
 
+> 2026-07-29 起，文中已有 `shadow` 命令和制品只作为 Local Replay 兼容测试资产；
+> 保留旧命令名是为了历史兼容，不代表它就是 REQ-2026-0014 新批准的 Research
+> Shadow。新的多候选 Research Shadow 和单账户 Paper 虚拟分仓都尚未实施。
+
 - 适用工作包：WP-0001、WP-0002A、WP-0002B
 - 当前状态：阶段 1A/1B、1C 价格检查器基线、2A 和 2B 历史行情快照已建立；
   阶段 1D 未开始
@@ -49,6 +53,10 @@ make dev
 端口 8000 和 5173 已被同机旧 AstraMind 开发服务占用，因此 Mini 使用独立端口，
 避免停止或干扰用户现有进程。
 
+API 热重载只监听 `src/`、`apps/api/` 和 `scripts/` 下的 Python 源码，不监听
+`.venv/`、`node_modules/` 或持续写入的 `var/` 数据目录；后台数据管线运行时不会再
+因触发整仓扫描而拖慢诊断页。
+
 诊断页只证明 FastAPI、React/Vite 和浏览器链路可用，不代表产品 UI 已实现。
 
 ## 稳定检查
@@ -60,7 +68,7 @@ make dev
 - `make contracts-generate`：公共契约变更后重新生成 JSON Schema。
 - `make contracts-check`：验证生成 Schema 与 Pydantic 模型没有漂移。
 
-历史重建、模型训练、Shadow 和券商探查都不属于这些默认命令。
+历史重建、模型训练、Local Replay 和券商探查都不属于这些默认命令。
 
 ## 本地运行、备份与恢复
 
@@ -85,8 +93,9 @@ make daily-run-recover \
 ```
 
 首次成功会在已配置的仓库外目录创建或复用目标日完整备份，再以内容身份发布不可变摘要。
-重复运行直接返回同一摘要；并发实例只显示租约占用。三个命令均永久排除 MiniQMT、
-Paper/Live 和持续 Shadow 周期推进。
+重复运行直接返回同一摘要；并发实例只显示租约占用。三个命令均永久排除 MiniQMT
+账户/交易、Paper/Live 和活动前向周期推进；数据步骤可按已发布路由读取 MiniQMT
+只读行情。
 
 ### Windows 日度计划任务
 
@@ -95,11 +104,13 @@ WP-0031 用 Windows Task Scheduler 唤起 WSL 内的 WP-0030 统一入口。先�
 
 ```bash
 make daily-schedule-preview \
-  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env
+  PROVIDER_ENV_FILE=/home/ly/work/AstraMind_OS_mini/.env.local
 make daily-schedule-status
 ```
 
-固定触发点为每日 08:30、16:35、16:50、17:10，以及 Windows 登录后的错过窗口恢复。
+固定触发点为每日 08:30、16:35、16:50、17:10、20:10，以及 Windows 登录后的
+错过窗口恢复。20:10 用于在 ETF 日线 18:00 可用、事件输入 20:05 可用后完成同一
+运行身份的最终恢复。
 决策器读取版本化交易日历；登录恢复只处理最近一个未完成交易日。任务定义只保存环境文件
 路径，不复制 Token，并固定输出 `broker_actions_allowed=false`。
 
@@ -107,13 +118,18 @@ make daily-schedule-status
 
 ```bash
 make daily-schedule-install \
-  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  PROVIDER_ENV_FILE=/home/ly/work/AstraMind_OS_mini/.env.local \
   CONFIRM_TASK_NAME="AstraMind OS Mini - Daily Ops" \
   CONFIRM_WORKDIR="/home/ly/work/AstraMind_OS_mini"
 ```
 
 任务使用内置 Users 组而不把个人账户标识写入定义；因此首次安装可能出现 Windows UAC
 提示。批准 UAC 只用于登记任务，任务本身仍以 `LeastPrivilege` 运行。
+任务动作通过 `/bin/bash -lc` 进入 WSL，确保 Task Scheduler 的非交互环境能够解析
+用户级 `uv`；直接以 `/usr/bin/make` 作为 WSL 进程会因 PATH 缺少 `uv` 而失败。
+2026-07-29 已将已安装任务的环境来源从已不存在的
+`/mnt/e/work/AstraMind_OS/.env` 原位更新为仓库内 `.env.local`；随后按 v1.3
+重新安装任务并增加 20:10 最终恢复触发。任务名、权限和工作目录未变。
 
 暂停和卸载只改变 Windows 任务状态，不删除快照、控制台账或运行摘要：
 
@@ -142,8 +158,8 @@ make daily-decision-run
 make daily-decision-status
 ```
 
-该命令生成 `FeatureSnapshot → PredictionBatch → PortfolioTarget → Shadow OrderPlan`
-和本地 Shadow/Paper 预检。它不连接 MiniQMT，不启动持续 Shadow 周期，不提交或撤销
+该命令生成 `FeatureSnapshot → PredictionBatch → PortfolioTarget → Local Replay OrderPlan`
+和 Local Replay/Paper 就绪预检。它不连接 MiniQMT，不启动活动 Paper 周期，不提交或撤销
 模拟盘订单。正常输出必须包含：
 
 ```text
@@ -178,12 +194,12 @@ make ops-backup BACKUP_REASON=daily_close LOGICAL_DATE=YYYY-MM-DD
 make ops-recovery-drill BACKUP_ID=local-backup:<identity>
 ```
 
-备份复制控制、Shadow 和晋级 SQLite 以及当前数据指针，保留最近 30 日和 12 个月末
+备份复制控制、Local Replay 和晋级 SQLite 以及当前数据指针，保留最近 30 日和 12 个月末
 恢复点。恢复演练只写入 `var/recovery-drills/`，不会覆盖运行状态。未配置目录、目录在
 仓库内、文件篡改或 SQLite 损坏时均失败关闭，且不打印实际备份路径、Token 或账户
 标识。备份和恢复健康也不授权 Paper 或 Live。
 
-WP-0023A 增加不连接券商的持续 Paper 离线守护。它自动发现当前持续 Shadow 决策链、
+WP-0023A 增加不连接券商的持续 Paper 离线守护。它自动发现当前 Local Replay 决策链、
 最新健康备份/恢复和本地 Paper 投影：
 
 ```bash
@@ -307,6 +323,69 @@ Git 忽略的 `var/data/realtime/miniqmt/`。超时或异常会终止 runner；�
 UI Lab 位于 `http://127.0.0.1:5174/dev/ui-lab`。它只使用合成 Fixture，不读取
 实时行情或账户。
 
+## MiniQMT 常驻实时管线与数据源测速
+
+常驻行情桥只导入 `xtquant.xtdata`，不读取账户，不暴露委托、撤单或交易回调。
+显式配置固定的 `xtquant` 包目录和行情端口后可运行：
+
+桥启动前会在 1 秒候选超时内选择可用的 WSL Interop socket。陈旧 socket 不再导致
+三次相同的无效重试，也不会执行 `wsl.exe --shutdown`。股票日度按交易日请求未显式
+传证券池时，桥使用 MiniQMT `沪深京A股` 当前成员冻结本次全市场请求。
+
+```bash
+make miniqmt-catalog-probe
+make miniqmt-realtime
+make miniqmt-source-benchmark PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env
+```
+
+目录探针逐项检查日线、分钟线、合约资料、交易日历校验、指数权重、板块目录、五类
+财务表、股东户数、十大股东、十大流通股东和公司行动因子；只输出字段、行数和脱敏
+状态，原始响应留在 Git 忽略的数据目录。L2、逐笔、北向、ETF IOPV/申赎和公告问答
+等当前缺口明确登记为 `unsupported`，不创建空生产数据集。
+
+无时长参数时，实时命令常驻运行，只在上海交易日 08:55–16:05 建立全市场 L1
+会话，闭市或休市保持等待；每个交易日和每次断线重连都会换代会话。进程锁阻止
+第二实例，运行心跳写入 `var/control/realtime-market-service/status.json`。
+
+一秒市场/行业结果只更新 SSE 消费的当前投影，不长期保存；全 A 股一分钟 K 线长期
+只追加保存，会话结束时冲刷最后一个未闭合分钟。原始与规范化细粒度微批在一分钟
+聚合校验通过后按五个交易日清理；会话/微批清单、哈希、缺口和删除台账永久保留。
+
+```bash
+make realtime-market-service-status
+make realtime-market-service-preview
+make realtime-market-service-install
+make realtime-market-service-start
+```
+
+`status` 同时报告 Windows 任务状态、WSL 运行状态、PID、心跳年龄、当前市场日期、
+会话、消息数和微批数；心跳超过 90 秒或 PID 不存在显示 `stale_process`。
+
+测速命令记录原生获取、桥接、规范化、落盘和端到端延迟。默认产生诊断报告，不能
+激活生产路由；只有完整生产范围的覆盖、点时和内容门禁报告才允许执行配置级切源。
+MiniQMT 故障时按整个数据集回退 Tushare，既有不可变快照不会被改写。
+速度比较固定使用 Tushare 100 次/分钟基准；本机 `.env` 中更高的生产限额不会改变
+测速基线。测速重点是 MiniQMT 的常驻桥热缓存延迟和批量吞吐。
+
+只需判断相对快慢时使用快速生产场景，接受现有 MiniQMT 缓存并重复 3 次：
+
+```bash
+uv run python scripts/benchmark_market_data_sources.py \
+  --provider-env-file /mnt/e/work/AstraMind_OS/.env \
+  --coverage-scope production \
+  --universe-file var/data/benchmarks/production-universe-20260728.txt \
+  --repetitions 3 --cache-state warm --performance-only --quick
+```
+
+该命令包含全市场单日、500 只近 20 日和六宽基近 20 日，只生成相对性能报告。
+`--quick` 和 `--performance-only` 均被禁止直接激活生产路由。首次准备全市场历史
+缓存必须使用显式 `--prepare-miniqmt-cache`；准备过程分 200 只一批记录进度，
+不得把冷下载耗时混入热读取结论。
+
+当前生产源路由中，`daily_market` 和 `broad_index_daily` 按用户批准的成本例外使用
+`miniqmt, tushare`。这表示 MiniQMT 整批成功时只发布 MiniQMT 版本；失败时丢弃该批
+并由 Tushare 完整重取，不表示逐证券或逐字段补值。
+
 WP-0011 已实现 MiniQMT 有界只读账户与启动对账：
 
 ```bash
@@ -335,10 +414,29 @@ make miniqmt-paper-readonly-handshake
 ## 首笔 Paper 金丝雀运行
 
 WP-0021 已实现首笔金丝雀的真实预检与运行命令，但命令不会自动运行。首先只能在已
-批准的 2026-07-29 09:35～09:45 窗口内建立新鲜只读基线和准确限价：
+批准的 2026-07-29 09:35～15:00 窗口内建立新鲜只读基线和准确限价：
 
-WP-0022 提供推荐的简化入口。Windows QMT 登录准确模拟盘且行情连接正常后，在09:20
-以前不要启动；09:20～09:45 运行：
+WP-0022 v1.1 提供推荐的简化入口。先运行只读预检；它会读取当前不可变授权、完整账户
+基线和 L1，但不生成限价提案、订单意图或券商命令：
+
+```bash
+make paper-canary-preflight
+```
+
+成功输出必须包含 `proposal_count_delta=0`、`order_intent_count_delta=0`、
+`broker_write_attempts=0` 和 `broker_actions_allowed=false`。窗口前可返回
+`submission_window=upcoming`；过期授权不会被命令自动延长。
+
+行情 runner 最多等待8秒获取一条年龄不超过3秒的新 L1 tick；3秒阈值没有放宽。
+脱敏 stdout/stderr 位于 `var/control/paper-canary/runner-diagnostics/`。常见阻断为：
+
+- `windows_interop_unavailable`：WSL 调用 Windows 程序的互操作通道不可用；
+- `qmt_not_connected`：QMT 行情或交易会话未连接；
+- `canary_quote_stale`：等待期耗尽仍没有不超过3秒的 tick；
+- `invalid_runner_json`：Windows runner 没有返回有效 JSON；
+- `canary_quote_timeout` 或 `paper_readonly_handshake_timeout`：对应 runner 超时。
+
+预检通过后，只能按当前授权记录允许的启动和提交窗口运行：
 
 ```bash
 make paper-canary-run
@@ -365,14 +463,14 @@ make paper-canary-stage-limit
 
 输出必须完整展示 `605208.SH`、买入、100股、确切限价、最大金额、行情时间、账户
 基线、Mandate、PortfolioTarget 和撤单范围。用户明确批准这一准确摘要后，才可记录
-一个不超过3分钟且不晚于09:45的本地批准：
+一个不超过3分钟且不晚于当前授权截止时间的本地批准：
 
 ```bash
 make paper-canary-approve \
   PROPOSAL_ID=paper-limit-proposal:<identity> \
   EXACT_LIMIT_PRICE=<用户看到并批准的准确两位小数> \
   APPROVED_AT=<带时区ISO时间> \
-  EFFECTIVE_TO=<不晚于09:45且不超过3分钟>
+  EFFECTIVE_TO=<不晚于当前授权截止时间且不超过3分钟>
 ```
 
 该命令仍不连接 MiniQMT。只有准确批准 ID 存在时，以下命令才可能调用一次
@@ -408,8 +506,8 @@ make paper-canary-converge APPROVAL_ID=<identity> INTENT_ID=<可选>
 启动前数量保留为 `inherited`、本单确认增量记为 `managed`。阻断报告会冻结未来订单，
 不得通过重跑提交命令绕过。
 
-WP-0012 使用 WP-0011 已保存的准确证据身份初始化纯本地持续 Shadow，不重新查询
-券商：
+WP-0012 的以下命令只用于读取和复核历史 Local Replay，不再初始化正式前向环境，也
+不重新查询券商：
 
 ```bash
 make continuous-shadow-initialize \
@@ -417,8 +515,8 @@ make continuous-shadow-initialize \
   RECONCILIATION_REPORT_ID=reconciliation-report:<sha256>
 ```
 
-该命令把模拟盘未归属资金/持仓分类为隔离外部状态，保留合成 50,000 元空仓 Shadow
-账本；只设置 `local_shadow_allowed=true`，始终输出
+该命令按旧语义把模拟盘未归属资金/持仓分类为隔离外部状态，保留合成 50,000 元空仓
+Local Replay 账本；兼容字段仍设置 `local_shadow_allowed=true`，始终输出
 `broker_actions_allowed=false`。初始化后若没有准确晋级的 `PortfolioTarget`，状态
 必须为 `waiting_for_promoted_portfolio_target`。
 

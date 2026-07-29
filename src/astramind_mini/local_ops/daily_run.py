@@ -54,7 +54,7 @@ class DailyRunOrchestrator:
         now = self._now()
         run_id = daily_run_id(target_date=target_date, base_snapshot_id=base_snapshot_id)
         existing = self._store.status(run_id)
-        if existing and existing.state == "current":
+        if existing and existing.state == "current" and not recover:
             return DailyRunResult(status=existing, summary=self._store.summary(run_id))
         if target_date > now.date():
             return self._publish_terminal(
@@ -86,11 +86,14 @@ class DailyRunOrchestrator:
             expires_at=now + timedelta(minutes=30),
         )
         try:
+            if existing and existing.state == "current" and recover:
+                self._store.prepare_recovery(run_id, now)
             return await self._run_locked(
                 run_id=run_id,
                 target_date=target_date,
                 base_snapshot_id=base_snapshot_id,
                 existing=existing,
+                recover=recover,
             )
         finally:
             self._store.release_lease(run_id=run_id, owner_id=owner_id)
@@ -102,8 +105,9 @@ class DailyRunOrchestrator:
         target_date: date,
         base_snapshot_id: str,
         existing: DailyRunStatus | None,
+        recover: bool,
     ) -> DailyRunResult:
-        reset_attempt_budget = bool(existing and existing.state == "waiting_provider")
+        reset_attempt_budget = bool(existing and (recover or existing.state == "waiting_provider"))
         started_at = (
             self._now()
             if reset_attempt_budget

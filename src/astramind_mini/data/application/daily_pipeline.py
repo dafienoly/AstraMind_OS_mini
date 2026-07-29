@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -14,6 +15,7 @@ from ..adapters import (
     FilesystemDatasetStore,
     FilesystemRawRecordStore,
     FilesystemSnapshotStore,
+    SnapshotPointerAdvancedError,
 )
 from ..contracts import (
     DailyPipelineCommit,
@@ -25,7 +27,12 @@ from ..ports import (
     HistoricalMarketDataProvider,
     ParquetEncoder,
 )
-from .daily_pipeline_collection import collect_calendar, collect_industries
+from .daily_pipeline_collection import (
+    collect_broad_indexes,
+    collect_calendar,
+    collect_industries,
+)
+from .daily_pipeline_dataset_publication import publish_daily_datasets
 from .daily_pipeline_identity import (
     POLICY_VERSION,
     build_run_id,
@@ -35,8 +42,7 @@ from .daily_pipeline_identity import (
     touch_status,
 )
 from .daily_pipeline_inputs import (
-    DailyPreparedInputs,
-    PublishedDailyDatasets,
+    DailyDatasetExtensions,
     prepare_daily_inputs,
     prepare_daily_reference_scope,
     waiting_provider_status,
@@ -44,16 +50,12 @@ from .daily_pipeline_inputs import (
 )
 from .daily_pipeline_publication import DailyOutputPublisher
 from .daily_pipeline_support import (
-    daily_calendar_manifest,
-    daily_industry_manifest,
     load_snapshot_bundle,
-    merge_industry_daily,
     merge_trade_calendar,
     published_industries,
 )
 from .daily_reference_inputs import DailyReferenceInputs
-from .daily_research_inputs import artifact_sources
-from .identity import content_hash, file_hash
+from .identity import content_hash
 from .state_files import load_state
 
 
@@ -81,6 +83,9 @@ class DailyIndustryPipeline:
         rotation_store: FilesystemRotationStore,
         control_store: DailyPipelineStore,
         ledger: DataArtifactLedger,
+        prepare_extensions: (
+            Callable[[str, date], Awaitable[DailyDatasetExtensions]] | None
+        ) = None,
     ) -> None:
         self._root = data_root
         self._provider = provider
@@ -91,6 +96,7 @@ class DailyIndustryPipeline:
         self._rotations = rotation_store
         self._control = control_store
         self._ledger = ledger
+        self._prepare_extensions = prepare_extensions
         self._publisher = DailyOutputPublisher(
             data_root=data_root,
             datasets=dataset_store,
@@ -108,6 +114,7 @@ class DailyIndustryPipeline:
         base_snapshot_id: str,
         target_date: date,
         started_at: datetime,
+        recover: bool = False,
         interrupt_after_step: str | None = None,
         include_research_inputs: bool = True,
         include_event_inputs: bool = True,
@@ -122,7 +129,9 @@ class DailyIndustryPipeline:
         if (
             current_commit is not None
             and current_commit.target_date == target_date
+            and current_commit.data_snapshot_id == base_snapshot_id
             and self._snapshots.get(current_commit.data_snapshot_id).code_identity == POLICY_VERSION
+            and not recover
         ):
             current_status = self._control.status(current_commit.run_id)
             if current_status is None or current_status.state != "current":
@@ -137,11 +146,13 @@ class DailyIndustryPipeline:
         expected_l2 = sum(level == "L2" for level, _, _ in industries)
         run_id = requested_run_id
         existing = self._control.status(run_id)
-        if existing and existing.state == "current":
-            commit = self._control.current_commit()
-            if commit.run_id != run_id:
-                raise ValueError("日度运行已完成但当前提交指针不一致")
+        if existing and existing.state == "current" and not recover:
+            commit = self._control.commit_for_run(run_id)
+            if commit is None:
+                raise ValueError("日度运行已完成但缺少对应提交制品")
             return DailyPipelineResult(existing, commit)
+        if recover and existing is not None:
+            self._control.prepare_recovery(run_id, started_at)
         workspace = self._root / "daily-runs" / run_id.rsplit(":", 1)[-1]
         state_path = workspace / "requests.json"
         state = load_state(state_path) or {"calendar": None, "industries": {}}
@@ -186,6 +197,16 @@ class DailyIndustryPipeline:
                 recovery_action="以相同基础快照和目标日期重新运行",
             )
             self._control.publish_status(interrupted)
+            raise
+        except SnapshotPointerAdvancedError:
+            blocked = replace_status(
+                status,
+                state="blocked",
+                updated_at=started_at,
+                blocker_codes=("concurrent_snapshot_advanced",),
+                recovery_action="从最新 DataSnapshot 重新启动日度运行，禁止恢复旧基线",
+            )
+            self._control.publish_status(blocked)
             raise
         except Exception:
             blocked = replace_status(
@@ -264,14 +285,24 @@ class DailyIndustryPipeline:
             raw_store=self._raw,
         )
         retrieved_at = max(retrieved_at, calendar_received)
+        broad_increment, retrieved_at, broad_count = await self._collect_broad(
+            paths=paths,
+            state=state,
+            state_path=state_path,
+            workspace=workspace,
+            target_date=target_date,
+            retrieved_at=retrieved_at,
+        )
         reason = waiting_reason(
             expected=(expected_l1, expected_l2),
             observed=(observed_l1, observed_l2),
+            broad_index_count=broad_count,
             root=self._root,
             manifests=manifests,
-            started_at=started_at,
+            evaluated_at=retrieved_at,
             target_date=target_date,
             include_events=include_event_inputs,
+            include_extensions=self._prepare_extensions is not None,
         )
         if reason is not None:
             waiting = waiting_provider_status(
@@ -289,6 +320,7 @@ class DailyIndustryPipeline:
             paths=paths,
             calendar_increment=calendar_increment,
             increments=increments,
+            broad_increment=broad_increment,
             expected_l1=expected_l1,
             expected_l2=expected_l2,
             run_id=run_id,
@@ -314,6 +346,7 @@ class DailyIndustryPipeline:
         paths: dict[str, tuple[Path, ...]],
         calendar_increment: Path,
         increments: tuple[Path, ...],
+        broad_increment: Path | None,
         expected_l1: int,
         expected_l2: int,
         run_id: str,
@@ -355,13 +388,24 @@ class DailyIndustryPipeline:
             include_events=include_event_inputs,
             references=references,
         )
+        extensions = (
+            await self._prepare_extensions(base.snapshot_id, target_date)
+            if self._prepare_extensions is not None
+            else None
+        )
         retrieved_at = prepared.retrieved_at
+        if extensions is not None:
+            retrieved_at = max(retrieved_at, extensions.retrieved_at)
         self._checkpoint(run_id, "provider_collect", retrieved_at, content_hash(state))
         self._interrupt(interrupt_after_step, "provider_collect")
-        published = self._publish_datasets(
+        published = publish_daily_datasets(
+            data_root=self._root,
+            datasets=self._datasets,
+            ledger=self._ledger,
             manifests=manifests,
             paths=paths,
             increments=increments,
+            broad_increment=broad_increment,
             expected_l1=expected_l1,
             expected_l2=expected_l2,
             run_id=run_id,
@@ -371,6 +415,7 @@ class DailyIndustryPipeline:
             merged_calendar=merged_calendar,
             calendar_stats=calendar_stats,
             prepared=prepared,
+            extensions=extensions,
         )
         self._checkpoint(run_id, "dataset", retrieved_at, published.industry.dataset_version)
         self._interrupt(interrupt_after_step, "dataset")
@@ -388,98 +433,28 @@ class DailyIndustryPipeline:
         )
         return DailyPipelineResult(completed, commit)
 
-    def _publish_datasets(
+    async def _collect_broad(
         self,
         *,
-        manifests: dict[str, DatasetManifest],
         paths: dict[str, tuple[Path, ...]],
-        increments: tuple[Path, ...],
-        expected_l1: int,
-        expected_l2: int,
-        run_id: str,
+        state: dict[str, object],
+        state_path: Path,
+        workspace: Path,
         target_date: date,
         retrieved_at: datetime,
-        workspace: Path,
-        merged_calendar: Path,
-        calendar_stats: tuple[int, date, date],
-        prepared: DailyPreparedInputs,
-    ) -> PublishedDailyDatasets:
-        merged = workspace / "industry_index_daily.parquet"
-        row_count, start_date, end_date = merge_industry_daily(
-            base_paths=paths["industry_index_daily"],
-            increments=increments,
+    ) -> tuple[Path | None, datetime, int]:
+        if "broad_index_daily" not in paths:
+            return None, retrieved_at, 6
+        increment, received_at, count = await collect_broad_indexes(
+            state=state,
+            state_path=state_path,
+            workspace=workspace,
             target_date=target_date,
-            output=merged,
-            expected_l1=expected_l1,
-            expected_l2=expected_l2,
+            provider=self._provider,
+            encoder=self._encoder,
+            raw_store=self._raw,
         )
-        industry = daily_industry_manifest(
-            path=merged,
-            run_id=run_id,
-            retrieved_at=retrieved_at,
-            row_count=row_count,
-            date_range=(start_date, end_date),
-        )
-        industry_path = self._datasets.publish_files(
-            industry,
-            {"industry_index_daily.parquet": (merged, file_hash(merged))},
-        )
-        self._ledger.record_dataset(industry, industry_path)
-        calendar = daily_calendar_manifest(
-            path=merged_calendar,
-            run_id=run_id,
-            retrieved_at=retrieved_at,
-            row_count=calendar_stats[0],
-            date_range=(calendar_stats[1], calendar_stats[2]),
-        )
-        calendar_path = self._datasets.publish_files(
-            calendar,
-            {"trade_calendar.parquet": (merged_calendar, file_hash(merged_calendar))},
-        )
-        self._ledger.record_dataset(calendar, calendar_path)
-        research_paths: dict[str, Path] = {}
-        for name, manifest in prepared.research.items():
-            path = self._datasets.publish_files(
-                manifest,
-                artifact_sources(
-                    self._root,
-                    manifests[name],
-                    manifest,
-                    prepared.replacements[name],
-                ),
-            )
-            self._ledger.record_dataset(manifest, path)
-            research_paths[name] = path
-        event_paths: dict[str, Path] = {}
-        if prepared.events is not None:
-            for name, manifest in prepared.events.manifests.items():
-                path = self._datasets.publish_files(
-                    manifest,
-                    prepared.events.artifacts[name],
-                )
-                self._ledger.record_dataset(manifest, path)
-                event_paths[name] = path
-        reference_paths: dict[str, Path] = {}
-        if prepared.references is not None:
-            for name, manifest in prepared.references.manifests.items():
-                path = self._datasets.publish_files(
-                    manifest,
-                    prepared.references.artifacts[name],
-                )
-                self._ledger.record_dataset(manifest, path)
-                reference_paths[name] = path
-        return PublishedDailyDatasets(
-            industry,
-            industry_path,
-            calendar,
-            calendar_path,
-            prepared.research,
-            research_paths,
-            prepared.events.manifests if prepared.events is not None else {},
-            event_paths,
-            prepared.references.manifests if prepared.references is not None else {},
-            reference_paths,
-        )
+        return increment, max(retrieved_at, received_at), count
 
     def _checkpoint(self, run_id: str, step_id: str, completed_at: datetime, artifact: str) -> None:
         publish_checkpoint(self._control, run_id, step_id, completed_at, artifact)

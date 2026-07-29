@@ -1,4 +1,8 @@
-"""Create a clearly synthetic formal-rotation fixture for browser acceptance."""
+"""Create one cohesive synthetic market fixture for cross-page browser acceptance.
+
+The fixture intentionally stays in one module so rotation, hierarchy, dashboard, and
+daily-status browser flows share exactly one snapshot identity.
+"""
 
 import json
 from datetime import UTC, date, datetime, timedelta
@@ -72,15 +76,20 @@ def _write_hierarchy_datasets(root: Path) -> tuple[DatasetRef, ...]:
             root,
             "industry_taxonomy",
             """
-            SELECT 'L1' "level", printf('8010%d0.SI', l1) industry_code,
+            SELECT 'SYNTH' taxonomy, 'SYNTH-HIER' taxonomy_version,
+                   'L1' "level", printf('8010%d0.SI', l1) industry_code,
                    printf('合成行业%d', l1) industry_name,
                    CAST(NULL AS VARCHAR) parent_code, true is_published
             FROM range(1, 5) t(l1)
             UNION ALL
-            SELECT 'L2', printf('8010%d%d.SI', l1, l2),
+            SELECT 'SYNTH', 'SYNTH-HIER', 'L2', printf('8010%d%d.SI', l1, l2),
                    printf('合成二级%d-%d', l1, l2),
                    printf('8010%d0.SI', l1), true
             FROM range(1, 5) a(l1), range(1, 4) b(l2)
+            UNION ALL
+            SELECT 'SW', 'SW2021', 'L1', printf('801%03d.SI', l1),
+                   printf('合成一级行业%02d', l1), CAST(NULL AS VARCHAR), true
+            FROM range(1, 32) t(l1)
             """,
         ),
         _write_dataset(
@@ -96,10 +105,24 @@ def _write_hierarchy_datasets(root: Path) -> tuple[DatasetRef, ...]:
               WHERE dayofweek(day) BETWEEN 1 AND 5
             )
             SELECT 'L2' "level", printf('8010%d%d.SI', l1, l2) industry_code,
+                   printf('合成二级%d-%d', l1, l2) industry_name,
                    trade_date,
                    80 + l1 * 7 + l2 * 3 + session_no * (0.012 + l2 * 0.002)
-                     + sin(session_no / (9.0 + l1)) "close"
+                     + sin(session_no / (9.0 + l1)) "close",
+                   CAST(NULL AS DOUBLE) percent_change,
+                   CAST(NULL AS DOUBLE) amount_provider_native,
+                   CAST(NULL AS DOUBLE) price_earnings,
+                   CAST(NULL AS DOUBLE) price_book
             FROM range(1, 5) a(l1), range(1, 4) b(l2), sessions
+            UNION ALL
+            SELECT 'L1', printf('801%03d.SI', l1),
+                   printf('合成一级行业%02d', l1), trade_date,
+                   100 + l1 * 2 + session_no * (0.01 + l1 * 0.0004),
+                   -1.6 + l1 * 0.1,
+                   100000 + l1 * 5000 + session_no * 20,
+                   12 + l1 * 0.5,
+                   1 + l1 * 0.04
+            FROM range(1, 32) a(l1), sessions
             """,
         ),
         _write_dataset(
@@ -107,7 +130,23 @@ def _write_hierarchy_datasets(root: Path) -> tuple[DatasetRef, ...]:
             "security_master",
             """
             SELECT printf('60%04d.SH', stock_id) instrument_id,
-                   printf('合成股票%02d', stock_id) "name"
+                   printf('合成股票%02d', stock_id) "name",
+                   'SH' exchange,
+                   '主板' market
+            FROM range(1, 37) t(stock_id)
+            """,
+        ),
+        _write_dataset(
+            root,
+            "security_name_history",
+            """
+            SELECT printf('60%04d.SH', stock_id) instrument_id,
+                   printf('合成股票%02d', stock_id) "name",
+                   'normal' risk_status,
+                   false is_special_treatment,
+                   DATE '2012-01-01' effective_start_date,
+                   CAST(NULL AS DATE) effective_end_date,
+                   TIMESTAMPTZ '2012-01-01 18:00:00+08' available_at
             FROM range(1, 37) t(stock_id)
             """,
         ),
@@ -115,16 +154,27 @@ def _write_hierarchy_datasets(root: Path) -> tuple[DatasetRef, ...]:
             root,
             "industry_membership",
             """
-            SELECT printf('60%04d.SH', stock_id) instrument_id,
+            SELECT 'SYNTH' taxonomy, 'SYNTH-HIER' taxonomy_version,
+                   printf('60%04d.SH', stock_id) instrument_id,
                    printf('合成股票%02d', stock_id) instrument_name,
                    'L2' "level", printf('8010%d%d.SI', l1, l2) industry_code,
+                   printf('合成二级%d-%d', l1, l2) industry_name,
                    DATE '2012-01-01' effective_from,
                    CAST(NULL AS DATE) effective_to,
-                   TIMESTAMPTZ '2012-01-01 18:00:00+08' available_at
+                   TIMESTAMPTZ '2012-01-01 18:00:00+08' available_at,
+                   TIMESTAMPTZ '2025-05-21 18:00:00+08' retrieved_at
             FROM range(1, 5) a(l1), range(1, 4) b(l2), range(1, 4) c(member),
             LATERAL (
               SELECT CAST((l1 - 1) * 9 + (l2 - 1) * 3 + member AS INTEGER) stock_id
             )
+            UNION ALL
+            SELECT 'SW', 'SW2021', printf('60%04d.SH', l1),
+                   printf('合成股票%02d', l1),
+                   'L1', printf('801%03d.SI', l1),
+                   printf('合成一级行业%02d', l1), DATE '2012-01-01',
+                   CAST(NULL AS DATE), TIMESTAMPTZ '2012-01-01 18:00:00+08',
+                   TIMESTAMPTZ '2025-05-21 18:00:00+08'
+            FROM range(1, 32) t(l1)
             """,
         ),
     )
@@ -132,6 +182,39 @@ def _write_hierarchy_datasets(root: Path) -> tuple[DatasetRef, ...]:
 
 def _write_stock_datasets(root: Path) -> tuple[DatasetRef, ...]:
     return (
+        _write_dataset(
+            root,
+            "broad_index_daily",
+            """
+            WITH sessions AS (
+              SELECT CAST(day AS DATE) trade_date,
+                     row_number() OVER (ORDER BY day) session_no
+              FROM generate_series(
+                DATE '2023-01-02', DATE '2025-05-21', INTERVAL 1 DAY
+              ) t(day)
+              WHERE dayofweek(day) BETWEEN 1 AND 5
+            ), indexes AS (
+              SELECT * FROM (VALUES
+                ('000001.SH', '上证指数', 3200.0),
+                ('399001.SZ', '深证成指', 10500.0),
+                ('399006.SZ', '创业板指', 2100.0),
+                ('000688.SH', '科创50', 980.0),
+                ('000300.SH', '沪深300', 3900.0),
+                ('000852.SH', '中证1000', 6100.0)
+              ) t(instrument_id, instrument_name, base)
+            ), bars AS (
+              SELECT *, base + session_no * 0.8
+                + sin(session_no / 11.0) * base * 0.004 AS close
+              FROM sessions CROSS JOIN indexes
+            )
+            SELECT instrument_id, instrument_name, trade_date,
+                   close - 4 "open", close + 8 high, close - 9 low, close,
+                   4.0 change, 0.12 percent_change,
+                   800000 + session_no * 900 volume_lots,
+                   12000000000 + session_no * 1000000 amount_cny
+            FROM bars
+            """,
+        ),
         _write_dataset(
             root,
             "daily_market",
@@ -163,6 +246,19 @@ def _write_stock_datasets(root: Path) -> tuple[DatasetRef, ...]:
         ),
         _write_dataset(
             root,
+            "daily_tradability",
+            """
+            SELECT printf('60%04d.SH', stock_id) instrument_id,
+                   DATE '2025-05-21' trade_date,
+                   stock_id IN (1, 2) upper_limit_locked,
+                   stock_id = 36 lower_limit_locked,
+                   'eligible' research_eligibility,
+                   true has_daily_bar
+            FROM range(1, 37) t(stock_id)
+            """,
+        ),
+        _write_dataset(
+            root,
             "daily_basic",
             """
             SELECT printf('60%04d.SH', stock_id) instrument_id,
@@ -170,6 +266,7 @@ def _write_stock_datasets(root: Path) -> tuple[DatasetRef, ...]:
                    1.2 + stock_id * 0.04 turnover_rate,
                    14.0 + stock_id * 0.8 price_earnings_ttm,
                    1.1 + stock_id * 0.06 price_book,
+                   0.012 + stock_id * 0.0001 dividend_yield_ttm,
                    70000.0 + stock_id * 2500 total_market_value_ten_thousand_cny,
                    52000.0 + stock_id * 1900 circulating_market_value_ten_thousand_cny,
                    CAST(trade_date AS TIMESTAMPTZ) + INTERVAL 18 HOUR available_at
@@ -196,8 +293,43 @@ def _write_stock_datasets(root: Path) -> tuple[DatasetRef, ...]:
     )
 
 
+def _write_lifecycle_datasets(root: Path) -> tuple[DatasetRef, ...]:
+    return (
+        _write_dataset(
+            root,
+            "adjusted_market",
+            """
+            WITH sessions AS (
+              SELECT CAST(day AS DATE) trade_date,
+                     row_number() OVER (ORDER BY day) session_no
+              FROM generate_series(
+                DATE '2024-01-02', DATE '2025-05-21', INTERVAL 1 DAY
+              ) t(day)
+              WHERE dayofweek(day) BETWEEN 1 AND 5
+            ), values AS (
+              SELECT printf('60%04d.SH', stock_id) instrument_id, trade_date,
+                     100 * exp(
+                     session_no * (0.0004 + stock_id * 0.00001)
+                     + 0.018 * sin((session_no + stock_id * 2) / 9.0)
+                     ) research_close_index
+              FROM range(1, 37) t(stock_id), sessions
+            )
+            SELECT *, research_close_index
+              / lag(research_close_index) OVER (
+                PARTITION BY instrument_id ORDER BY trade_date
+              ) - 1 reported_total_return
+            FROM values
+            """,
+        ),
+    )
+
+
 def _write_fixture_datasets(root: Path) -> tuple[DatasetRef, ...]:
-    return _write_hierarchy_datasets(root) + _write_stock_datasets(root)
+    return (
+        _write_hierarchy_datasets(root)
+        + _write_stock_datasets(root)
+        + _write_lifecycle_datasets(root)
+    )
 
 
 def prepare_data_snapshot(root: Path) -> DataSnapshot:
@@ -212,6 +344,12 @@ def prepare_data_snapshot(root: Path) -> DataSnapshot:
     target = root / "snapshots" / ("e" * 64)
     target.mkdir(parents=True, exist_ok=True)
     (target / "manifest.json").write_text(snapshot.model_dump_json(), encoding="utf-8")
+    current = root / "current"
+    current.mkdir(parents=True, exist_ok=True)
+    (current / "data-snapshot.json").write_text(
+        json.dumps({"snapshot_id": snapshot.snapshot_id}),
+        encoding="utf-8",
+    )
     return snapshot
 
 
@@ -224,7 +362,14 @@ def _write_dataset(root: Path, name: str, query: str) -> DatasetRef:
         connection.execute(f"COPY ({query}) TO ? (FORMAT PARQUET)", [str(artifact)])
     content_hash = sha256(artifact.read_bytes()).hexdigest()
     (dataset / "manifest.json").write_text(
-        json.dumps({"artifact_paths": [artifact.name]}),
+        json.dumps(
+            {
+                "dataset_version": "sha256:" + digest,
+                "content_hash": "sha256:" + content_hash,
+                "artifact_paths": [artifact.name],
+                "provider": "synthetic-e2e",
+            }
+        ),
         encoding="utf-8",
     )
     return DatasetRef(

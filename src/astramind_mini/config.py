@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("var/data")
     control_db_path: Path = Path("var/control/astramind.db")
     rotation_data_dir: Path = Path("var/research/market-rotation")
+    market_model_dir: Path = Path("var/research/market-models")
     tushare_token: SecretStr | None = None
     tushare_api_url: str = "https://api.tushare.pro"
     tushare_rate_limit_per_minute: int = Field(default=120, ge=1, le=500)
@@ -36,6 +37,7 @@ class Settings(BaseSettings):
     miniqmt_xtquant_path: Path | None = None
     miniqmt_quote_port: int | None = Field(default=None, ge=1024, le=65535)
     miniqmt_probe_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    miniqmt_fresh_tick_wait_seconds: float = Field(default=8.0, ge=0, le=30)
     miniqmt_account_id: SecretStr | None = None
     miniqmt_account_mode: Literal["simulation", "live"] | None = None
     miniqmt_userdata_path: SecretStr | None = None

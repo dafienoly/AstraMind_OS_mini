@@ -80,6 +80,21 @@ def test_windows_runner_contains_only_market_data_surface() -> None:
     assert not any(token in source for token in forbidden)
 
 
+def test_persistent_data_bridge_contains_no_trading_surface() -> None:
+    source = Path("scripts/windows/miniqmt_data_bridge.py").read_text(encoding="utf-8").lower()
+    forbidden = (
+        "xtquanttrader",
+        "order_stock",
+        "cancel_order_stock",
+        "query_stock_asset",
+        "query_stock_position",
+        "query_stock_order",
+        "query_stock_trade",
+    )
+    assert not any(token in source for token in forbidden)
+    assert 'import_module("xtquant.xtdata")' in source
+
+
 def test_capture_reconnects_after_a_disconnected_runner(tmp_path: Path) -> None:
     class FixtureCapture(MiniQMTL1Capture):
         calls = 0

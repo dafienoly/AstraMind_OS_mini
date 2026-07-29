@@ -20,9 +20,13 @@ from ..ports import (
 )
 from .constraint_supplements import ConstraintSupplementService
 from .datasets import build_dataset_manifest_from_hashes
-from .historical_supplements import HistoricalSupplementService
+from .historical_supplements import (
+    HistoricalSupplementService,
+    validate_daily_market_coverage,
+)
 from .identity import file_hash
-from .state_files import load_state
+from .provider_lineage import market_source_attribution
+from .state_files import load_state, save_state
 
 SOURCE_DATASETS = (
     "daily_market",
@@ -52,17 +56,6 @@ async def publish_daily_research_inputs(
     constraint_state_path = workspace / "research" / "constraint-state.json"
     market_state = load_state(market_state_path) or {"supplements": {}}
     constraints_state = load_state(constraint_state_path) or {"supplements": {}}
-    await HistoricalSupplementService(
-        provider=provider,
-        raw_store=raw_store,
-        encoder=encoder,
-    ).prepare(
-        staging=workspace / "research",
-        state=market_state,
-        state_path=market_state_path,
-        missing_daily=frozenset({target_date}),
-        missing_factors=frozenset({target_date}),
-    )
     await ConstraintSupplementService(
         provider=provider,
         raw_store=raw_store,
@@ -76,6 +69,43 @@ async def publish_daily_research_inputs(
             "stk_limit": frozenset({target_date}),
             "suspend_d": frozenset({target_date}),
         },
+    )
+    daily_basic_state = cast(
+        dict[str, object],
+        cast(dict[str, object], constraints_state["supplements"])["daily_basic"],
+    )
+    constraint_day = cast(
+        dict[str, object],
+        daily_basic_state[target_date.isoformat()],
+    )
+    daily_basic_path = Path(str(constraint_day["path"]))
+    daily_universe = _daily_instruments(daily_basic_path, target_date)
+    _invalidate_incomplete_market_cache(
+        market_state=market_state,
+        market_state_path=market_state_path,
+        daily_basic_path=daily_basic_path,
+        target_date=target_date,
+    )
+    await HistoricalSupplementService(
+        provider=provider,
+        raw_store=raw_store,
+        encoder=encoder,
+    ).prepare(
+        staging=workspace / "research",
+        state=market_state,
+        state_path=market_state_path,
+        missing_daily=frozenset({target_date}),
+        missing_factors=frozenset({target_date}),
+        daily_universe={target_date: daily_universe},
+    )
+    market_day = cast(
+        dict[str, object],
+        cast(dict[str, object], market_state["supplements"])[target_date.isoformat()],
+    )
+    validate_daily_market_coverage(
+        Path(str(market_day["daily"])),
+        daily_basic_path,
+        target_date,
     )
     replacements = _source_replacements(
         root=root,
@@ -121,6 +151,43 @@ async def publish_daily_research_inputs(
             run_id=run_id,
         )
     return staged_manifests, {**replacements, **derived}, retrieved_at
+
+
+def _invalidate_incomplete_market_cache(
+    *,
+    market_state: dict[str, object],
+    market_state_path: Path,
+    daily_basic_path: Path,
+    target_date: date,
+) -> None:
+    supplements = cast(dict[str, object], market_state["supplements"])
+    entry = supplements.get(target_date.isoformat())
+    if not isinstance(entry, dict) or "daily" not in entry:
+        return
+    try:
+        validate_daily_market_coverage(
+            Path(str(entry["daily"])),
+            daily_basic_path,
+            target_date,
+        )
+    except (duckdb.Error, OSError, ValueError):
+        for field in ("daily", "daily_request_identity", "daily_received_at"):
+            entry.pop(field, None)
+        save_state(market_state_path, market_state)
+
+
+def _daily_instruments(path: Path, target_date: date) -> tuple[str, ...]:
+    with duckdb.connect(":memory:") as connection:
+        rows = connection.execute(
+            """
+            SELECT DISTINCT instrument_id
+            FROM read_parquet(?)
+            WHERE trade_date = ?
+            ORDER BY instrument_id
+            """,
+            [str(path), target_date],
+        ).fetchall()
+    return tuple(str(row[0]) for row in rows)
 
 
 def artifact_sources(
@@ -258,11 +325,12 @@ def _reversion_manifest(
         ).fetchone()
         assert row is not None
         row_count = int(row[0])
+    attribution = market_source_attribution(tuple(parquet))
     return build_dataset_manifest_from_hashes(
         dataset_name=base.dataset_name,
         schema_version=base.schema_version,
-        provider=base.provider,
-        source_endpoint=base.source_endpoint,
+        provider=attribution.provider,
+        source_endpoint=attribution.source_endpoint,
         request_identity="sha256:" + run_id.rsplit(":", 1)[-1],
         retrieved_at=retrieved_at,
         market_timezone=base.market_timezone,
@@ -275,6 +343,7 @@ def _reversion_manifest(
         artifact_hashes=hashes,
         known_gaps=base.known_gaps,
         critical_gaps=base.critical_gaps,
+        provider_lineage=attribution.provider_lineage,
     )
 
 

@@ -1,6 +1,6 @@
 # WP-0031：本地日度调度、错过窗口补跑与启动恢复
 
-- 版本：1.1.0
+- 版本：1.3.0
 - 状态：已完成
 - 需求：REQ-2026-0009 v1.2.0
 - 上游：WP-0030 v1.1.0
@@ -18,7 +18,8 @@
 
 ## 调度口径
 
-- 16:35 首次运行，提供方未完成时在 16:50、17:10 有界补跑；
+- 16:35 首次运行，提供方未完成时在 16:50、17:10 有界补跑；20:10 在 ETF 日线
+  18:00 可用和事件数据 20:05 可用后完成最终恢复；
 - 次日 08:30 只做启动恢复和上一交易日完成度核验；
 - 交易日来自版本化日历，不按自然日猜测；
 - 同一目标日期始终复用 WP-0030 幂等身份；
@@ -55,7 +56,8 @@
 
 - 生成和测试任务定义不需要券商授权；
 - 执行实际 `schedule-install` 前必须获得用户对任务名称、触发时间和工作目录的确认；
-- 调度器永久排除 `paper-canary-run`、`paper-canary-settle`、MiniQMT 和 Live 命令。
+- 调度器永久排除 `paper-canary-run`、`paper-canary-settle`、MiniQMT 账户/交易和
+  Live 命令；统一日度数据管线可按已发布路由调用 MiniQMT 只读行情。
 
 ## 验收
 
@@ -70,6 +72,9 @@
    私有路径或任何 Paper/Live 命令。
 6. Given 暂停或卸载调度，When 查看本地数据和历史，Then 已发布快照、运行摘要和控制
    台账不被删除。
+7. Given 已完成运行后来发现当日覆盖不全，When 用户以同一运行 ID 显式恢复，Then
+   旧步骤、数据检查点和摘要进入追加式历史，新数据、决策和备份重新执行，不改写旧
+   审计工件。
 
 ## 检查
 
@@ -83,19 +88,28 @@ git diff --check
 
 ## 实施证据
 
-- 平台无关决策器覆盖 08:30、16:35、16:50、17:10、登录恢复和版本化交易日历；
+- 平台无关决策器覆盖 08:30、16:35、16:50、17:10、20:10、登录恢复和版本化
+  交易日历；
 - Windows 任务定义使用 least privilege、`StartWhenAvailable`、35 分钟上限和
   `IgnoreNew`，动作只进入 `make daily-schedule-trigger`；
 - 预览已于 2026-07-29 生成，任务名称为
   `AstraMind OS Mini - Daily Ops`，工作目录为
   `/home/ly/work/AstraMind_OS_mini`，环境来源为
-  `/mnt/e/work/AstraMind_OS/.env`；
+  `/home/ly/work/AstraMind_OS_mini/.env.local`；原 E 盘环境文件消失后已按用户指令
+  原位更新，未改变任务名称、权限或工作目录；
 - 用户于 2026-07-29 精确确认后完成 Windows Task Scheduler 实际安装；内置 Users 组
   任务通过 UAC 登记，任务本身保持 `LeastPrivilege`；
-- `make daily-schedule-status` 确认 `state=installed`，Windows 状态为 `Ready`，共五个
-  触发器，首次计划运行是 2026-07-29 16:35；
+- 提前触发发现 Task Scheduler 的非登录 shell 无法解析用户级 `uv`，Windows 结果为2、
+  内部 Make 结果为127。启动包装改为
+  `wsl.exe --cd <仓库> -- /bin/bash -lc '<make daily-schedule-trigger ...>'`，保持任务
+  名称、触发器、环境来源和权限不变；相同登录 shell 动作已验证退出码为0；
+- v1.3 已重新安装到 Windows Task Scheduler；`make daily-schedule-status` 确认
+  `state=installed`，PowerShell 实际读取到 08:30、16:35、16:50、17:10、20:10
+  五个日历触发点；
 - 单元与包装器集成测试验证同一运行身份、提供方有界重试、错过窗口恢复、XML 敏感信息
   排除和零券商动作。
+- v1.3 的 20:10 最终触发解决 ETF 日线在 18:00 前发布后长期沿用昨日证据，
+  以及事件输入 20:05 前持续等待却没有后续自动恢复的问题。
 
 ## 交接
 

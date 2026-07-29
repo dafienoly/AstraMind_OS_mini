@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useRouteLoadPhase } from "../app-shell/routeProgress";
 import type {
   DailyOperations,
   DailyPipelineStatus,
@@ -20,14 +21,6 @@ import {
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
 
 type Destination = "today" | "portfolio" | "execution" | "system";
-
-const nav: { id: Destination | "market"; label: string; href: string }[] = [
-  { id: "today", label: "今日", href: "/today" },
-  { id: "market", label: "市场", href: "/market?tab=industries&view=rotation" },
-  { id: "portfolio", label: "组合", href: "/portfolio" },
-  { id: "execution", label: "订单", href: "/execution" },
-  { id: "system", label: "系统", href: "/system" },
-];
 
 export function OperationsShell({ destination }: { destination: Destination }) {
   const [state, setState] = useState<OperationsState>({ kind: "loading" });
@@ -64,6 +57,10 @@ export function OperationsShell({ destination }: { destination: Destination }) {
   }, []);
 
   useEffect(() => refresh(), [refresh]);
+  useRouteLoadPhase(
+    state.kind === "loading" ? "loading_content" : state.kind === "ready" ? "ready" : "error",
+    state.kind === "loading" ? "正在读取本地运行投影" : "运行工作面加载完成",
+  );
 
   const registerRequest = useCallback(async (action: DailyRunRequestAction) => {
     if (state.kind !== "ready" || !state.value.daily) return;
@@ -97,23 +94,6 @@ export function OperationsShell({ destination }: { destination: Destination }) {
 
   return (
     <div className="ops-app">
-      <header className="ops-topbar">
-        <a className="wordmark" href="/today">
-          ASTRA<span>MIND</span>
-        </a>
-        <nav aria-label="一级导航">
-          {nav.map((item) => (
-            <a
-              aria-current={item.id === destination ? "page" : undefined}
-              href={item.href}
-              key={item.id}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <span className="mode-pill">PAPER · SIMULATION</span>
-      </header>
       {state.kind === "ready" ? (
         <>
           <DecisionSpine value={state.value} />

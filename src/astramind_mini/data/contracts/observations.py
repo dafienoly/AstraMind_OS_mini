@@ -270,9 +270,26 @@ class IndustryIndexDailyObservation(ObservationSource):
     total_market_value_provider_native: float | None = None
 
 
+class BroadIndexDailyObservation(ObservationSource):
+    registry_version: Literal["a-share-broad-index-v1"]
+    instrument_id: Identifier
+    instrument_name: str
+    trade_date: date
+    open: float
+    high: float
+    low: float
+    close: float
+    previous_close: float
+    change: float
+    percent_change: float
+    volume_lots: float
+    amount_cny: float
+
+
 __all__ = [
     "AdjustedMarketObservation",
     "AdjustmentFactorObservation",
+    "BroadIndexDailyObservation",
     "CorporateActionObservation",
     "DailyBarObservation",
     "DailyBasicObservation",

@@ -54,6 +54,27 @@ class DailyRunStore:
                     content_hash TEXT NOT NULL,
                     payload_json TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS daily_run_step_history (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    run_id TEXT NOT NULL,
+                    step_id TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    content_hash TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    superseded_at TEXT NOT NULL,
+                    recovery_reason TEXT NOT NULL,
+                    UNIQUE (run_id, step_id, content_hash)
+                );
+                CREATE TABLE IF NOT EXISTS daily_run_summary_history (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    summary_id TEXT NOT NULL UNIQUE,
+                    run_id TEXT NOT NULL,
+                    target_date TEXT NOT NULL,
+                    content_hash TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    superseded_at TEXT NOT NULL,
+                    recovery_reason TEXT NOT NULL
+                );
                 """
             )
 
@@ -184,6 +205,64 @@ class DailyRunStore:
                 (run_id, step_id),
             ).fetchone()
         return DailyRunStep.model_validate_json(row[0]) if row else None
+
+    def prepare_recovery(self, run_id: str, prepared_at: datetime) -> tuple[int, int]:
+        """Reopen a completed run while retaining its prior steps and summary."""
+        self.migrate()
+        with self._connect() as connection:
+            status = connection.execute(
+                "SELECT state FROM daily_run_status WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            if status is None or status[0] != "current":
+                raise ValueError("只有已完成的日常运行可显式重建")
+            audit = (prepared_at.isoformat(), "explicit_recovery", run_id)
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO daily_run_step_history
+                  (run_id, step_id, state, content_hash, payload_json,
+                   superseded_at, recovery_reason)
+                SELECT run_id, step_id, state, content_hash, payload_json, ?, ?
+                FROM daily_run_steps WHERE run_id = ?
+                """,
+                audit,
+            )
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO daily_run_summary_history
+                  (summary_id, run_id, target_date, content_hash, payload_json,
+                   superseded_at, recovery_reason)
+                SELECT summary_id, run_id, target_date, content_hash, payload_json, ?, ?
+                FROM daily_run_summaries WHERE run_id = ?
+                """,
+                audit,
+            )
+            step_count = connection.execute(
+                "SELECT count(*) FROM daily_run_steps WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            summary_count = connection.execute(
+                "SELECT count(*) FROM daily_run_summaries WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            connection.execute("DELETE FROM daily_run_steps WHERE run_id = ?", (run_id,))
+            connection.execute("DELETE FROM daily_run_summaries WHERE run_id = ?", (run_id,))
+        return (
+            int(step_count[0]) if step_count else 0,
+            int(summary_count[0]) if summary_count else 0,
+        )
+
+    def summary_history(self, run_id: str) -> tuple[DailyRunSummary, ...]:
+        self.migrate()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT payload_json FROM daily_run_summary_history
+                WHERE run_id = ? ORDER BY event_id
+                """,
+                (run_id,),
+            ).fetchall()
+        return tuple(DailyRunSummary.model_validate_json(row[0]) for row in rows)
 
     def publish_summary(self, value: DailyRunSummary) -> Path:
         self.migrate()

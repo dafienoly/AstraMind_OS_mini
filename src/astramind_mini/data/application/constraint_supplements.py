@@ -9,16 +9,15 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
-from ..contracts import RawRecordEnvelope
 from ..ports import HistoricalMarketDataProvider, ParquetEncoder, ProviderTable, RawRecordStore
 from .dataset_schemas import DAILY_BASIC_COLUMNS, PRICE_LIMIT_COLUMNS, SUSPENSION_EVENT_COLUMNS
-from .identity import content_hash
 from .normalization import (
     normalize_daily_basic,
     normalize_price_limits,
     normalize_suspension_events,
 )
 from .publication_policy import DAILY_BASIC_FIELDS, PRICE_LIMIT_FIELDS, SUSPENSION_FIELDS
+from .raw_records import preserve_provider_table_raw
 from .state_files import save_state, write_bytes_atomic
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
@@ -100,16 +99,7 @@ class ConstraintSupplementService:
         fields: tuple[str, ...],
     ) -> ProviderTable:
         table = await self._provider.query(api_name, params=params, fields=fields)
-        envelope = RawRecordEnvelope(
-            provider="tushare",
-            interface_name=api_name,
-            source_endpoint=table.source_endpoint,
-            request_identity=table.request_identity,
-            received_at=table.received_at,
-            schema_version="provider-v1",
-            content_hash=content_hash(table.raw_body),
-        )
-        self._raw_store.append(envelope, table.raw_body)
+        preserve_provider_table_raw(table, self._raw_store)
         return table
 
 

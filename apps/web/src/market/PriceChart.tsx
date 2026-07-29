@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   CandlestickSeries,
   ColorType,
@@ -7,6 +7,8 @@ import {
   LineSeries,
   LineStyle,
   type CandlestickData,
+  type IPriceLine,
+  type ISeriesApi,
   type Time,
 } from "lightweight-charts";
 
@@ -25,6 +27,11 @@ type PriceChartProps = {
   indicator?: Indicator | null;
   visibleRange?: [number, number];
   onHoverDate?: (date: string) => void;
+  liveReference?: {
+    value: number;
+    label: string;
+    state: "current" | "stale" | "disconnected";
+  };
 };
 
 type Hover = {
@@ -44,8 +51,13 @@ export function PriceChart({
   indicator = null,
   visibleRange,
   onHoverDate,
+  liveReference,
 }: PriceChartProps) {
   const container = useRef<HTMLDivElement>(null);
+  const priceSeries = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const liveLine = useRef<IPriceLine | null>(null);
+  const latestLiveReference = useRef(liveReference);
+  latestLiveReference.current = liveReference;
   const [hover, setHover] = useState<Hover>(null);
 
   useEffect(() => {
@@ -94,12 +106,18 @@ export function PriceChart({
       wickUpColor: "#c23b32",
       wickDownColor: "#148060",
     });
+    priceSeries.current = prices;
     const volume = chart.addSeries(
       HistogramSeries,
       { priceFormat: { type: "volume" }, priceScaleId: "" },
       1,
     );
     prices.setData(candles);
+    if (latestLiveReference.current) {
+      liveLine.current = prices.createPriceLine(
+        liveLineOptions(latestLiveReference.current),
+      );
+    }
     volume.setData(candles.map((item) => ({
       time: item.time,
       value: item.volume,
@@ -132,8 +150,14 @@ export function PriceChart({
       setHover(hoverAt(time ? byTime.get(time) : undefined));
       onHoverDate?.(time ?? cutoffCandle?.time ?? candles.at(-1)?.time ?? "");
     });
-    return () => chart.remove();
+    return () => {
+      priceSeries.current = null;
+      liveLine.current = null;
+      chart.remove();
+    };
   }, [candles, cutoffCandle, indicator, maWindows, onHoverDate, visibleRange]);
+
+  useLiveReference(priceSeries, liveLine, liveReference);
 
   const cutoff = cutoffCandle ?? candles.at(-1);
   return (
@@ -142,6 +166,40 @@ export function PriceChart({
       <div ref={container} className="chart-canvas" aria-label="统一 K 线、成交量与技术指标图" />
     </div>
   );
+}
+
+function useLiveReference(
+  priceSeries: RefObject<ISeriesApi<"Candlestick"> | null>,
+  liveLine: RefObject<IPriceLine | null>,
+  liveReference: PriceChartProps["liveReference"],
+) {
+  useEffect(() => {
+    const series = priceSeries.current;
+    if (!series) return;
+    if (!liveReference) {
+      if (liveLine.current) series.removePriceLine(liveLine.current);
+      liveLine.current = null;
+      return;
+    }
+    if (liveLine.current) {
+      liveLine.current.applyOptions(liveLineOptions(liveReference));
+    } else {
+      liveLine.current = series.createPriceLine(liveLineOptions(liveReference));
+    }
+  }, [liveLine, liveReference, priceSeries]);
+}
+
+function liveLineOptions(reference: NonNullable<PriceChartProps["liveReference"]>) {
+  return {
+    price: reference.value,
+    color: reference.state === "current"
+      ? "#2e5e84"
+      : reference.state === "stale" ? "#b47a22" : "#68747c",
+    lineWidth: 1 as const,
+    lineStyle: LineStyle.Dashed,
+    axisLabelVisible: true,
+    title: reference.label,
+  };
 }
 
 function PriceChartLegend({ cutoff, hover }: { cutoff?: Candle; hover: Hover }) {

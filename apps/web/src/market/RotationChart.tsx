@@ -17,6 +17,7 @@ import {
 import type { RotationViewport } from "./rotationViewport";
 import { useElementSize } from "./useElementSize";
 import { useRotationPan } from "./useRotationPan";
+import type { RotationIntradayPoint } from "./rotationIntraday";
 
 interface RotationChartProps {
   ariaLabel?: string;
@@ -32,6 +33,7 @@ interface RotationChartProps {
   showPointDetails?: boolean;
   viewport?: RotationViewport;
   onViewportChange?: (viewport: RotationViewport) => void;
+  intraday?: RotationIntradayPoint[];
 }
 
 function trailPath(points: VisualRotationPoint[], viewport: RotationViewport) {
@@ -57,6 +59,7 @@ export const RotationChart = memo(function RotationChart({
   showPointDetails = false,
   viewport = DEFAULT_ROTATION_VIEWPORT,
   onViewportChange,
+  intraday = [],
 }: RotationChartProps) {
   const panHandlers = useRotationPan(viewport, onViewportChange, onClear);
   const plotSize = useElementSize();
@@ -86,7 +89,6 @@ export const RotationChart = memo(function RotationChart({
     () => new Map(labelPlacements.map((placement) => [placement.code, placement])),
     [labelPlacements],
   );
-
   return (
     <section
       aria-label={ariaLabel}
@@ -103,18 +105,7 @@ export const RotationChart = memo(function RotationChart({
       ref={plotSize.ref}
       {...panHandlers}
     >
-      <div className="quadrant quadrant--improving">
-        <strong>弱势改善</strong><span>趋势偏弱 · 动量回升</span>
-      </div>
-      <div className="quadrant quadrant--leading">
-        <strong>强势领先</strong><span>趋势偏强 · 动量增强</span>
-      </div>
-      <div className="quadrant quadrant--lagging">
-        <strong>弱势落后</strong><span>趋势偏弱 · 动量减弱</span>
-      </div>
-      <div className="quadrant quadrant--weakening">
-        <strong>强势降温</strong><span>趋势偏强 · 动量回落</span>
-      </div>
+      <RotationQuadrants />
       <div className="plot-safe-frame" aria-hidden="true">
         <small>安全绘图区</small>
       </div>
@@ -135,6 +126,7 @@ export const RotationChart = memo(function RotationChart({
             style={{ stroke: trail.color }}
           />
         ))}
+        <RotationIntradayOverlay points={intraday} viewport={viewport} />
       </svg>
       <RotationLabelLeaders
         height={plotSize.height}
@@ -163,3 +155,37 @@ export const RotationChart = memo(function RotationChart({
     </section>
   );
 });
+
+function RotationQuadrants() {
+  return <>
+    <div className="quadrant quadrant--improving">
+      <strong>弱势改善</strong><span>趋势偏弱 · 动量回升</span>
+    </div>
+    <div className="quadrant quadrant--leading">
+      <strong>强势领先</strong><span>趋势偏强 · 动量增强</span>
+    </div>
+    <div className="quadrant quadrant--lagging">
+      <strong>弱势落后</strong><span>趋势偏弱 · 动量减弱</span>
+    </div>
+    <div className="quadrant quadrant--weakening">
+      <strong>强势降温</strong><span>趋势偏强 · 动量回落</span>
+    </div>
+  </>;
+}
+
+function RotationIntradayOverlay({
+  points,
+  viewport,
+}: {
+  points: RotationIntradayPoint[];
+  viewport: RotationViewport;
+}) {
+  return points.map((item) => {
+    const start = applyRotationViewport(projectVisualPoint(item.anchor), viewport);
+    const end = applyRotationViewport(projectVisualPoint(item.endpoint), viewport);
+    return <g className="rotation-intraday" key={item.industry_code}>
+      <line x1={start.x} y1={100 - start.y} x2={end.x} y2={100 - end.y} />
+      <circle cx={end.x} cy={100 - end.y} r="0.75" />
+    </g>;
+  });
+}

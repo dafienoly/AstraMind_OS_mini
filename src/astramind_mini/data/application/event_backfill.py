@@ -252,7 +252,7 @@ class TacticalEventBackfillService:
         if len(table.rows) >= provider_limit:
             raise ProviderRowLimitError(f"{api_name}:{key} 达到提供方上限，拒绝发布可能截断的数据")
         envelope = RawRecordEnvelope(
-            provider="tushare",
+            provider=table.provider_id,
             interface_name=api_name,
             source_endpoint=table.source_endpoint,
             request_identity=table.request_identity,

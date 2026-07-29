@@ -22,6 +22,7 @@ from ..contracts.paper_continuous import (
 from ..domain.paper_continuous import validate_submission_approval
 from ..domain.reconciliation import canonical_hash
 from .miniqmt_account import MiniQMTAccountError, _parse_body, _terminate_process_tree
+from .windows_runner_diagnostics import classify_runner_failure, record_runner_diagnostic
 
 
 class MiniQMTPaperGateway:
@@ -37,6 +38,7 @@ class MiniQMTPaperGateway:
         fingerprint_key: str,
         quote_port: int | None = None,
         timeout_seconds: float = 20,
+        diagnostic_root: Path | None = None,
     ) -> None:
         self._runner = runner
         self._python_command = python_command
@@ -47,6 +49,7 @@ class MiniQMTPaperGateway:
         self._fingerprint_key = fingerprint_key
         self._quote_port = quote_port
         self._timeout = timeout_seconds
+        self._diagnostic_root = diagnostic_root
 
     async def query(self, intent: PaperOrderIntent) -> PaperBrokerCommandResult:
         return await self._command("query", intent)
@@ -126,14 +129,53 @@ class MiniQMTPaperGateway:
                 stderr=asyncio.subprocess.PIPE,
             )
             try:
-                stdout, _ = await asyncio.wait_for(process.communicate(), timeout=self._timeout)
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=self._timeout
+                )
             except TimeoutError:
                 await _terminate_process_tree(process)
-                raise TimeoutError("paper_gateway_timeout") from None
-            body = _parse_body(stdout)
+                self._record(action, b"", b"", process.returncode, "paper_gateway_timeout")
+                raise MiniQMTAccountError("paper_gateway_timeout") from None
+            try:
+                body = _parse_body(stdout)
+            except MiniQMTAccountError:
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=None,
+                    default="invalid_runner_json",
+                )
+                self._record(action, stdout, stderr, process.returncode, code)
+                raise MiniQMTAccountError(code) from None
             if process.returncode != 0 or body.get("runner_error_code"):
-                raise MiniQMTAccountError("paper_gateway_failed")
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=body,
+                    default="paper_gateway_failed",
+                )
+                self._record(action, stdout, stderr, process.returncode, code)
+                raise MiniQMTAccountError(code)
+            self._record(action, stdout, stderr, process.returncode, "ok")
             return body
+
+    def _record(
+        self,
+        action: str,
+        stdout: bytes,
+        stderr: bytes,
+        returncode: int | None,
+        outcome: str,
+    ) -> None:
+        record_runner_diagnostic(
+            root=self._diagnostic_root,
+            runner=f"paper-{action}",
+            stdout=stdout,
+            stderr=stderr,
+            returncode=returncode,
+            outcome=outcome,
+            secrets=(self._account_selector, self._userdata_path, self._fingerprint_key),
+        )
 
     def _staged_command(self, temporary: Path, action: str, intent: PaperOrderIntent) -> list[str]:
         staged_runner = temporary / "runner.py"

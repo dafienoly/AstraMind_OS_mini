@@ -20,6 +20,8 @@ import type {
   TrailMode,
   VisualRotationPoint,
 } from "./rotationTypes";
+import type { RotationIntradayPoint } from "./rotationIntraday";
+import { ModelEvidenceBand } from "../market-dashboard/model-evidence/ModelEvidenceBand";
 
 export interface RotationReadyViewProps {
   snapshot: RotationSnapshot;
@@ -69,6 +71,8 @@ export interface RotationReadyViewProps {
   onHierarchyParent: (value: string) => void;
   setSpeed: (value: RotationSpeed) => void;
   setTrail: (value: number) => void;
+  intraday?: RotationIntradayPoint[];
+  intradayLabel?: string;
 }
 
 export function RotationReadyView(props: RotationReadyViewProps) {
@@ -88,10 +92,11 @@ export function RotationReadyView(props: RotationReadyViewProps) {
         snapshot={props.snapshot}
       />
       <main className="rotation-main">
-        <div className="market-tabs" aria-label="市场视图">
-          <span>大盘</span><strong>行业</strong><span>ETF 轮动</span>
-          <i /><span>行业热力</span><strong>相对轮动</strong>
-        </div>
+        <ModelEvidenceBand
+          dataCutoff={props.currentDate}
+          family="industry_rotation"
+          horizons={["未来 5 日", "未来 20 日"]}
+        />
         {props.hierarchyParent ? (
           <IndustryHierarchyExplorer
             asOf={props.currentDate}
@@ -134,6 +139,7 @@ export function RotationReadyView(props: RotationReadyViewProps) {
             当前选择不在筛选结果中，检查器仍保留。
           </p>
         ) : null}
+        {props.intradayLabel ? <p className="rotation-intraday-status">{props.intradayLabel}</p> : null}
         <div className="rotation-workspace">
           <div>
             <RotationChart
@@ -145,6 +151,7 @@ export function RotationReadyView(props: RotationReadyViewProps) {
               progress={props.progress}
               selectedCode={props.selected}
               trails={props.trails}
+              intraday={props.intraday}
             />
             <Playback
               dateIndex={props.dateIndex}

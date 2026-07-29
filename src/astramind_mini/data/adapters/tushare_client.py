@@ -59,6 +59,8 @@ class TushareHttpClient:
             request_identity=request_identity,
             received_at=received_at,
             source_endpoint=_endpoint_identity(self._config.api_url),
+            provider_id="tushare",
+            provider_version="http-v1",
         )
 
     async def _pace(self, api_name: str) -> None:

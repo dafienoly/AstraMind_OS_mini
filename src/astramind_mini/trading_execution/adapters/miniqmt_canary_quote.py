@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .miniqmt_account import MiniQMTAccountError, _parse_body, _terminate_process_tree
+from .windows_runner_diagnostics import classify_runner_failure, record_runner_diagnostic
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,12 +46,16 @@ class MiniQMTCanaryQuoteReader:
         xtquant_path: Path | None,
         quote_port: int | None,
         timeout_seconds: float = 10,
+        fresh_wait_seconds: float = 8,
+        diagnostic_root: Path | None = None,
     ) -> None:
         self._runner = runner
         self._python_command = python_command
         self._xtquant_path = xtquant_path
         self._quote_port = quote_port
         self._timeout = timeout_seconds
+        self._fresh_wait = fresh_wait_seconds
+        self._diagnostic_root = diagnostic_root
 
     async def read(self, instrument_id: str) -> CanaryQuote:
         body = await self._invoke(instrument_id)
@@ -96,13 +101,62 @@ class MiniQMTCanaryQuoteReader:
                 stderr=asyncio.subprocess.PIPE,
             )
             try:
-                stdout, _ = await asyncio.wait_for(process.communicate(), timeout=self._timeout)
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), timeout=self._timeout
+                )
             except TimeoutError:
                 await _terminate_process_tree(process)
+                record_runner_diagnostic(
+                    root=self._diagnostic_root,
+                    runner="canary-quote",
+                    stdout=b"",
+                    stderr=b"",
+                    returncode=process.returncode,
+                    outcome="canary_quote_timeout",
+                )
                 raise MiniQMTAccountError("canary_quote_timeout") from None
-            body = _parse_body(stdout)
+            try:
+                body = _parse_body(stdout)
+            except MiniQMTAccountError:
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=None,
+                    default="invalid_runner_json",
+                )
+                record_runner_diagnostic(
+                    root=self._diagnostic_root,
+                    runner="canary-quote",
+                    stdout=stdout,
+                    stderr=stderr,
+                    returncode=process.returncode,
+                    outcome=code,
+                )
+                raise MiniQMTAccountError(code) from None
             if process.returncode != 0 or body.get("runner_error_code"):
-                raise MiniQMTAccountError("canary_quote_failed")
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=body,
+                    default="canary_quote_failed",
+                )
+                record_runner_diagnostic(
+                    root=self._diagnostic_root,
+                    runner="canary-quote",
+                    stdout=stdout,
+                    stderr=stderr,
+                    returncode=process.returncode,
+                    outcome=code,
+                )
+                raise MiniQMTAccountError(code)
+            record_runner_diagnostic(
+                root=self._diagnostic_root,
+                runner="canary-quote",
+                stdout=stdout,
+                stderr=stderr,
+                returncode=process.returncode,
+                outcome="ok",
+            )
             return body
 
     def _command(self, temporary: Path, instrument_id: str) -> list[str]:
@@ -114,6 +168,8 @@ class MiniQMTCanaryQuoteReader:
             self._windows_path(runner),
             "--instrument",
             instrument_id,
+            "--fresh-wait-seconds",
+            str(self._fresh_wait),
         ]
         if python_path:
             arguments.extend(["--xtquant-path", python_path])

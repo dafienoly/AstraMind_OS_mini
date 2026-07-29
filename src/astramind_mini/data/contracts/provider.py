@@ -37,6 +37,13 @@ class RawRecordEnvelope(ContractModel):
     content_hash: ContentHash
 
 
+class DatasetProviderEpoch(ContractModel):
+    provider: Identifier
+    source_endpoint: Identifier
+    effective_from: date
+    effective_to: date | None = None
+
+
 class DatasetManifest(ContractModel):
     dataset_name: Identifier
     dataset_version: ContentHash
@@ -55,6 +62,7 @@ class DatasetManifest(ContractModel):
     row_count: int = Field(ge=0)
     known_gaps: tuple[str, ...] = ()
     critical_gaps: tuple[str, ...] = ()
+    provider_lineage: tuple[DatasetProviderEpoch, ...] = ()
     artifact_paths: tuple[str, ...] = Field(min_length=1)
     publish_status: str = Field(pattern=r"^complete$")
 
@@ -89,6 +97,7 @@ class ProbeReport(ContractModel):
 __all__ = [
     "CapabilityState",
     "DatasetManifest",
+    "DatasetProviderEpoch",
     "ProbeReport",
     "ProviderCapability",
     "RawRecordEnvelope",

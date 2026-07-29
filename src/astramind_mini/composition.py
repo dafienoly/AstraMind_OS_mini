@@ -14,8 +14,9 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from . import __version__
 from .config import Settings, get_settings
-from .data.adapters import DailyPipelineStore
+from .data.adapters import DailyPipelineStore, RealtimeProjectionStore
 from .data.contracts import DailyPipelineStatus
+from .data.realtime_api import register_realtime_routes
 from .local_ops.contracts import DailyDecisionStatus
 from .local_ops.daily_decision_store import DailyDecisionStore
 from .local_ops.daily_operations import (
@@ -24,12 +25,23 @@ from .local_ops.daily_operations import (
 )
 from .local_ops.daily_scheduler_contracts import DailyRunRequest
 from .local_ops.daily_scheduler_store import DailySchedulerStore
+from .market_regime.model_status_api import register_market_model_status_route
 from .market_regime.public import (
+    EtfRotationProjection,
     FilesystemRotationStore,
     IndustryHierarchyView,
+    IndustryLifecycleIntradayProjection,
+    IndustryLifecycleProjection,
+    IndustryResearchRankingSnapshot,
+    MarketDashboardProjection,
     MarketRotationSnapshot,
+    SnapshotEtfRotation,
     SnapshotIndustryHierarchy,
+    SnapshotIndustryLifecycle,
+    SnapshotIndustryResearchRanking,
+    SnapshotMarketDashboard,
 )
+from .market_regime.stock_workbench_api import register_stock_workbench_route
 from .trading_execution.adapters.paper_operations_reader import PaperOperationsReader
 from .trading_execution.contracts.paper_continuous import PaperOperationsSnapshot
 
@@ -80,7 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PUT"],
         allow_headers=["*"],
     )
 
@@ -98,6 +110,86 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ),
             broker_enabled=False,
         )
+
+    _register_etf_routes(app, resolved)
+    _register_market_routes(app, resolved)
+    register_market_model_status_route(app, resolved.market_model_dir)
+
+    @app.get(
+        "/api/execution/paper-operations",
+        response_model=PaperOperationsSnapshot,
+        responses={503: {"description": "Paper 本地投影不可用"}},
+    )
+    def paper_operations() -> PaperOperationsSnapshot:
+        try:
+            return PaperOperationsReader(resolved.shadow_db_path).current()
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "paper_operations_projection_unavailable"},
+            ) from error
+
+    _register_system_routes(app, resolved)
+    register_realtime_routes(app, resolved.data_dir)
+    return app
+
+
+def _register_etf_routes(app: FastAPI, resolved: Settings) -> None:
+    @app.get(
+        "/api/market/etf-rotation",
+        response_model=EtfRotationProjection,
+        responses={404: {"description": "尚无正式 ETF 数据快照"}},
+    )
+    def etf_rotation(
+        data_snapshot_id: str | None = None,
+        selected_etf_code: str | None = None,
+    ) -> EtfRotationProjection:
+        try:
+            reader = SnapshotEtfRotation(resolved.data_dir)
+            if data_snapshot_id is None:
+                return reader.current(selected_etf_code=selected_etf_code)
+            return reader.load(
+                data_snapshot_id,
+                selected_etf_code=selected_etf_code,
+            )
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "etf_rotation_snapshot_not_available"},
+            ) from error
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "etf_rotation_projection_unavailable"},
+            ) from error
+
+
+def _register_market_routes(app: FastAPI, resolved: Settings) -> None:
+    _register_lifecycle_routes(app, resolved)
+    register_stock_workbench_route(
+        app,
+        resolved,
+        RealtimeProjectionStore(resolved.data_dir),
+    )
+
+    @app.get(
+        "/api/market/dashboard",
+        response_model=MarketDashboardProjection,
+        responses={404: {"description": "尚无正式数据快照"}},
+    )
+    def market_dashboard() -> MarketDashboardProjection:
+        try:
+            return SnapshotMarketDashboard(resolved.data_dir).current()
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "market_dashboard_snapshot_not_available"},
+            ) from error
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "market_dashboard_projection_unavailable"},
+            ) from error
 
     @app.get(
         "/api/market/industry-rotation",
@@ -147,21 +239,91 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ) from error
 
     @app.get(
-        "/api/execution/paper-operations",
-        response_model=PaperOperationsSnapshot,
-        responses={503: {"description": "Paper 本地投影不可用"}},
+        "/api/market/industry-ranking",
+        response_model=IndustryResearchRankingSnapshot,
+        responses={404: {"description": "尚无正式数据快照"}},
     )
-    def paper_operations() -> PaperOperationsSnapshot:
+    def industry_ranking(
+        industry_code: str,
+        data_snapshot_id: str | None = None,
+        instrument_id: str | None = None,
+    ) -> IndustryResearchRankingSnapshot:
         try:
-            return PaperOperationsReader(resolved.shadow_db_path).current()
+            reader = SnapshotIndustryResearchRanking(resolved.data_dir)
+            if data_snapshot_id is None:
+                return reader.current(
+                    industry_code=industry_code,
+                    instrument_id=instrument_id,
+                )
+            return reader.load(
+                data_snapshot_id=data_snapshot_id,
+                industry_code=industry_code,
+                instrument_id=instrument_id,
+            )
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "industry_ranking_snapshot_not_available"},
+            ) from error
         except (ValueError, OSError, sqlite3.Error) as error:
             raise HTTPException(
                 status_code=503,
-                detail={"code": "paper_operations_projection_unavailable"},
+                detail={"code": "industry_ranking_projection_unavailable"},
             ) from error
 
-    _register_system_routes(app, resolved)
-    return app
+
+def _register_lifecycle_routes(app: FastAPI, resolved: Settings) -> None:
+    lifecycle_reader = SnapshotIndustryLifecycle(resolved.data_dir)
+    realtime_store = RealtimeProjectionStore(resolved.data_dir)
+
+    @app.get(
+        "/api/market/industry-lifecycle",
+        response_model=IndustryLifecycleProjection,
+        responses={404: {"description": "尚无正式数据快照"}},
+    )
+    def industry_lifecycle() -> IndustryLifecycleProjection:
+        try:
+            return lifecycle_reader.current()
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "industry_lifecycle_snapshot_not_available"},
+            ) from error
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "industry_lifecycle_projection_unavailable"},
+            ) from error
+
+    @app.get(
+        "/api/market/industry-lifecycle/intraday",
+        response_model=IndustryLifecycleIntradayProjection,
+    )
+    def industry_lifecycle_intraday() -> IndustryLifecycleIntradayProjection:
+        try:
+            realtime = realtime_store.current_instruments()
+            prices = {
+                quote.instrument_id: quote.last_price
+                for quote in realtime.quotes
+                if quote.instrument_type == "stock" and quote.last_price is not None
+            }
+            return lifecycle_reader.intraday(
+                prices=prices,
+                market_date=realtime.market_date,
+                session_id=realtime.session_id,
+                state=realtime.state,
+                as_of=realtime.as_of,
+            )
+        except FileNotFoundError as error:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "industry_lifecycle_intraday_not_available"},
+            ) from error
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "industry_lifecycle_intraday_unavailable"},
+            ) from error
 
 
 def _register_system_routes(app: FastAPI, resolved: Settings) -> None:

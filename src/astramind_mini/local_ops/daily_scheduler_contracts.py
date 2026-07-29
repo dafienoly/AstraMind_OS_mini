@@ -16,6 +16,7 @@ ScheduleTrigger = Literal[
     "post_close_1635",
     "provider_retry_1650",
     "provider_retry_1710",
+    "finalize_2010",
     "startup_0830",
     "logon_recovery",
     "outside_window",

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import fcntl
 import gzip
+import json
 import os
 import shutil
 import tempfile
@@ -17,6 +19,10 @@ from ..contracts import DatasetManifest, RawRecordEnvelope
 
 class ImmutableConflictError(RuntimeError):
     """Raised when an immutable identity already points at different bytes."""
+
+
+class SnapshotPointerAdvancedError(RuntimeError):
+    """Raised when a publisher tries to replace a snapshot newer than its frozen base."""
 
 
 def _digest(identity: str) -> str:
@@ -193,17 +199,35 @@ class FilesystemSnapshotStore:
         path = self._root / "snapshots" / _digest(snapshot_id) / "manifest.json"
         return DataSnapshot.model_validate_json(path.read_text(encoding="utf-8"))
 
-    def activate(self, snapshot: DataSnapshot, manifest_path: Path) -> None:
+    def activate(
+        self,
+        snapshot: DataSnapshot,
+        manifest_path: Path,
+        *,
+        expected_snapshot_id: str | None = None,
+    ) -> None:
         pointer = self._root / "current" / "data-snapshot.json"
-        _atomic_write(
-            pointer,
-            canonical_json(
-                {
-                    "snapshot_id": snapshot.snapshot_id,
-                    "manifest_path": str(manifest_path.relative_to(self._root)),
-                }
-            ),
-        )
+        lock = self._root / "current" / ".data-snapshot.lock"
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        with lock.open("a+b") as stream:
+            fcntl.flock(stream, fcntl.LOCK_EX)
+            if expected_snapshot_id is not None and pointer.exists():
+                current = json.loads(pointer.read_text(encoding="utf-8"))
+                current_id = current.get("snapshot_id") if isinstance(current, dict) else None
+                if current_id != expected_snapshot_id:
+                    raise SnapshotPointerAdvancedError(
+                        "当前 DataSnapshot 已前移，拒绝以旧基线覆盖："
+                        f"expected={expected_snapshot_id},current={current_id}"
+                    )
+            _atomic_write(
+                pointer,
+                canonical_json(
+                    {
+                        "snapshot_id": snapshot.snapshot_id,
+                        "manifest_path": str(manifest_path.relative_to(self._root)),
+                    }
+                ),
+            )
 
 
 def _snapshot_identity(snapshot: DataSnapshot) -> dict[str, object]:
@@ -221,4 +245,5 @@ __all__ = [
     "FilesystemRawRecordStore",
     "FilesystemSnapshotStore",
     "ImmutableConflictError",
+    "SnapshotPointerAdvancedError",
 ]

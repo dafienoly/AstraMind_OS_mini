@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0001 v0.6 个股全景行情台</title>
+  <desc id="desc">个股观察页的实时列表、行情尺、当日统计、多周期K线、成交量、MACD、五档盘口和数据证据示意图。</desc>
+  <defs>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans",Arial,sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",Consolas,monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.ochre{fill:#b47a22}.up{fill:#c34b43}.down{fill:#238267}.white{fill:#fff}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t14{font-size:14px}.t18{font-size:18px}.t24{font-size:24px}.bold{font-weight:700}
+      .rule{stroke:#d8e0dd;stroke-width:1}.grid{stroke:#edf0ed;stroke-width:1}.blue-line{stroke:#2e5e84;stroke-width:1.5;fill:none}.ma5{stroke:#d99018;stroke-width:1.4;fill:none}.ma20{stroke:#7654d8;stroke-width:1.3;fill:none}.ma60{stroke:#284b78;stroke-width:1.3;fill:none}
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#f2f4f3"/>
+  <rect width="68" height="900" fill="#172129"/>
+  <text x="34" y="34" text-anchor="middle" class="white num bold t14">AM</text>
+  <text x="34" y="112" text-anchor="middle" class="white cn t10">今日</text>
+  <rect x="7" y="135" width="54" height="42" fill="#2e5e84"/>
+  <text x="34" y="160" text-anchor="middle" class="white cn bold t10">市场</text>
+  <text x="34" y="217" text-anchor="middle" class="white cn t10">策略</text>
+  <text x="34" y="272" text-anchor="middle" class="white cn t10">组合</text>
+  <text x="34" y="327" text-anchor="middle" class="white cn t10">系统</text>
+
+  <rect x="68" width="1372" height="48" fill="#fff"/>
+  <text x="92" y="29" class="ink cn bold t14">AstraMind OS Mini</text>
+  <text x="1190" y="29" class="muted cn t10">只读行情 · 不进入策略或订单</text>
+  <line x1="68" y1="48" x2="1440" y2="48" class="rule"/>
+  <rect x="68" y="48" width="1372" height="38" fill="#f8faf8"/>
+  <text x="92" y="72" class="blue cn bold t10">数据　正在更新</text>
+  <text x="230" y="72" class="muted cn t10">市场 15:00:01　接收 18:14:05　1 秒粒度　覆盖 5,534/5,534　会话 57565026</text>
+  <text x="1318" y="72" text-anchor="end" class="ochre cn t10">参考日 2026-07-28</text>
+  <line x1="68" y1="86" x2="1440" y2="86" class="rule"/>
+
+  <rect x="68" y="86" width="1372" height="52" fill="#fff"/>
+  <text x="94" y="117" class="muted cn t11">大盘</text>
+  <text x="151" y="117" class="muted cn t11">行业</text>
+  <text x="208" y="117" class="muted cn t11">ETF 轮动</text>
+  <text x="297" y="117" class="blue cn bold t11">个股观察</text>
+  <line x1="291" y1="134" x2="359" y2="134" stroke="#2e5e84" stroke-width="3"/>
+
+  <!-- watchlist -->
+  <rect x="86" y="154" width="246" height="724" fill="#fff" stroke="#d8e0dd"/>
+  <text x="102" y="181" class="ink cn bold t12">实时列表</text>
+  <text x="308" y="181" text-anchor="end" class="muted num t10">自选 8</text>
+  <rect x="100" y="194" width="218" height="34" fill="#f8faf8" stroke="#cbd5d0"/>
+  <text x="112" y="215" class="muted cn t10">输入代码或名称添加自选</text>
+  <rect x="96" y="242" width="226" height="62" fill="#edf3f7"/>
+  <rect x="96" y="242" width="3" height="62" fill="#2e5e84"/>
+  <text x="108" y="262" class="ink cn bold t11">有研新材</text>
+  <text x="108" y="280" class="muted mono t9">600206.SH · 连续交易</text>
+  <text x="306" y="264" text-anchor="end" class="ink num bold t12">39.86</text>
+  <text x="306" y="282" text-anchor="end" class="down num t10">↓ -8.37%</text>
+  <g class="cn t10">
+    <text x="108" y="329" class="ink">平安银行</text><text x="306" y="329" text-anchor="end" class="up num">+0.71%</text>
+    <line x1="100" y1="342" x2="318" y2="342" class="rule"/>
+    <text x="108" y="367" class="ink">贵州茅台</text><text x="306" y="367" text-anchor="end" class="down num">-0.42%</text>
+    <line x1="100" y1="380" x2="318" y2="380" class="rule"/>
+    <text x="108" y="405" class="ink">中芯国际</text><text x="306" y="405" text-anchor="end" class="up num">+1.18%</text>
+  </g>
+  <text x="102" y="850" class="muted cn t9">列表保留价格、方向、状态和新鲜度；</text>
+  <text x="102" y="866" class="muted cn t9">自选只是本地观察配置。</text>
+
+  <!-- instrument tape -->
+  <rect x="348" y="154" width="742" height="188" fill="#fff" stroke="#d8e0dd"/>
+  <text x="366" y="180" class="ink cn bold t18">有研新材</text>
+  <text x="460" y="180" class="muted mono t10">600206.SH</text>
+  <text x="366" y="211" class="down num bold t24">39.86</text>
+  <text x="456" y="211" class="down num bold t14">↓ -8.37%</text>
+  <text x="552" y="180" class="muted cn t10">申万一级</text><text x="608" y="180" class="ink cn bold t10">电子</text><text x="643" y="180" class="down num t10">↓ -1.12%</text>
+  <text x="718" y="180" class="muted cn t10">申万二级</text><text x="774" y="180" class="ink cn bold t10">半导体</text><text x="818" y="180" class="down num t10">↓ -0.86%</text>
+  <rect x="978" y="166" width="92" height="22" fill="#edf3f7"/>
+  <text x="1024" y="181" text-anchor="middle" class="blue cn bold t9">当前 · 1 秒</text>
+
+  <!-- price ruler signature -->
+  <text x="366" y="239" class="muted cn t9">当日行情尺</text>
+  <line x1="430" y1="236" x2="1058" y2="236" stroke="#c8d2cd" stroke-width="3"/>
+  <circle cx="430" cy="236" r="4" fill="#238267"/><text x="430" y="254" text-anchor="middle" class="muted num t9">跌停 39.15</text>
+  <circle cx="670" cy="236" r="4" fill="#68747c"/><text x="670" y="254" text-anchor="middle" class="muted num t9">昨收 43.50</text>
+  <circle cx="482" cy="236" r="7" fill="#fff" stroke="#2e5e84" stroke-width="2"/><text x="482" y="224" text-anchor="middle" class="blue num bold t10">现价 39.86</text>
+  <circle cx="1058" cy="236" r="4" fill="#c34b43"/><text x="1058" y="254" text-anchor="middle" class="muted num t9">涨停 —</text>
+
+  <g class="cn t9 muted">
+    <text x="366" y="283">今开</text><text x="430" y="283">最高</text><text x="494" y="283">最低</text><text x="558" y="283">换手率</text><text x="630" y="283">PE(TTM)</text><text x="711" y="283">成交量</text><text x="790" y="283">成交额</text><text x="869" y="283">总市值</text><text x="948" y="283">流通市值</text>
+  </g>
+  <g class="num t11 ink bold">
+    <text x="366" y="302">43.09</text><text x="430" y="302">43.28</text><text x="494" y="302">39.15</text><text x="558" y="302">13.43%</text><text x="630" y="302">118.12</text><text x="711" y="302">113.69万手</text><text x="790" y="302">45.80亿</text><text x="869" y="302">337.44亿</text><text x="948" y="302">337.44亿</text>
+  </g>
+  <text x="366" y="326" class="ochre cn t9">PE、市值与换手为“实时价格/量额 × 最近完成日股本与估值基准”的盘中派生值，显示参考日。</text>
+
+  <!-- chart -->
+  <rect x="348" y="354" width="742" height="524" fill="#fff" stroke="#d8e0dd"/>
+  <text x="366" y="381" class="ink cn bold t12">价格与成交</text>
+  <g class="cn t9">
+    <text x="486" y="381" class="blue bold">分时</text><text x="526" y="381" class="muted">1分</text><text x="560" y="381" class="blue bold">5分</text><text x="594" y="381" class="muted">15分</text><text x="635" y="381" class="muted">30分</text><text x="676" y="381" class="muted">60分</text><text x="717" y="381" class="muted">120分</text><text x="765" y="381" class="muted">5日</text><text x="800" y="381" class="muted">日K</text><text x="836" y="381" class="muted">周K</text><text x="872" y="381" class="muted">月K</text><text x="908" y="381" class="muted">年K</text>
+  </g>
+  <line x1="554" y1="390" x2="581" y2="390" stroke="#2e5e84" stroke-width="2"/>
+  <text x="960" y="381" class="muted cn t9">均线 MA5 MA10 MA30 MA60</text>
+  <g class="grid">
+    <line x1="366" y1="424" x2="1070" y2="424"/><line x1="366" y1="468" x2="1070" y2="468"/><line x1="366" y1="512" x2="1070" y2="512"/><line x1="366" y1="556" x2="1070" y2="556"/>
+    <line x1="482" y1="402" x2="482" y2="610"/><line x1="622" y1="402" x2="622" y2="610"/><line x1="762" y1="402" x2="762" y2="610"/><line x1="902" y1="402" x2="902" y2="610"/>
+  </g>
+  <path d="M366 433 C440 440 492 456 548 470 S616 530 662 539 S752 523 810 536 S938 518 1070 535" class="ma60"/>
+  <path d="M366 448 C444 455 492 468 548 480 S603 549 662 552 S750 544 810 553 S938 533 1070 545" class="ma20"/>
+  <path d="M366 462 C450 466 505 472 550 488 S590 557 654 559 S748 550 810 558 S946 540 1070 551" class="ma5"/>
+  <g stroke-width="2">
+    <line x1="520" y1="449" x2="520" y2="493" stroke="#238267"/><rect x="514" y="464" width="12" height="23" fill="#238267"/>
+    <line x1="548" y1="470" x2="548" y2="526" stroke="#238267"/><rect x="542" y="482" width="12" height="37" fill="#238267"/>
+    <line x1="576" y1="493" x2="576" y2="571" stroke="#238267"/><rect x="570" y="506" width="12" height="52" fill="#238267"/>
+    <line x1="604" y1="531" x2="604" y2="583" stroke="#238267"/><rect x="598" y="545" width="12" height="26" fill="#238267"/>
+    <line x1="632" y1="540" x2="632" y2="576" stroke="#c34b43"/><rect x="626" y="550" width="12" height="15" fill="#c34b43"/>
+    <line x1="660" y1="544" x2="660" y2="572" stroke="#238267"/><rect x="654" y="552" width="12" height="12" fill="#238267"/>
+    <line x1="688" y1="548" x2="688" y2="568" stroke="#c34b43"/><rect x="682" y="553" width="12" height="10" fill="#c34b43"/>
+    <line x1="716" y1="545" x2="716" y2="565" stroke="#c34b43"/><rect x="710" y="550" width="12" height="9" fill="#c34b43"/>
+    <line x1="744" y1="548" x2="744" y2="568" stroke="#238267"/><rect x="738" y="555" width="12" height="8" fill="#238267"/>
+  </g>
+  <line x1="576" y1="402" x2="576" y2="812" stroke="#2e5e84" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="382" y="412" width="164" height="166" fill="#fff" stroke="#cbd5d0"/>
+  <text x="394" y="431" class="ink num t9">2026-07-29 09:45</text>
+  <text x="394" y="450" class="muted cn t9">较昨收</text><text x="528" y="450" text-anchor="end" class="down num t9">-8.11%</text>
+  <text x="394" y="468" class="muted cn t9">本 Bar</text><text x="528" y="468" text-anchor="end" class="down num t9">-4.31%</text>
+  <text x="394" y="486" class="muted cn t9">开 / 高 / 低 / 收</text><text x="528" y="486" text-anchor="end" class="ink num t9">41.77 / 41.98 / 39.90 / 39.97</text>
+  <text x="394" y="504" class="muted cn t9">MA5 / 10 / 30 / 60</text><text x="528" y="504" text-anchor="end" class="ink num t9">42.33 / 42.69 / 43.63 / 44.65</text>
+  <text x="394" y="522" class="muted cn t9">MACD / DIF / DEA</text><text x="528" y="522" text-anchor="end" class="ink num t9">-0.465 / -0.718 / -0.485</text>
+  <text x="394" y="540" class="muted cn t9">成交量</text><text x="528" y="540" text-anchor="end" class="ink num t9">10.12 万手</text>
+  <text x="394" y="558" class="muted cn t9">成交额</text><text x="528" y="558" text-anchor="end" class="ink num t9">4.14 亿</text>
+  <!-- volume -->
+  <line x1="366" y1="610" x2="1070" y2="610" class="rule"/>
+  <text x="366" y="630" class="muted cn t9">成交量 / 成交额</text>
+  <g fill="#23826788">
+    <rect x="516" y="647" width="12" height="18"/><rect x="544" y="632" width="12" height="33"/><rect x="572" y="620" width="12" height="45"/><rect x="600" y="638" width="12" height="27"/><rect x="656" y="650" width="12" height="15"/>
+  </g>
+  <g fill="#c34b4388"><rect x="628" y="646" width="12" height="19"/><rect x="684" y="651" width="12" height="14"/><rect x="712" y="648" width="12" height="17"/></g>
+  <!-- MACD -->
+  <line x1="366" y1="680" x2="1070" y2="680" class="rule"/>
+  <text x="366" y="700" class="muted cn t9">MACD　DIF　DEA</text>
+  <line x1="366" y1="742" x2="1070" y2="742" class="grid"/>
+  <g fill="#238267"><rect x="548" y="742" width="10" height="28"/><rect x="564" y="742" width="10" height="42"/><rect x="580" y="742" width="10" height="36"/><rect x="596" y="742" width="10" height="24"/></g>
+  <g fill="#c34b43"><rect x="680" y="725" width="10" height="17"/><rect x="696" y="714" width="10" height="28"/><rect x="712" y="708" width="10" height="34"/><rect x="728" y="716" width="10" height="26"/></g>
+  <path d="M522 730 C582 790 640 746 694 720 S802 712 870 734 S982 740 1050 737" class="ma5"/>
+  <path d="M522 736 C590 767 645 752 700 731 S810 724 872 736 S985 742 1050 739" class="blue-line"/>
+  <rect x="366" y="824" width="704" height="22" fill="#f2f4f3"/>
+  <rect x="566" y="824" width="322" height="22" fill="#dce7ec" stroke="#9bb2bf"/>
+  <line x1="566" y1="821" x2="566" y2="850" stroke="#2e5e84" stroke-width="2"/><line x1="888" y1="821" x2="888" y2="850" stroke="#2e5e84" stroke-width="2"/>
+  <text x="366" y="869" class="muted cn t9">分钟缺口不插值；指标只在种子窗口完整时显示。</text>
+
+  <!-- order book -->
+  <rect x="1106" y="154" width="316" height="724" fill="#fff" stroke="#d8e0dd"/>
+  <text x="1124" y="181" class="ink cn bold t12">盘口与状态</text>
+  <text x="1404" y="181" text-anchor="end" class="ochre cn t9">状态代码 5 · 收盘</text>
+  <rect x="1122" y="198" width="284" height="72" fill="#f8faf8"/>
+  <text x="1136" y="219" class="muted cn t9">最优买 / 卖</text><text x="1392" y="219" text-anchor="end" class="ink num bold t11">39.86 / 39.87</text>
+  <text x="1136" y="241" class="muted cn t9">价差</text><text x="1392" y="241" text-anchor="end" class="ink num t10">0.01 元 · 2.51 bp</text>
+  <text x="1136" y="259" class="muted cn t9">五档量差</text><text x="1392" y="259" text-anchor="end" class="blue num t10">买 689 / 卖 3,559 手</text>
+  <g class="num t10">
+    <text x="1132" y="302" class="muted cn">卖五</text><text x="1275" y="302" text-anchor="end" class="down">39.91</text><text x="1392" y="302" text-anchor="end" class="ink">145</text>
+    <text x="1132" y="329" class="muted cn">卖四</text><text x="1275" y="329" text-anchor="end" class="down">39.90</text><text x="1392" y="329" text-anchor="end" class="ink">777</text>
+    <text x="1132" y="356" class="muted cn">卖三</text><text x="1275" y="356" text-anchor="end" class="down">39.89</text><text x="1392" y="356" text-anchor="end" class="ink">74</text>
+    <text x="1132" y="383" class="muted cn">卖二</text><text x="1275" y="383" text-anchor="end" class="down">39.88</text><text x="1392" y="383" text-anchor="end" class="ink">908</text>
+    <text x="1132" y="410" class="muted cn">卖一</text><text x="1275" y="410" text-anchor="end" class="down bold">39.87</text><text x="1392" y="410" text-anchor="end" class="ink">1,655</text>
+    <line x1="1124" y1="426" x2="1404" y2="426" class="rule"/>
+    <text x="1132" y="451" class="muted cn">买一</text><text x="1275" y="451" text-anchor="end" class="up bold">39.86</text><text x="1392" y="451" text-anchor="end" class="ink">340</text>
+    <text x="1132" y="478" class="muted cn">买二</text><text x="1275" y="478" text-anchor="end" class="up">39.85</text><text x="1392" y="478" text-anchor="end" class="ink">212</text>
+    <text x="1132" y="505" class="muted cn">买三</text><text x="1275" y="505" text-anchor="end" class="up">39.84</text><text x="1392" y="505" text-anchor="end" class="ink">30</text>
+    <text x="1132" y="532" class="muted cn">买四</text><text x="1275" y="532" text-anchor="end" class="up">39.83</text><text x="1392" y="532" text-anchor="end" class="ink">95</text>
+    <text x="1132" y="559" class="muted cn">买五</text><text x="1275" y="559" text-anchor="end" class="up">39.82</text><text x="1392" y="559" text-anchor="end" class="ink">12</text>
+  </g>
+  <line x1="1124" y1="582" x2="1404" y2="582" class="rule"/>
+  <text x="1124" y="607" class="ink cn bold t11">数据证据</text>
+  <g class="cn t9">
+    <text x="1124" y="633" class="muted">报价 / 盘口</text><text x="1404" y="633" text-anchor="end" class="ink">MiniQMT L1 · 当前会话</text>
+    <text x="1124" y="655" class="muted">涨跌停 / 股本</text><text x="1404" y="655" text-anchor="end" class="ochre">MiniQMT 合约资料 · 待补齐</text>
+    <text x="1124" y="677" class="muted">估值基准</text><text x="1404" y="677" text-anchor="end" class="ink">daily_basic · 2026-07-28</text>
+    <text x="1124" y="699" class="muted">行业身份</text><text x="1404" y="699" text-anchor="end" class="ink">SW2021 L1/L2 · 点时</text>
+    <text x="1124" y="721" class="muted">分钟序列</text><text x="1404" y="721" text-anchor="end" class="ochre">聚合未完成 · 不画伪 K</text>
+  </g>
+  <rect x="1122" y="750" width="284" height="88" fill="#fff8ec" stroke="#dec59c"/>
+  <text x="1136" y="773" class="ochre cn bold t10">当前缺口</text>
+  <text x="1136" y="795" class="ink cn t9">分钟暖启动与跨日种子尚未通过验收；</text>
+  <text x="1136" y="813" class="ink cn t9">因此 MA60 / MACD 在不足窗口时保持不可用。</text>
+</svg>

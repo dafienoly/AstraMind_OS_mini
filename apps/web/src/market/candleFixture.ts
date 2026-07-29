@@ -52,6 +52,9 @@ export function aggregateCandles(candles: Candle[], timeframe: Timeframe): Candl
     low: Math.min(...group.map((item) => item.low)),
     close: group.at(-1)?.close ?? group[0].close,
     volume: group.reduce((total, item) => total + item.volume, 0),
+    amount: group.some((item) => item.amount != null)
+      ? group.reduce((total, item) => total + (item.amount ?? 0), 0)
+      : null,
   }));
 }
 

@@ -39,6 +39,119 @@ test("today consumes the same daily exception projection", async ({ page }) => {
   await expect(page.getByRole("button", { name: /提交|撤单|买入|卖出/ })).toHaveCount(0);
 });
 
+test("market overview and industry heat use one bounded projection per view", async ({ page }) => {
+  test.setTimeout(120_000);
+  let dashboardRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/market/dashboard")) dashboardRequests += 1;
+  });
+  mkdirSync("var/evidence", { recursive: true });
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/market?tab=overview");
+  await expect(page.getByRole("heading", { name: "沪深300" })).toBeVisible();
+  const realtimePulse = page.getByRole("region", { name: "盘中会话脉冲" });
+  await expect(realtimePulse).toBeVisible();
+  await expect(realtimePulse).toContainText(
+    /CURRENT|STALE|DISCONNECTED|等待|不可用|连接/,
+  );
+  await expect(realtimePulse).toContainText("市场时间");
+  await expect(realtimePulse).toContainText("接收时间");
+  await expect(page.getByRole("region", { name: "宽基指数" }).getByRole("button"))
+    .toHaveCount(6);
+  await page.getByRole("button", { name: /上证指数/ }).click();
+  await page.getByRole("button", { name: "周线" }).click();
+  await expect(page.getByRole("heading", { name: "上证指数" })).toBeVisible();
+  expect(dashboardRequests).toBe(1);
+  await page.screenshot({
+    path: "var/evidence/wp-0045-realtime-market-overview.png",
+    fullPage: true,
+  });
+
+  await page.goto("/market?tab=industries&view=heatmap");
+  await expect(page.getByRole("heading", { name: "行业结构热力" })).toBeVisible();
+  const industries = page.locator(".heat-grid button");
+  await expect(industries).toHaveCount(31);
+  await industries.nth(20).click();
+  await expect(page.locator(".heat-inspector h2")).not.toBeEmpty();
+  expect(dashboardRequests).toBe(2);
+  await expect(page.getByRole("button", { name: /提交|撤单|买入|卖出/ })).toHaveCount(0);
+  await page.screenshot({
+    path: "var/evidence/wp-0045-realtime-industry-heatmap.png",
+    fullPage: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBe(true);
+  await page.screenshot({
+    path: "var/evidence/wp-0045-realtime-industry-heatmap-mobile.png",
+    fullPage: true,
+  });
+  await page.goto("/market?tab=overview");
+  await expect(page.getByRole("heading", { name: "沪深300" })).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBe(true);
+  await page.screenshot({
+    path: "var/evidence/wp-0045-realtime-market-overview-mobile.png",
+    fullPage: true,
+  });
+});
+
+test("industry lifecycle keeps the full index and one immutable snapshot", async ({ page }) => {
+  test.setTimeout(120_000);
+  let lifecycleRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/market/industry-lifecycle")) lifecycleRequests += 1;
+  });
+  mkdirSync("var/evidence", { recursive: true });
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/market?tab=industries&view=lifecycle");
+  await expect(page.getByRole("img", { name: "行业生命周期结构地图" }))
+    .toBeVisible({ timeout: 30_000 });
+  const index = page.getByRole("complementary", { name: "生命周期行业索引" });
+  await expect(index.getByRole("button")).toHaveCount(31);
+  await index.getByRole("button").nth(20).click();
+  await expect(page.locator(".lifecycle-heading h1")).not.toBeEmpty();
+  await expect(page.getByText("研究观察，不是买卖信号").last()).toBeVisible();
+  const ranking = page.getByRole("region", { name: "行业内个股研究排序" });
+  await expect(ranking).toBeVisible({ timeout: 30_000 });
+  await expect(ranking.locator("tbody tr").first()).toBeVisible();
+  await ranking.locator("tbody tr").nth(1).click();
+  await expect(ranking.getByRole("button", { name: "周线" })).toBeVisible();
+  await ranking.getByRole("button", { name: "周线" }).click();
+  await expect(ranking.getByTestId("dual-range")).toBeVisible();
+  await expect(ranking.getByRole("slider", { name: "区间起点" })).toBeVisible();
+  await expect(ranking.getByText("未经独立样本外验证")).toBeVisible();
+  await expect(page).toHaveURL(/rankingStock=/);
+  await expect(page.getByRole("button", { name: /提交|撤单|买入|卖出/ })).toHaveCount(0);
+  expect(lifecycleRequests).toBe(1);
+  await page.locator(".lifecycle-layout").screenshot({
+    path: "var/evidence/wp-0040-industry-lifecycle.png",
+  });
+  await ranking.screenshot({
+    path: "var/evidence/wp-0042-industry-research-ranking.png",
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".lifecycle-heading h1")).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBe(true);
+  await page.locator(".rotation-topbar nav").evaluate((element) => {
+    (element as HTMLElement).style.display = "none";
+  });
+  await page.locator(".lifecycle-layout").screenshot({
+    path: "var/evidence/wp-0040-industry-lifecycle-mobile.png",
+  });
+  await ranking.screenshot({
+    path: "var/evidence/wp-0042-industry-research-ranking-mobile.png",
+  });
+});
+
 test("formal industry rotation replays locally without business refetch", async ({ page }) => {
   test.setTimeout(60_000);
   let rotationRequests = 0;
@@ -131,56 +244,21 @@ test("formal industry rotation replays locally without business refetch", async 
     await route.continue();
   }, { times: 1 });
   await selectedStock.click();
-  await expect(page.getByRole("status")).toContainText("正在切换至");
+  await expect(page.locator(".stock-update-status")).toContainText("正在切换至");
   await expect(stockPlot).toBeVisible();
-  await expect(page.getByRole("status")).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "日K" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "MA120" })).toBeVisible();
-  await expect(page.getByText("最新股东户数")).toBeVisible();
-  await expect(page.getByText(/同一快照/)).toBeVisible();
+  await expect(page.locator(".stock-update-status")).not.toBeVisible();
+  const commonWorkbench = page.getByRole("link", { name: /打开通用个股工作面/ });
+  await expect(commonWorkbench).toBeVisible();
+  await expect(commonWorkbench).toHaveAttribute(
+    "href",
+    /\/stocks\/.+data_snapshot_id=snapshot%3Asha256%3A/,
+  );
+  expect(hierarchyRequests).toBeGreaterThanOrEqual(2);
   await page.getByRole("combobox", { name: "个股排序字段" }).selectOption("speed");
   await page.getByRole("combobox", { name: "个股排序方向" }).selectOption("desc");
   await expect(page).toHaveURL(/stock_sort=speed/);
   await expect(page.locator(".stock-navigator .rotation-ranked-list small").first())
     .toContainText(/X .*Y .*速度/);
-  await page.getByRole("button", { name: "月K" }).click();
-  await page.getByRole("button", { name: "MA120" }).click();
-  await page.getByRole("button", { name: "RSI" }).click();
-  await expect(page.getByRole("button", { name: "月K" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await expect(page.getByRole("button", { name: "MA120" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  const stockChart = page.locator(".stock-price-workbench .chart-canvas");
-  const stockChartBox = await stockChart.boundingBox();
-  if (stockChartBox) {
-    await page.mouse.move(
-      stockChartBox.x + stockChartBox.width * 0.65,
-      stockChartBox.y + stockChartBox.height * 0.25,
-    );
-  }
-  await expect(page.locator(".stock-price-workbench .chart-legend")).toContainText(
-    "至 2025-05-20",
-  );
-  const hoveredDate = await page.locator(".stock-price-workbench .chart-legend strong")
-    .first().textContent();
-  await expect(page.locator(".stock-evidence-panel > small"))
-    .toContainText(hoveredDate ?? "");
-  const hoveredClose = (await page.locator(".stock-price-workbench .chart-legend span")
-    .filter({ hasText: /^收 / }).textContent())?.replace("收 ", "");
-  await expect(page.locator(".stock-evidence-row")
-    .filter({ hasText: "最新收盘" }).locator("strong"))
-    .toHaveText(hoveredClose ?? "");
-  const workbenchUrl = new URL(page.url());
-  expect(workbenchUrl.searchParams.get("l2")).toBeTruthy();
-  expect(workbenchUrl.searchParams.get("stock")).toBeTruthy();
-  expect(workbenchUrl.searchParams.get("stock_period")).toBe("month");
-  expect(workbenchUrl.searchParams.get("stock_indicator")).toBe("rsi");
-  const hierarchyRequestsBeforeFocus = hierarchyRequests;
-  const chartShell = page.locator(".stock-price-workbench .chart-shell");
   await page.getByRole("button", { name: "展开聚焦" }).click();
   await expect(page.getByRole("button", { name: "收起" })).toBeVisible();
   await expect(stockPlot).toHaveAttribute("data-trail-count", "1");
@@ -196,8 +274,6 @@ test("formal industry rotation replays locally without business refetch", async 
     String(await stockPlot.locator(".rotation-node").count()),
   );
   expect(await labelOverlapCount(stockPlot.locator(".rotation-node span"))).toBe(0);
-  await expect(chartShell).toBeVisible();
-  expect(hierarchyRequests).toBe(hierarchyRequestsBeforeFocus);
   await page.screenshot({
     path: "var/evidence/wp-0036-stock-rotation-focus.png",
     fullPage: true,
@@ -222,32 +298,10 @@ test("formal industry rotation replays locally without business refetch", async 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "收起" }).click();
   await expect(page.getByRole("button", { name: "展开聚焦" })).toBeVisible();
-  await expect(chartShell).toBeVisible();
-  await page.screenshot({
-    path: "var/evidence/wp-0033-stock-evidence-workbench.png",
-    fullPage: true,
-  });
   await page.screenshot({
     path: "var/evidence/wp-0034-motion-filter-sort-stock.png",
     fullPage: true,
   });
-  await page.screenshot({
-    path: "var/evidence/wp-0033-hover-synchronized-evidence.png",
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-  ).toBe(true);
-  await page.screenshot({
-    path: "var/evidence/wp-0033-stock-evidence-workbench-mobile.png",
-    fullPage: true,
-  });
-  await page.screenshot({
-    path: "var/evidence/wp-0034-motion-filter-sort-stock-mobile.png",
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "一级行业" }).click();
   await page.getByRole("button", { name: "公式与口径" }).click();
   await expect(page.getByRole("complementary", {

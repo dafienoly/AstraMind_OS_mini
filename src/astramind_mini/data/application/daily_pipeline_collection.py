@@ -6,14 +6,28 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal, cast
 
+import duckdb
+
 from ..adapters import FilesystemRawRecordStore
-from ..contracts import RawRecordEnvelope
 from ..ports import HistoricalMarketDataProvider, ParquetEncoder, ProviderTable
-from .dataset_schemas import INDUSTRY_INDEX_DAILY_COLUMNS, TRADE_CALENDAR_COLUMNS
-from .identity import content_hash, file_hash
+from .broad_index_normalization import (
+    BROAD_INDEX_REGISTRY,
+    normalize_broad_index_daily,
+)
+from .broad_index_normalization import (
+    INDEX_DAILY_FIELDS as BROAD_INDEX_DAILY_FIELDS,
+)
+from .dataset_schemas import (
+    BROAD_INDEX_DAILY_COLUMNS,
+    INDUSTRY_INDEX_DAILY_COLUMNS,
+    TRADE_CALENDAR_COLUMNS,
+)
+from .identity import file_hash
 from .industry_foundation_support import INDEX_DAILY_FIELDS
 from .industry_normalization import normalize_index_daily
 from .normalization import normalize_trade_calendar
+from .provider_lineage import market_artifact_matches_epoch
+from .raw_records import preserve_provider_table_raw
 from .state_files import save_state, write_bytes_atomic
 
 
@@ -137,17 +151,83 @@ async def collect_industries(
     )
 
 
+async def collect_broad_indexes(
+    *,
+    state: dict[str, object],
+    state_path: Path,
+    workspace: Path,
+    target_date: date,
+    provider: HistoricalMarketDataProvider,
+    encoder: ParquetEncoder,
+    raw_store: FilesystemRawRecordStore,
+) -> tuple[Path, datetime, int]:
+    entries = state.setdefault("broad_indexes", {})
+    if not isinstance(entries, dict):
+        raise ValueError("日度宽基指数状态格式无效")
+    for code in BROAD_INDEX_REGISTRY:
+        cached = entries.get(code)
+        if isinstance(cached, dict):
+            path = Path(str(cached["path"]))
+            if (
+                path.is_file()
+                and file_hash(path) == cached["hash"]
+                and market_artifact_matches_epoch(path, target_date)
+            ):
+                continue
+            entries.pop(code)
+            save_state(state_path, state)
+        table = await provider.query(
+            "index_daily",
+            params={
+                "ts_code": code,
+                "start_date": f"{target_date:%Y%m%d}",
+                "end_date": f"{target_date:%Y%m%d}",
+            },
+            fields=BROAD_INDEX_DAILY_FIELDS,
+        )
+        preserve_raw(table, raw_store)
+        rows = normalize_broad_index_daily(table)
+        if any(row.trade_date != target_date or row.instrument_id != code for row in rows):
+            raise ValueError("提供方返回了请求范围外的宽基指数日线")
+        if len(rows) > 1:
+            raise ValueError("提供方返回重复宽基指数日线")
+        if not rows:
+            continue
+        path = workspace / "requests" / "broad_index" / f"{code}.parquet"
+        write_bytes_atomic(path, encoder.encode(rows, BROAD_INDEX_DAILY_COLUMNS))
+        entries[code] = {
+            "path": str(path),
+            "hash": file_hash(path),
+            "received_at": table.received_at.isoformat(),
+            "request_identity": table.request_identity,
+        }
+        save_state(state_path, state)
+    valid = [
+        value
+        for value in entries.values()
+        if isinstance(value, dict)
+        and Path(str(value.get("path", ""))).is_file()
+        and file_hash(Path(str(value["path"]))) == value.get("hash")
+    ]
+    received = [datetime.fromisoformat(str(value["received_at"])) for value in valid]
+    calendar = as_dict(state["calendar"])
+    received.append(datetime.fromisoformat(str(calendar["received_at"])))
+    output = workspace / "requests" / "broad_index_daily.parquet"
+    if valid:
+        sources = [str(value["path"]) for value in valid]
+        output.parent.mkdir(parents=True, exist_ok=True)
+        target = str(output).replace("'", "''")
+        with duckdb.connect(":memory:") as connection:
+            connection.execute(
+                "COPY (SELECT * FROM read_parquet(?) ORDER BY instrument_id) "
+                f"TO '{target}' (FORMAT PARQUET, COMPRESSION ZSTD)",
+                [sources],
+            )
+    return output, max(received), len(valid)
+
+
 def preserve_raw(table: ProviderTable, raw_store: FilesystemRawRecordStore) -> None:
-    envelope = RawRecordEnvelope(
-        provider="tushare",
-        interface_name=table.api_name,
-        source_endpoint=table.source_endpoint,
-        request_identity=table.request_identity,
-        received_at=table.received_at,
-        schema_version="provider-v1",
-        content_hash=content_hash(table.raw_body),
-    )
-    raw_store.append(envelope, table.raw_body)
+    preserve_provider_table_raw(table, raw_store)
 
 
 def as_dict(value: object) -> dict[str, object]:
@@ -156,4 +236,4 @@ def as_dict(value: object) -> dict[str, object]:
     return value
 
 
-__all__ = ["collect_calendar", "collect_industries"]
+__all__ = ["collect_broad_indexes", "collect_calendar", "collect_industries"]

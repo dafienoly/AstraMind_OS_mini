@@ -16,6 +16,7 @@ from typing import Literal
 
 from astramind_mini.config import Settings
 from astramind_mini.data.adapters import DailyPipelineStore
+from astramind_mini.data.application.daily_pipeline_identity import build_run_id
 from astramind_mini.local_ops.contracts import BackupManifest, DailyDecisionStatus
 from astramind_mini.local_ops.daily_decision_store import DailyDecisionStore
 from astramind_mini.local_ops.daily_run import (
@@ -53,7 +54,8 @@ async def run(args: argparse.Namespace) -> int:
         _print_status(status.model_dump(mode="json"))
         return 0
 
-    target_date, base_snapshot_id = _resolve_identity(args, store, settings)
+    target_date, base_snapshot_id, rebuild_completed = _resolve_identity(args, store, settings)
+    pipeline_run_id = build_run_id(base_snapshot_id, target_date)
     if args.provider_env_file is None:
         raise ValueError("运行或恢复日常任务必须提供 --provider-env-file")
 
@@ -64,8 +66,9 @@ async def run(args: argparse.Namespace) -> int:
             provider_env_file=args.provider_env_file,
             target_date=target_date,
             base_snapshot_id=base_snapshot_id,
+            force_rebuild=rebuild_completed,
         ),
-        run_decision=lambda: _run_decision(settings),
+        run_decision=lambda: _run_decision(settings, pipeline_run_id),
         check_backup=lambda: _check_backup(settings, target_date),
     )
     try:
@@ -89,17 +92,21 @@ async def run(args: argparse.Namespace) -> int:
 
 def _resolve_identity(
     args: argparse.Namespace, store: DailyRunStore, settings: Settings
-) -> tuple[date, str]:
+) -> tuple[date, str, bool]:
     if args.recover:
         if not args.run_id:
             raise ValueError("恢复必须提供 --run-id")
         status = store.status(args.run_id)
         if status is None:
             raise ValueError("待恢复的日常运行不存在")
-        return status.target_date, status.base_snapshot_id
+        return status.target_date, status.base_snapshot_id, status.state == "current"
     if args.target_date is None:
         raise ValueError("运行日常任务必须提供 --target-date")
-    return args.target_date, args.base_snapshot_id or _current_snapshot_id(settings.data_dir)
+    return (
+        args.target_date,
+        args.base_snapshot_id or _current_snapshot_id(settings.data_dir),
+        False,
+    )
 
 
 def _run_data(
@@ -108,7 +115,11 @@ def _run_data(
     provider_env_file: Path,
     target_date: date,
     base_snapshot_id: str,
+    force_rebuild: bool,
 ) -> DailyDataOutcome:
+    control = DailyPipelineStore(settings.control_db_path, settings.data_dir)
+    pipeline_run_id = build_run_id(base_snapshot_id, target_date)
+    existing = control.status(pipeline_run_id)
     command = [
         sys.executable,
         "scripts/run_daily_data_pipeline.py",
@@ -119,10 +130,11 @@ def _run_data(
         "--base-snapshot-id",
         base_snapshot_id,
     ]
+    if force_rebuild or (existing is not None and existing.state != "current"):
+        command.append("--recover")
     completed = subprocess.run(command, check=False)
-    control = DailyPipelineStore(settings.control_db_path, settings.data_dir)
-    status = control.latest_status()
-    if status is None or status.target_date != target_date:
+    status = control.status(pipeline_run_id)
+    if status is None:
         return DailyDataOutcome(
             state="recovery_required",
             blocker_codes=("daily_pipeline_status_missing",),
@@ -145,8 +157,8 @@ def _run_data(
             blocker_codes=status.blocker_codes,
             recovery_action=status.recovery_action,
         )
-    commit = control.current_commit()
-    if commit.target_date != target_date or commit.run_id != status.run_id:
+    commit = control.commit_for_run(pipeline_run_id)
+    if commit is None or commit.target_date != target_date:
         return DailyDataOutcome(
             state="blocked",
             blocker_codes=("daily_pipeline_identity_drift",),
@@ -160,16 +172,29 @@ def _run_data(
     )
 
 
-def _run_decision(settings: Settings) -> DailyDecisionOutcome:
+def _run_decision(settings: Settings, pipeline_run_id: str) -> DailyDecisionOutcome:
+    pipeline = DailyPipelineStore(settings.control_db_path, settings.data_dir)
+    commit = pipeline.commit_for_run(pipeline_run_id)
+    if commit is None:
+        return DailyDecisionOutcome(
+            state="recovery_required",
+            blocker_codes=("daily_pipeline_commit_missing",),
+            recovery_action="恢复准确日度数据提交后重跑决策链",
+        )
     completed = subprocess.run(
-        [sys.executable, "scripts/run_daily_decision_chain.py"],
+        [
+            sys.executable,
+            "scripts/run_daily_decision_chain.py",
+            "--pipeline-run-id",
+            pipeline_run_id,
+        ],
         check=False,
     )
     store = DailyDecisionStore(
         settings.local_ops_db_path,
         Path("var/research/daily-decision"),
     )
-    status: DailyDecisionStatus | None = store.latest_status()
+    status: DailyDecisionStatus | None = store.latest_status_for_pipeline_commit(commit.commit_id)
     if completed.returncode != 0 or status is None:
         return DailyDecisionOutcome(
             state="recovery_required",

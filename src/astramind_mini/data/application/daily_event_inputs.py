@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from ..contracts import DatasetManifest, RawRecordEnvelope
+from ..contracts import DatasetManifest
 from ..ports import HistoricalMarketDataProvider, ParquetEncoder, ProviderTable, RawRecordStore
 from .dataset_schemas import (
     LHB_EVENT_COLUMNS,
@@ -31,6 +31,7 @@ from .event_normalization import (
 from .event_publication import build_event_manifests
 from .historical_publication import FileArtifacts
 from .identity import content_hash, file_hash
+from .raw_records import preserve_provider_table_raw
 from .state_files import save_state, write_bytes_atomic
 
 
@@ -194,16 +195,7 @@ async def _collect(
 
 
 def _preserve_raw(table: ProviderTable, raw_store: RawRecordStore) -> None:
-    envelope = RawRecordEnvelope(
-        provider="tushare",
-        interface_name=table.api_name,
-        source_endpoint=table.source_endpoint,
-        request_identity=table.request_identity,
-        received_at=table.received_at,
-        schema_version="provider-v1",
-        content_hash=content_hash(table.raw_body),
-    )
-    raw_store.append(envelope, table.raw_body)
+    preserve_provider_table_raw(table, raw_store)
 
 
 __all__ = [

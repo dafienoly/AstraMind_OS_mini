@@ -22,19 +22,7 @@ export function RotationHeader({
     : freshness.kind === "stale"
       ? `${freshness.latestDate} 已过期 · 预期 ${freshness.expectedDate}`
       : `${freshness.latestDate} 已阻断 · ${freshness.reason}`;
-  return <><header className="rotation-topbar">
-    <a href="/">ASTRAMIND <span>/ MINI</span></a>
-    <nav aria-label="一级导航">
-      <a href="/today">今日</a>
-      <strong aria-current="page">市场</strong>
-      <span aria-label="策略竞技场（尚未开放）" title="策略竞技场尚未开放">
-        策略竞技场
-      </span>
-      <a href="/portfolio">组合</a>
-      <a href="/system">系统</a>
-    </nav>
-    <span className="readonly">只读研究</span>
-  </header><div className="rotation-status" data-state={freshness.kind}>
+  return <div className="rotation-status" data-state={freshness.kind}>
     <strong>数据</strong> {freshnessText}
     <button disabled={refreshing} onClick={onRefresh} type="button">
       {refreshing ? "刷新中…" : "刷新快照"}
@@ -43,7 +31,7 @@ export function RotationHeader({
     <i /><strong>行业</strong> {snapshot.covered_industry_count}/{snapshot.industry_count}
     <i /><strong>公式</strong> {snapshot.formula.formula_version}
     <em>研究观察，不是买卖信号</em>
-  </div></>;
+  </div>;
 }
 
 export function Playback(props: {

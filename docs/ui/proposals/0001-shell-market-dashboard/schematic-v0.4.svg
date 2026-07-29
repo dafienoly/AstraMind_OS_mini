@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <defs>
+    <style>
+      .bg{fill:#F2F4F3}.paper{fill:#FFF}.ink{fill:#172129}.muted{fill:#68747C}
+      .blue{fill:#2E5E84}.ochre{fill:#B47A22}.up{fill:#C34B43}.down{fill:#238267}
+      .line{stroke:#D8DEDC;stroke-width:1}.strong{stroke:#172129;stroke-width:1.5}
+      .dash{stroke:#B47A22;stroke-width:1.5;stroke-dasharray:5 4}
+      .sans{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}
+      .num{font-family:"IBM Plex Sans","Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+      .mono{font-family:"IBM Plex Mono",Consolas,monospace}
+      .t11{font-size:11px}.t12{font-size:12px}.t14{font-size:14px}.t18{font-size:18px}.t24{font-size:24px}
+      .bold{font-weight:700}.medium{font-weight:600}
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="900"/>
+  <rect class="paper" x="0" y="0" width="76" height="900"/>
+  <line class="line" x1="76" y1="0" x2="76" y2="900"/>
+  <text class="ink mono bold t14" x="19" y="38">ASTRA</text>
+  <text class="muted sans t11" x="24" y="112">今日</text>
+  <rect class="blue" x="0" y="136" width="3" height="46"/>
+  <text class="blue sans bold t12" x="24" y="163">市场</text>
+  <text class="muted sans t11" x="19" y="224">策略</text>
+  <text class="muted sans t11" x="19" y="278">组合</text>
+  <text class="muted sans t11" x="19" y="332">系统</text>
+
+  <rect class="paper" x="77" y="0" width="1363" height="70"/>
+  <text class="ink sans bold t18" x="108" y="30">市场</text>
+  <text class="muted sans t12" x="108" y="51">完成日事实 + 盘中临时观察</text>
+  <text class="muted sans t11" x="873" y="29">数据 07-28 完整  ──  信号 只读  ──  风险 未授权  ──  订单 0</text>
+  <rect x="1265" y="18" width="138" height="32" rx="3" fill="#F7F2E8" stroke="#B47A22"/>
+  <text class="ochre sans medium t12" x="1282" y="39">需要处理  1</text>
+
+  <rect class="paper" x="77" y="71" width="1363" height="50"/>
+  <text class="blue sans bold t12" x="108" y="101">大盘</text>
+  <text class="muted sans t12" x="174" y="101">行业</text>
+  <text class="muted sans t12" x="232" y="101">ETF 轮动</text>
+  <line stroke="#2E5E84" stroke-width="2" x1="106" y1="119" x2="139" y2="119"/>
+
+  <!-- Signature: one continuous session pulse, not KPI cards -->
+  <rect x="96" y="137" width="1325" height="72" rx="3" fill="#F8FAF9" stroke="#CAD4D1"/>
+  <rect class="ochre" x="96" y="137" width="5" height="72"/>
+  <text class="ink sans bold t12" x="120" y="162">盘中会话脉冲</text>
+  <text class="ochre sans bold t12" x="242" y="162">STALE · 10 秒未收到有效更新</text>
+  <line class="line" x1="120" y1="177" x2="1397" y2="177"/>
+  <text class="muted sans t11" x="120" y="196">市场时间</text>
+  <text class="ink num medium t12" x="183" y="196">14:37:20.842</text>
+  <path d="M292 191h47" class="dash" fill="none"/>
+  <text class="muted sans t11" x="358" y="196">接收时间</text>
+  <text class="ink num medium t12" x="421" y="196">14:37:21.118</text>
+  <text class="muted sans t11" x="596" y="196">延迟</text>
+  <text class="ink num medium t12" x="633" y="196">276 ms</text>
+  <text class="muted sans t11" x="734" y="196">粒度</text>
+  <text class="ink num medium t12" x="771" y="196">1 秒</text>
+  <text class="muted sans t11" x="846" y="196">覆盖</text>
+  <text class="ink num medium t12" x="883" y="196">5,412 / 5,524</text>
+  <text class="muted sans t11" x="1036" y="196">会话</text>
+  <text class="ink mono t11" x="1073" y="196">sha256:91af…6c20</text>
+  <text class="muted sans t11" x="1264" y="196">自动重连中</text>
+
+  <rect class="paper" x="96" y="225" width="936" height="622"/>
+  <rect class="paper" x="1048" y="225" width="373" height="622"/>
+  <line class="line" x1="1040" y1="225" x2="1040" y2="847"/>
+
+  <text class="muted sans t11" x="120" y="253">正式完成日 · 2026-07-28 · snapshot:94a33…</text>
+  <text class="ink sans bold t24" x="120" y="286">沪深 300</text>
+  <text class="up num bold t18" x="250" y="286">+0.73% ↑</text>
+  <text class="ochre sans medium t11" x="352" y="284">盘中临时</text>
+  <text class="muted sans t11" x="120" y="311">日线结构保持正式快照；虚线只标记当前会话最新价，不形成今日收盘 K 线。</text>
+  <rect x="842" y="251" width="48" height="27" rx="2" fill="#EDF3F7"/>
+  <text class="blue sans t11" x="856" y="269">日</text>
+  <text class="muted sans t11" x="907" y="269">周</text>
+  <text class="muted sans t11" x="952" y="269">月</text>
+
+  <line class="line" x1="120" y1="345" x2="1008" y2="345"/>
+  <line class="line" x1="120" y1="425" x2="1008" y2="425"/>
+  <line class="line" x1="120" y1="505" x2="1008" y2="505"/>
+  <line class="line" x1="120" y1="585" x2="1008" y2="585"/>
+  <path d="M130 558 C220 520,260 548,335 470 S470 440,535 485 S680 400,765 420 S900 352,994 380"
+        fill="none" stroke="#2E5E84" stroke-width="2"/>
+  <path d="M130 575 C235 555,310 540,400 520 S570 490,670 462 S850 430,994 412"
+        fill="none" stroke="#8FA7B7" stroke-width="1.5"/>
+  <line class="dash" x1="120" y1="374" x2="1008" y2="374"/>
+  <text class="ochre num t11" x="930" y="367">4,052.18 临时</text>
+  <rect class="up" x="160" y="620" width="8" height="39"/>
+  <rect class="down" x="190" y="632" width="8" height="27"/>
+  <rect class="up" x="220" y="610" width="8" height="49"/>
+  <rect class="down" x="250" y="638" width="8" height="21"/>
+  <rect class="up" x="280" y="602" width="8" height="57"/>
+  <rect class="down" x="310" y="626" width="8" height="33"/>
+  <rect class="up" x="340" y="615" width="8" height="44"/>
+  <text class="muted sans t11" x="120" y="694">成交量 · 正式日线</text>
+
+  <line class="line" x1="120" y1="726" x2="1008" y2="726"/>
+  <rect x="192" y="751" width="646" height="22" rx="11" fill="#DDE6E3"/>
+  <rect x="334" y="751" width="355" height="22" rx="11" fill="#9DB3C2"/>
+  <circle cx="334" cy="762" r="10" fill="#FFF" stroke="#2E5E84"/>
+  <circle cx="689" cy="762" r="10" fill="#FFF" stroke="#2E5E84"/>
+  <text class="muted sans t11" x="120" y="805">拖动两端缩放 · 拖动选区平移</text>
+  <text class="muted sans t11" x="829" y="805">未来数据不可见</text>
+
+  <text class="ink sans bold t14" x="1072" y="256">盘中观察</text>
+  <text class="muted sans t11" x="1072" y="278">不改写正式市场状态</text>
+  <line class="line" x1="1072" y1="294" x2="1397" y2="294"/>
+  <text class="muted sans t11" x="1072" y="321">上涨 / 下跌 / 平盘</text>
+  <text class="up num bold t18" x="1072" y="348">2,894 ↑</text>
+  <text class="down num bold t18" x="1168" y="348">2,401 ↓</text>
+  <text class="ink num bold t18" x="1264" y="348">117 —</text>
+  <text class="muted sans t11" x="1072" y="380">市场成交额</text>
+  <text class="ink num bold t24" x="1072" y="411">8,462.7 亿</text>
+  <text class="ochre sans t11" x="1227" y="409">盘中累计</text>
+  <line class="line" x1="1072" y1="436" x2="1397" y2="436"/>
+  <text class="ink sans bold t14" x="1072" y="466">行业即时热度</text>
+  <text class="muted sans t11" x="1072" y="487">相对昨收等权变化 · 覆盖随会话更新</text>
+  <text class="up sans t12" x="1072" y="522">电子</text><text class="up num t12" x="1268" y="522">+1.82% ↑</text>
+  <text class="up sans t12" x="1072" y="553">通信</text><text class="up num t12" x="1268" y="553">+1.24% ↑</text>
+  <text class="ink sans t12" x="1072" y="584">银行</text><text class="ink num t12" x="1273" y="584">+0.06% —</text>
+  <text class="down sans t12" x="1072" y="615">煤炭</text><text class="down num t12" x="1272" y="615">−0.91% ↓</text>
+  <line class="line" x1="1072" y1="642" x2="1397" y2="642"/>
+  <text class="ink sans bold t14" x="1072" y="673">状态解释</text>
+  <rect x="1072" y="692" width="325" height="89" rx="3" fill="#F7F2E8"/>
+  <text class="ochre sans bold t12" x="1088" y="717">数据已陈旧</text>
+  <text class="ink sans t11" x="1088" y="739">最后有效接收距今超过 10 秒。</text>
+  <text class="ink sans t11" x="1088" y="759">完成日证据仍可读；盘中数值不标为当前。</text>
+  <text class="muted sans t11" x="1072" y="818">市场观察，不是买卖信号</text>
+</svg>

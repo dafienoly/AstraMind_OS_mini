@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
+import { useRouteLoadPhase } from "../app-shell/routeProgress";
 import { RotationStatus } from "./RotationPanels";
 import { RotationReadyView } from "./RotationReadyView";
 import type {
@@ -24,6 +25,8 @@ import type {
 } from "./rotationTypes";
 import { useRotationDerived, useRotationUrl } from "./useRotationDerived";
 import { useRotationPlayback } from "./useRotationPlayback";
+import { buildRotationIntraday, ROTATION_INTRADAY_METHOD } from "./rotationIntraday";
+import { useRealtimeMarket } from "../market-dashboard/useRealtimeMarket";
 
 export function MarketRotation() {
   const initial = useMemo(readRotationInitialParams, []);
@@ -46,6 +49,10 @@ export function MarketRotation() {
       setRefreshing(false);
     }
   }, []);
+  useRouteLoadPhase(
+    load.kind === "loading" ? "loading_content" : load.kind === "ready" ? "ready" : "error",
+    load.kind === "loading" ? "正在加载正式轮动快照" : "行业相对轮动加载完成",
+  );
   if (load.kind !== "ready") return <RotationStatus state={load} />;
   return <LoadedRotation
     initial={initial}
@@ -66,6 +73,7 @@ function LoadedRotation({
   refreshing: boolean;
   snapshot: RotationSnapshot;
 }) {
+  const realtime = useRealtimeMarket();
   const requested = initial.date ? snapshot.dates.indexOf(initial.date) : -1;
   const [dateIndex, setDateIndex] = useState(
     requested >= 0 ? requested : snapshot.dates.length - 1,
@@ -112,6 +120,11 @@ function LoadedRotation({
     playing, playbackMode, setPlaying, setSelected,
     resetProgress: playback.resetProgress, goToDate: playback.goToDate,
   });
+  const showIntraday = !playing && dateIndex === snapshot.dates.length - 1;
+  const intraday = useMemo(
+    () => showIntraday ? buildRotationIntraday(snapshot, realtime.projection) : [],
+    [realtime.projection, showIntraday, snapshot],
+  );
   return (
     <RotationReadyView
       {...derived}
@@ -155,6 +168,10 @@ function LoadedRotation({
       continuousDuration={continuousDuration}
       onContinuousDuration={setContinuousDuration}
       hierarchyParent={hierarchyParent}
+      intraday={intraday}
+      intradayLabel={showIntraday && intraday.length
+        ? `盘中临时端点 · ${realtime.effectiveState === "current" ? "当前" : "非当前"} · ${ROTATION_INTRADAY_METHOD}`
+        : undefined}
       onHierarchyParent={setHierarchyParent}
       setSpeed={setSpeed}
       setTrail={stopped(stop, setTrail)}

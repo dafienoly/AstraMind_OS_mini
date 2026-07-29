@@ -56,6 +56,7 @@ async def fresh_startup(settings: Settings) -> PaperStartupPublication:
         timeout_seconds=(
             settings.miniqmt_account_timeout_seconds + settings.miniqmt_callback_wait_seconds
         ),
+        diagnostic_root=settings.shadow_db_path.parent / "paper-canary/runner-diagnostics",
     )
     return await PaperStartupService(
         reader=client,
@@ -71,6 +72,8 @@ def quote_reader(settings: Settings) -> MiniQMTCanaryQuoteReader:
         xtquant_path=settings.miniqmt_xtquant_path,
         quote_port=settings.miniqmt_quote_port,
         timeout_seconds=settings.miniqmt_probe_timeout_seconds,
+        fresh_wait_seconds=settings.miniqmt_fresh_tick_wait_seconds,
+        diagnostic_root=settings.shadow_db_path.parent / "paper-canary/runner-diagnostics",
     )
 
 
@@ -91,6 +94,7 @@ def paper_gateway(settings: Settings) -> MiniQMTPaperGateway:
         fingerprint_key=local_fingerprint_key(settings.account_reconciliation_dir),
         quote_port=settings.miniqmt_quote_port,
         timeout_seconds=settings.miniqmt_account_timeout_seconds,
+        diagnostic_root=settings.shadow_db_path.parent / "paper-canary/runner-diagnostics",
     )
 
 

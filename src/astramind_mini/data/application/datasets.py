@@ -7,7 +7,7 @@ from datetime import date, datetime
 
 from astramind_mini.contracts import DatasetRef, DataSnapshot
 
-from ..contracts import DatasetManifest
+from ..contracts import DatasetManifest, DatasetProviderEpoch
 from .identity import bytes_hash, content_hash
 
 
@@ -29,6 +29,7 @@ def build_dataset_manifest(
     artifacts: Mapping[str, bytes],
     known_gaps: Sequence[str] = (),
     critical_gaps: Sequence[str] = (),
+    provider_lineage: Sequence[DatasetProviderEpoch] = (),
 ) -> DatasetManifest:
     artifact_hashes = {name: bytes_hash(payload) for name, payload in sorted(artifacts.items())}
     return build_dataset_manifest_from_hashes(
@@ -48,6 +49,7 @@ def build_dataset_manifest(
         artifact_hashes=artifact_hashes,
         known_gaps=known_gaps,
         critical_gaps=critical_gaps,
+        provider_lineage=provider_lineage,
     )
 
 
@@ -69,6 +71,7 @@ def build_dataset_manifest_from_hashes(
     artifact_hashes: Mapping[str, str],
     known_gaps: Sequence[str] = (),
     critical_gaps: Sequence[str] = (),
+    provider_lineage: Sequence[DatasetProviderEpoch] = (),
 ) -> DatasetManifest:
     ordered_hashes = dict(sorted(artifact_hashes.items()))
     data_hash = content_hash(ordered_hashes)
@@ -78,6 +81,7 @@ def build_dataset_manifest_from_hashes(
     ordered_units = tuple(sorted(units))
     ordered_gaps = tuple(sorted(known_gaps))
     ordered_critical_gaps = tuple(sorted(critical_gaps))
+    ordered_provider_lineage = tuple(sorted(provider_lineage, key=lambda item: item.effective_from))
     identity = {
         "dataset_name": dataset_name,
         "schema_version": schema_version,
@@ -98,6 +102,10 @@ def build_dataset_manifest_from_hashes(
         "artifact_paths": artifact_paths,
         "publish_status": "complete",
     }
+    if ordered_provider_lineage:
+        identity["provider_lineage"] = [
+            item.model_dump(mode="json") for item in ordered_provider_lineage
+        ]
     return DatasetManifest(
         dataset_version=content_hash(identity),
         dataset_name=dataset_name,
@@ -116,6 +124,7 @@ def build_dataset_manifest_from_hashes(
         row_count=row_count,
         known_gaps=ordered_gaps,
         critical_gaps=ordered_critical_gaps,
+        provider_lineage=ordered_provider_lineage,
         artifact_paths=artifact_paths,
         publish_status="complete",
     )

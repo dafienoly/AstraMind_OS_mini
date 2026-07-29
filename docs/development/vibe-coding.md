@@ -83,6 +83,38 @@ features/<feature>/
 
 The public file exposes only what another context or the app shell needs.
 
+## Reuse and dependency discipline
+
+Reuse the lowest stable layer that has identical semantics across real consumers:
+
+1. public domain contracts and ports;
+2. pure calculations and validation with explicit units and time semantics;
+3. infrastructure primitives such as source routing, freshness, streaming, and
+   recovery;
+4. behavior-neutral UI primitives;
+5. a composed workbench only when the user job and lifecycle are the same.
+
+Before introducing a shared capability, the work package must name at least two real
+consumers and confirm that their semantics, lifecycle, units, failure states, and
+versioning needs match. It must also name one owning module and a small public API.
+Shape similarity alone is not a reuse boundary.
+
+Do not create generic helpers, untyped payloads, consumer-aware shared modules, or
+"god components" controlled by many page-origin booleans. If consumer-specific
+branches grow, split the upper-level compositions and keep the lower-level primitive.
+A temporary compatibility adapter must name its replacement and removal work package.
+
+Reviewers and automated checks should look for:
+
+- imports of another context's internal modules;
+- duplicate source routing, normalization, freshness, streaming, chart, or state
+  implementations;
+- shared modules that import their consumers;
+- generic dictionaries that conceal domain identity or point-in-time semantics;
+- a second registry, state store, projection, or implementation of an existing
+  foundational capability;
+- temporary adapters without a tested removal path.
+
 ## File budgets
 
 | Unit | Target | Warning | Block |

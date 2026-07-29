@@ -286,6 +286,8 @@ def test_orchestrator_has_one_submit_site_and_requires_cancel_text() -> None:
     assert source.count("workflow.submit(") == 1
     assert "workflow.refresh(active)" in source
     assert 'CANCEL_TEXT = "撤销本次金丝雀剩余委托"' in source
+    assert "cancel_prompt_at = submission_end - timedelta(minutes=1)" in source
+    assert "time(9, 44)" not in source
     assert "AUTO_CANCEL" not in source
 
 

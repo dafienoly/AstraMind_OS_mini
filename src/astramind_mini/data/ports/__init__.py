@@ -19,10 +19,12 @@ from .provider import (
     SnapshotQuery,
     SnapshotStore,
 )
+from .source import BatchDataSourceAdapter, RealtimeMarketFeedAdapter
 
 __all__ = [
     "AnnualConstraintCompactor",
     "AnnualMarketCompactor",
+    "BatchDataSourceAdapter",
     "CorporateActionProjector",
     "DataArtifactLedger",
     "DatasetStore",
@@ -35,6 +37,7 @@ __all__ = [
     "ParquetEncoder",
     "ProviderTable",
     "RawRecordStore",
+    "RealtimeMarketFeedAdapter",
     "ReleasableSnapshotStore",
     "SnapshotQuery",
     "SnapshotStore",

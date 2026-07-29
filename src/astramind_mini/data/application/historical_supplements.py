@@ -6,12 +6,14 @@ from datetime import date, datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from ..contracts import RawRecordEnvelope
+import duckdb
+
 from ..ports import HistoricalMarketDataProvider, ParquetEncoder, ProviderTable, RawRecordStore
 from .dataset_schemas import ADJUSTMENT_FACTOR_COLUMNS, DAILY_BAR_COLUMNS
-from .identity import content_hash
 from .normalization import normalize_adjustment_factors, normalize_daily_bars
+from .provider_lineage import market_artifact_matches_epoch
 from .publication_policy import ADJUSTMENT_FIELDS, DAILY_FIELDS, PROVIDER_LIMIT
+from .raw_records import preserve_provider_table_raw
 from .state_files import save_state, write_bytes_atomic
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
@@ -37,6 +39,7 @@ class HistoricalSupplementService:
         state_path: Path,
         missing_daily: frozenset[date],
         missing_factors: frozenset[date],
+        daily_universe: dict[date, tuple[str, ...]] | None = None,
     ) -> None:
         supplements = state["supplements"]
         assert isinstance(supplements, dict)
@@ -44,8 +47,25 @@ class HistoricalSupplementService:
             key = trade_date.isoformat()
             entry = supplements.setdefault(key, {})
             assert isinstance(entry, dict)
+            daily_path = Path(str(entry.get("daily", "")))
+            if (
+                trade_date in missing_daily
+                and "daily" in entry
+                and (
+                    not daily_path.is_file()
+                    or not market_artifact_matches_epoch(daily_path, trade_date)
+                )
+            ):
+                for field in ("daily", "daily_request_identity", "daily_received_at"):
+                    entry.pop(field, None)
+                save_state(state_path, state)
             if trade_date in missing_daily and "daily" not in entry:
-                table = await self._fetch("daily", trade_date, DAILY_FIELDS)
+                table = await self._fetch(
+                    "daily",
+                    trade_date,
+                    DAILY_FIELDS,
+                    universe=(daily_universe or {}).get(trade_date, ()),
+                )
                 daily_observations = tuple(
                     row.model_copy(
                         update={
@@ -90,26 +110,22 @@ class HistoricalSupplementService:
         api_name: str,
         trade_date: date,
         fields: tuple[str, ...],
+        *,
+        universe: tuple[str, ...] = (),
     ) -> ProviderTable:
+        params: dict[str, object] = {"trade_date": trade_date.strftime("%Y%m%d")}
+        if universe:
+            params["universe"] = universe
         table = await self._provider.query(
             api_name,
-            params={"trade_date": trade_date.strftime("%Y%m%d")},
+            params=params,
             fields=fields,
         )
         if not table.rows:
             raise ValueError(f"{api_name} {trade_date} 返回空数据")
         if len(table.rows) >= PROVIDER_LIMIT:
             raise ValueError(f"{api_name} 达到提供方行数上限")
-        envelope = RawRecordEnvelope(
-            provider="tushare",
-            interface_name=api_name,
-            source_endpoint=table.source_endpoint,
-            request_identity=table.request_identity,
-            received_at=table.received_at,
-            schema_version="provider-v1",
-            content_hash=content_hash(table.raw_body),
-        )
-        self._raw_store.append(envelope, table.raw_body)
+        preserve_provider_table_raw(table, self._raw_store)
         return table
 
 
@@ -117,4 +133,51 @@ def historical_availability(value: date) -> datetime:
     return datetime.combine(value, time(18), tzinfo=SHANGHAI)
 
 
-__all__ = ["HistoricalSupplementService", "historical_availability"]
+def validate_daily_market_coverage(
+    daily_path: Path,
+    daily_basic_path: Path,
+    target_date: date,
+) -> tuple[int, int]:
+    """Require every security with same-day fundamentals to have a market bar."""
+    with duckdb.connect(":memory:") as connection:
+        result = connection.execute(
+            """
+            SELECT
+              (SELECT count(DISTINCT instrument_id)
+               FROM read_parquet(?) WHERE trade_date = ?),
+              (SELECT count(DISTINCT instrument_id)
+               FROM read_parquet(?) WHERE trade_date = ?),
+              (SELECT count(*) FROM (
+                 SELECT instrument_id
+                 FROM read_parquet(?) WHERE trade_date = ?
+                 EXCEPT
+                 SELECT instrument_id
+                 FROM read_parquet(?) WHERE trade_date = ?
+              ))
+            """,
+            [
+                str(daily_path),
+                target_date,
+                str(daily_basic_path),
+                target_date,
+                str(daily_basic_path),
+                target_date,
+                str(daily_path),
+                target_date,
+            ],
+        ).fetchone()
+    assert result is not None
+    observed, expected, missing = result
+    if missing:
+        raise ValueError(
+            "日线行情覆盖不完整："
+            f"target_date={target_date},observed={observed},expected={expected},missing={missing}"
+        )
+    return int(observed), int(expected)
+
+
+__all__ = [
+    "HistoricalSupplementService",
+    "historical_availability",
+    "validate_daily_market_coverage",
+]

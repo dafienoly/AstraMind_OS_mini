@@ -62,6 +62,18 @@ def test_provider_retry_recovers_same_run_identity() -> None:
     assert decision.run_id == "daily-run:2026-07-28"
 
 
+def test_final_trigger_recovers_after_etf_and_event_publish_windows() -> None:
+    decision = evaluate_daily_schedule(
+        open_dates=OPEN_DATES,
+        evaluated_at=datetime.fromisoformat("2026-07-28T20:10:00+08:00"),
+        latest_run=status("waiting_provider"),
+    )
+
+    assert decision.trigger == "finalize_2010"
+    assert decision.action == "recover"
+    assert decision.target_date == date(2026, 7, 28)
+
+
 def test_current_or_stale_run_is_not_automatically_reexecuted() -> None:
     current = evaluate_daily_schedule(
         open_dates=OPEN_DATES,
@@ -125,12 +137,14 @@ def test_windows_task_definition_is_reviewable_and_broker_free(tmp_path: Path) -
     )
     payload = task_xml(spec).decode("utf-16")
 
-    assert payload.count("CalendarTrigger") == 8
+    assert payload.count("CalendarTrigger") == 10
     assert payload.count("LogonTrigger") == 2
     assert "StartWhenAvailable" in payload
     assert "MultipleInstancesPolicy" in payload
     assert "daily-schedule-trigger" in payload
     assert "/home/ly/work/AstraMind_OS_mini" in payload
+    assert "/bin/bash" in payload
+    assert "-lc" in payload
     assert all(
         forbidden not in payload.lower()
         for forbidden in (

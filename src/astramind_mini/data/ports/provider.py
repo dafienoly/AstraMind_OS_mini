@@ -28,6 +28,9 @@ class ProviderTable:
     request_identity: str
     received_at: datetime
     source_endpoint: str
+    provider_id: str = "tushare"
+    provider_version: str = "unknown"
+    raw_record_persisted: bool = False
 
 
 class HistoricalMarketDataProvider(Protocol):
@@ -194,7 +197,13 @@ class SnapshotStore(Protocol):
 
 
 class ReleasableSnapshotStore(SnapshotStore, Protocol):
-    def activate(self, snapshot: DataSnapshot, manifest_path: Path) -> None: ...
+    def activate(
+        self,
+        snapshot: DataSnapshot,
+        manifest_path: Path,
+        *,
+        expected_snapshot_id: str | None = None,
+    ) -> None: ...
 
 
 class SnapshotQuery(Protocol):

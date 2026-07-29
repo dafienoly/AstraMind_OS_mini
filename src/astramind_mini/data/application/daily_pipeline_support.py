@@ -14,6 +14,7 @@ from astramind_mini.contracts import DataSnapshot
 from ..contracts import DatasetManifest
 from .datasets import build_dataset_manifest_from_hashes
 from .identity import file_hash
+from .provider_lineage import market_source_attribution
 
 
 def load_snapshot_bundle(
@@ -173,6 +174,51 @@ def merge_trade_calendar(
     return int(row[0]), cast(date, row[1]), cast(date, row[2])
 
 
+def merge_broad_index_daily(
+    *,
+    base_paths: tuple[Path, ...],
+    increment: Path,
+    target_date: date,
+    output: Path,
+) -> tuple[int, date, date]:
+    if not increment.is_file():
+        raise ValueError("日度宽基指数增量为空")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(".parquet.tmp")
+    temporary.unlink(missing_ok=True)
+    target = str(temporary).replace("'", "''")
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            f"""
+            COPY (
+              SELECT * FROM read_parquet(?) WHERE trade_date <> ?
+              UNION ALL
+              SELECT * FROM read_parquet(?)
+              ORDER BY instrument_id, trade_date
+            ) TO '{target}' (FORMAT PARQUET, COMPRESSION ZSTD)
+            """,
+            [[str(path) for path in base_paths], target_date, str(increment)],
+        )
+        coverage = connection.execute(
+            """
+            SELECT count(DISTINCT instrument_id),
+                   count(*) - count(DISTINCT (instrument_id, trade_date))
+            FROM read_parquet(?) WHERE trade_date = ?
+            """,
+            [str(temporary), target_date],
+        ).fetchone()
+        totals = connection.execute(
+            "SELECT count(*), min(trade_date), max(trade_date) FROM read_parquet(?)",
+            [str(temporary)],
+        ).fetchone()
+    assert coverage is not None and totals is not None
+    if int(coverage[0]) != 6 or int(coverage[1]):
+        temporary.unlink(missing_ok=True)
+        raise ValueError(f"目标交易日宽基指数覆盖不完整：{coverage[0]}/6")
+    temporary.replace(output)
+    return int(totals[0]), cast(date, totals[1]), cast(date, totals[2])
+
+
 def daily_industry_manifest(
     *,
     path: Path,
@@ -181,11 +227,12 @@ def daily_industry_manifest(
     row_count: int,
     date_range: tuple[date, date],
 ) -> DatasetManifest:
+    attribution = market_source_attribution((path,))
     return build_dataset_manifest_from_hashes(
         dataset_name="industry_index_daily",
         schema_version="1.0.0",
-        provider="tushare",
-        source_endpoint="sw_daily",
+        provider=attribution.provider,
+        source_endpoint=attribution.source_endpoint,
         request_identity="sha256:" + run_id.rsplit(":", 1)[-1],
         retrieved_at=retrieved_at,
         market_timezone="Asia/Shanghai",
@@ -206,6 +253,7 @@ def daily_industry_manifest(
             "provider_native_volume_amount_market_value_units_unverified",
             "provider_ohlc_rounding_tolerance_up_to_1bp",
         ),
+        provider_lineage=attribution.provider_lineage,
     )
 
 
@@ -217,11 +265,12 @@ def daily_calendar_manifest(
     row_count: int,
     date_range: tuple[date, date],
 ) -> DatasetManifest:
+    attribution = market_source_attribution((path,), date_column="calendar_date")
     return build_dataset_manifest_from_hashes(
         dataset_name="trade_calendar",
         schema_version="1.0.0",
-        provider="tushare",
-        source_endpoint="trade_cal",
+        provider=attribution.provider,
+        source_endpoint=attribution.source_endpoint,
         request_identity="sha256:" + run_id.rsplit(":", 1)[-1],
         retrieved_at=retrieved_at,
         market_timezone="Asia/Shanghai",
@@ -232,6 +281,47 @@ def daily_calendar_manifest(
         units=("calendar_date:date", "is_open:boolean"),
         row_count=row_count,
         artifact_hashes={"trade_calendar.parquet": file_hash(path)},
+        provider_lineage=attribution.provider_lineage,
+    )
+
+
+def daily_broad_index_manifest(
+    *,
+    path: Path,
+    run_id: str,
+    retrieved_at: datetime,
+    row_count: int,
+    date_range: tuple[date, date],
+) -> DatasetManifest:
+    attribution = market_source_attribution((path,))
+    return build_dataset_manifest_from_hashes(
+        dataset_name="broad_index_daily",
+        schema_version="1.0.0",
+        provider=attribution.provider,
+        source_endpoint=attribution.source_endpoint,
+        request_identity="sha256:" + run_id.rsplit(":", 1)[-1],
+        retrieved_at=retrieved_at,
+        market_timezone="Asia/Shanghai",
+        date_range=date_range,
+        universe=(
+            "000001.SH",
+            "000300.SH",
+            "000688.SH",
+            "000852.SH",
+            "399001.SZ",
+            "399006.SZ",
+        ),
+        primary_key=("instrument_id", "trade_date"),
+        availability_rule="trade_date 18:00 Asia/Shanghai",
+        units=(
+            "price:index_points",
+            "volume:lots",
+            "amount:CNY",
+            "percent_change:percent",
+        ),
+        row_count=row_count,
+        artifact_hashes={"broad_index_daily.parquet": file_hash(path)},
+        provider_lineage=attribution.provider_lineage,
     )
 
 
@@ -251,9 +341,11 @@ def _digest(identity: str, prefix: str) -> str:
 
 __all__ = [
     "checkpoint_file",
+    "daily_broad_index_manifest",
     "daily_calendar_manifest",
     "daily_industry_manifest",
     "load_snapshot_bundle",
+    "merge_broad_index_daily",
     "merge_industry_daily",
     "merge_trade_calendar",
     "published_industries",

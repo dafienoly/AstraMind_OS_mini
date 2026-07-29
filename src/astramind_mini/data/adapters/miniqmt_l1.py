@@ -173,11 +173,18 @@ def normalize_l1_messages(
                 market_time_ms=_integer(quote.get("time")),
                 received_at=received_at,
                 last_price=_number(quote.get("lastPrice")),
+                previous_close=_number(quote.get("lastClose")),
                 open_price=_number(quote.get("open")),
                 high_price=_number(quote.get("high")),
                 low_price=_number(quote.get("low")),
                 volume=_number(quote.get("volume")),
                 amount=_number(quote.get("amount")),
+                bid_prices=_numbers(quote.get("bidPrice")),
+                ask_prices=_numbers(quote.get("askPrice")),
+                bid_volumes=_numbers(quote.get("bidVol")),
+                ask_volumes=_numbers(quote.get("askVol")),
+                stock_status=_optional_integer(quote.get("stockStatus")),
+                open_interest=_number(quote.get("openInt")),
                 raw_content_hash=raw_hash,
             )
             identity = content_hash(
@@ -199,6 +206,16 @@ def _number(value: object) -> float | None:
 
 def _integer(value: object) -> int | None:
     return int(value) if isinstance(value, int | float) and value >= 0 else None
+
+
+def _optional_integer(value: object) -> int | None:
+    return int(value) if isinstance(value, int | float) else None
+
+
+def _numbers(value: object) -> tuple[float, ...]:
+    if not isinstance(value, list | tuple):
+        return ()
+    return tuple(float(item) for item in value if isinstance(item, int | float) and item >= 0)
 
 
 def quote_is_stale(

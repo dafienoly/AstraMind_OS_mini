@@ -8,6 +8,7 @@ from astramind_mini.data.adapters import (
     FilesystemRawRecordStore,
     FilesystemSnapshotStore,
     ImmutableConflictError,
+    SnapshotPointerAdvancedError,
 )
 from astramind_mini.data.application import (
     DataSnapshotBuilder,
@@ -122,3 +123,40 @@ def test_snapshot_can_resolve_a_superseded_gap() -> None:
     )
 
     assert snapshot.known_gaps == ("source_gap",)
+
+
+def test_snapshot_activation_rejects_a_stale_frozen_base(tmp_path: Path) -> None:
+    item, artifacts = manifest()
+    FilesystemDatasetStore(tmp_path).publish(item, artifacts)
+    builder = DataSnapshotBuilder()
+    base = builder.build(
+        manifests=[item],
+        as_of=datetime(2026, 1, 15, 15, tzinfo=UTC),
+        created_at=datetime(2026, 1, 15, 15, tzinfo=UTC),
+        code_identity="base",
+    )
+    concurrent = builder.build(
+        manifests=[item],
+        as_of=datetime(2026, 1, 15, 16, tzinfo=UTC),
+        created_at=datetime(2026, 1, 15, 16, tzinfo=UTC),
+        code_identity="concurrent",
+    )
+    stale_result = builder.build(
+        manifests=[item],
+        as_of=datetime(2026, 1, 15, 17, tzinfo=UTC),
+        created_at=datetime(2026, 1, 15, 17, tzinfo=UTC),
+        code_identity="stale-result",
+    )
+    store = FilesystemSnapshotStore(tmp_path)
+    base_path = store.publish(base)
+    concurrent_path = store.publish(concurrent)
+    stale_path = store.publish(stale_result)
+    store.activate(base, base_path)
+    store.activate(concurrent, concurrent_path, expected_snapshot_id=base.snapshot_id)
+
+    with pytest.raises(SnapshotPointerAdvancedError, match="已前移"):
+        store.activate(stale_result, stale_path, expected_snapshot_id=base.snapshot_id)
+
+    pointer = (tmp_path / "current/data-snapshot.json").read_text(encoding="utf-8")
+    assert concurrent.snapshot_id in pointer
+    assert stale_result.snapshot_id not in pointer

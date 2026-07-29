@@ -1,5 +1,6 @@
 """Data application services."""
 
+from .broad_index_foundation import BroadIndexFoundationService, BroadIndexPublication
 from .constraint_import import ConstraintImportPublication, ConstraintImportService
 from .corporate_action_projection import (
     CorporateActionProjectionService,
@@ -19,6 +20,8 @@ from .shadow_market import SnapshotShadowMarketReader
 from .status_projection import StatusProjectionPublication, StatusProjectionService
 
 __all__ = [
+    "BroadIndexFoundationService",
+    "BroadIndexPublication",
     "ConstraintImportPublication",
     "ConstraintImportService",
     "CorporateActionProjectionService",

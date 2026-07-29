@@ -283,8 +283,31 @@ INDUSTRY_INDEX_DAILY_COLUMNS = (
     ("total_market_value_provider_native", "DOUBLE"),
 )
 
+BROAD_INDEX_DAILY_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("registry_version", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("instrument_name", "VARCHAR"),
+    ("trade_date", "DATE"),
+    ("open", "DOUBLE"),
+    ("high", "DOUBLE"),
+    ("low", "DOUBLE"),
+    ("close", "DOUBLE"),
+    ("previous_close", "DOUBLE"),
+    ("change", "DOUBLE"),
+    ("percent_change", "DOUBLE"),
+    ("volume_lots", "DOUBLE"),
+    ("amount_cny", "DOUBLE"),
+)
+
 __all__ = [
     "ADJUSTMENT_FACTOR_COLUMNS",
+    "BROAD_INDEX_DAILY_COLUMNS",
     "CORPORATE_ACTION_COLUMNS",
     "DAILY_BAR_COLUMNS",
     "DAILY_BASIC_COLUMNS",

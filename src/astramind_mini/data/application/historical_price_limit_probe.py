@@ -108,7 +108,7 @@ class HistoricalPriceLimitProbeService:
             fields=PRICE_LIMIT_FIELDS,
         )
         envelope = RawRecordEnvelope(
-            provider="tushare",
+            provider=table.provider_id,
             interface_name="stk_limit",
             source_endpoint=table.source_endpoint,
             request_identity=table.request_identity,

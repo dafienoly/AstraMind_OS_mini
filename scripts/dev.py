@@ -13,6 +13,20 @@ from astramind_mini.config import get_settings
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Uvicorn defaults to watching the whole working tree for ``--reload``.  This
+# repository also contains large, frequently changing runtime data under
+# ``var/``; watching it on WSL makes the watchfiles thread busy-loop and can
+# starve the local API.  Keep the API reload loop scoped to Python sources.
+API_RELOAD_DIRS = (
+    ROOT / "src",
+    ROOT / "apps/api",
+    ROOT / "scripts",
+)
+API_RELOAD_ARGS = tuple(
+    argument for path in API_RELOAD_DIRS for argument in ("--reload-dir", str(path))
+)
+API_GRACEFUL_SHUTDOWN_SECONDS = 3
+
 
 def ensure_ready() -> None:
     missing: list[str] = []
@@ -48,10 +62,13 @@ def main() -> int:
                 str(ROOT / ".venv/bin/uvicorn"),
                 "apps.api.main:app",
                 "--reload",
+                *API_RELOAD_ARGS,
                 "--host",
                 settings.api_host,
                 "--port",
                 str(settings.api_port),
+                "--timeout-graceful-shutdown",
+                str(API_GRACEFUL_SHUTDOWN_SECONDS),
             ],
             cwd=ROOT,
             start_new_session=True,

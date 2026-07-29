@@ -8,9 +8,12 @@ dependencies = [
   "duckdb>=1.5,<1.6",
   "fastapi>=0.140,<0.141",
   "httpx>=0.28,<0.29",
+  "numpy>=2,<3",
   "pydantic>=2.13,<3",
   "pydantic-settings>=2.14,<3",
   "pytz>=2025.2,<2027",
+  "scikit-learn>=1.9,<1.10",
+  "skops>=0.14,<0.15",
   "uvicorn[standard]>=0.40,<0.41",
 ]
 

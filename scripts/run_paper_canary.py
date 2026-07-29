@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from astramind_mini.config import Settings
@@ -53,6 +53,8 @@ async def _monitor(
     workflow: PaperCanaryWorkflow,
     active: ActiveCanary,
 ) -> int:
+    submission_end = workflow.runtime.authorization().submission_window_end
+    cancel_prompt_at = submission_end - timedelta(minutes=1)
     while True:
         projection = active.projection
         print(
@@ -62,8 +64,8 @@ async def _monitor(
         )
         if str(projection.state) in TERMINAL_STATES:
             return 0
-        now = datetime.now(SHANGHAI)
-        if now.time() >= time(9, 44):
+        now = datetime.now(UTC)
+        if now >= cancel_prompt_at:
             if str(projection.state) in {"acknowledged", "partially_filled"}:
                 confirmation = input(f"如需撤销剩余委托，请完整输入“{CANCEL_TEXT}”，否则直接回车：")
                 if confirmation.strip() == CANCEL_TEXT:
@@ -71,7 +73,7 @@ async def _monitor(
                     continue
                 print("state=monitoring_stopped automatic_resubmit=false")
                 return 3
-            if now.time() >= time(9, 45):
+            if now >= submission_end:
                 print("state=monitoring_stopped automatic_resubmit=false")
                 return 3
         await asyncio.sleep(5)

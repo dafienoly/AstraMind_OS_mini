@@ -151,6 +151,31 @@ def test_decision_chain_waits_for_pipeline_commit(
     assert result.artifact_path is None
 
 
+def test_decision_chain_can_select_historical_pipeline_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    orchestrator = _build_orchestrator(tmp_path, monkeypatch)
+    selected = orchestrator._data_control.current_commit()
+    monkeypatch.setattr(
+        DailyPipelineStore,
+        "commit_for_run",
+        lambda self, run_id: selected if run_id == selected.run_id else None,
+    )
+    monkeypatch.setattr(
+        DailyPipelineStore,
+        "current_commit",
+        lambda self: (_ for _ in ()).throw(AssertionError("不得读取全局当前提交")),
+    )
+
+    result = orchestrator.run(
+        started_at=NOW,
+        pipeline_run_id=selected.run_id,
+    )
+
+    assert result.status.state == "current"
+    assert result.status.pipeline_commit_id == selected.commit_id
+
+
 def _build_orchestrator(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> module.DailyDecisionOrchestrator:

@@ -102,12 +102,19 @@ class DailyDecisionOrchestrator:
         self,
         *,
         started_at: datetime,
+        pipeline_run_id: str | None = None,
         interrupt_after_step: str | None = None,
     ) -> DailyDecisionResult:
         if started_at.tzinfo is None:
             raise ValueError("决策链启动时间必须带时区")
         try:
-            commit = self._data_control.current_commit()
+            commit = (
+                self._data_control.commit_for_run(pipeline_run_id)
+                if pipeline_run_id
+                else self._data_control.current_commit()
+            )
+            if commit is None:
+                raise FileNotFoundError
         except FileNotFoundError:
             return self._preparation_failure(
                 pipeline_commit_id="daily-pipeline-commit:unavailable",

@@ -182,7 +182,7 @@ class ProductionSnapshotService:
         if len(table.rows) >= PROVIDER_LIMIT:
             raise ValueError(f"{api_name} 达到提供方行数上限，拒绝发布可能截断的数据")
         envelope = RawRecordEnvelope(
-            provider="tushare",
+            provider=table.provider_id,
             interface_name=api_name,
             source_endpoint=table.source_endpoint,
             request_identity=table.request_identity,
@@ -259,6 +259,9 @@ class ProductionSnapshotService:
         return tuple(self._publish_spec(spec) for spec in specs)
 
     def _publish_spec(self, spec: _DatasetSpec) -> DatasetManifest:
+        providers = {table.provider_id for table in spec.tables}
+        if len(providers) != 1:
+            raise ValueError(f"{spec.name} 同一版本不得混用提供方")
         artifacts = {
             "data.parquet": self._encoder.encode(spec.rows, spec.columns),
             "coverage.json": canonical_json(spec.coverage),
@@ -266,7 +269,7 @@ class ProductionSnapshotService:
         manifest = build_dataset_manifest(
             dataset_name=spec.name,
             schema_version="1.0.0",
-            provider="tushare",
+            provider=next(iter(providers)),
             source_endpoint=spec.tables[0].source_endpoint,
             request_identity=content_hash(sorted(table.request_identity for table in spec.tables)),
             retrieved_at=max(table.received_at for table in spec.tables),

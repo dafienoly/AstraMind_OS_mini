@@ -273,7 +273,7 @@ class IndustryFoundationService:
 
     def _preserve_raw(self, table: ProviderTable) -> None:
         envelope = RawRecordEnvelope(
-            provider="tushare",
+            provider=table.provider_id,
             interface_name=table.api_name,
             source_endpoint=table.source_endpoint,
             request_identity=table.request_identity,

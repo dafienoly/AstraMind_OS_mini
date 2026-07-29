@@ -80,6 +80,21 @@ class DailyDecisionStore:
             ).fetchone()
         return DailyDecisionStatus.model_validate_json(row[0]) if row else None
 
+    def latest_status_for_pipeline_commit(
+        self, pipeline_commit_id: str
+    ) -> DailyDecisionStatus | None:
+        self.migrate()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT payload_json FROM daily_decision_runs
+                WHERE json_extract(payload_json, '$.pipeline_commit_id') = ?
+                ORDER BY updated_at DESC, run_id DESC LIMIT 1
+                """,
+                (pipeline_commit_id,),
+            ).fetchone()
+        return DailyDecisionStatus.model_validate_json(row[0]) if row else None
+
     def checkpoint(
         self,
         *,

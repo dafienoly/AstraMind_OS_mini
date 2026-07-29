@@ -10,7 +10,7 @@ from .daily_scheduler_contracts import DailyScheduleDecision, ScheduleAction, Sc
 from .identity import operations_hash
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
-TRIGGER_TIMES = (time(8, 30), time(16, 35), time(16, 50), time(17, 10))
+TRIGGER_TIMES = (time(8, 30), time(16, 35), time(16, 50), time(17, 10), time(20, 10))
 
 
 def evaluate_daily_schedule(
@@ -61,7 +61,9 @@ def _trigger(value: datetime) -> ScheduleTrigger:
         return "provider_retry_1650"
     if time(17, 10) <= clock < time(17, 30):
         return "provider_retry_1710"
-    if clock < time(16, 35) or clock >= time(17, 30):
+    if time(20, 10) <= clock < time(20, 30):
+        return "finalize_2010"
+    if clock < time(16, 35) or time(17, 30) <= clock < time(20, 10) or clock >= time(20, 30):
         return "logon_recovery"
     return "outside_window"
 
@@ -74,7 +76,12 @@ def _target_date(
     if not eligible:
         return None
     today_is_open = eligible[-1] == local.date()
-    if trigger in ("post_close_1635", "provider_retry_1650", "provider_retry_1710"):
+    if trigger in (
+        "post_close_1635",
+        "provider_retry_1650",
+        "provider_retry_1710",
+        "finalize_2010",
+    ):
         return eligible[-1] if today_is_open else None
     if today_is_open and local.timetz().replace(tzinfo=None) < time(16, 35):
         return eligible[-2] if len(eligible) > 1 else None

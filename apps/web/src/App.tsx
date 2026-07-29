@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 
+import { AppShell, useAppLocation } from "./app-shell/AppShell";
+import { useRouteLoadPhase } from "./app-shell/routeProgress";
 import { UiLab } from "./UiLab";
-import { MarketRotation } from "./market/MarketRotation";
+import { MarketPage } from "./market-dashboard/MarketPage";
 import { OperationsShell } from "./operations/OperationsShell";
+import { StockWorkbenchPage } from "./stock-workbench/StockWorkbenchPage";
 
 type ApiState =
   | { kind: "loading" }
@@ -12,23 +15,28 @@ type ApiState =
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
 
 export function App() {
-  if (window.location.pathname === "/dev/ui-lab") {
+  const location = useAppLocation();
+  if (location.pathname === "/dev/ui-lab") {
     return <UiLab />;
   }
-  if (window.location.pathname === "/market") {
-    return <MarketRotation />;
-  }
-  if (window.location.pathname === "/today") {
-    return <OperationsShell destination="today" />;
-  }
-  if (window.location.pathname === "/portfolio") {
-    return <OperationsShell destination="portfolio" />;
-  }
-  if (window.location.pathname === "/execution") {
-    return <OperationsShell destination="execution" />;
-  }
-  if (window.location.pathname === "/system") {
-    return <OperationsShell destination="system" />;
+  return <AppShell location={location}>
+    <RouteContent pathname={location.pathname} />
+  </AppShell>;
+}
+
+function RouteContent({ pathname }: { pathname: string }) {
+  if (pathname === "/market") return <MarketPage />;
+  if (pathname.startsWith("/stocks/")) return <StockWorkbenchPage />;
+  if (pathname === "/today") return <OperationsShell destination="today" />;
+  if (pathname === "/portfolio") return <OperationsShell destination="portfolio" />;
+  if (pathname === "/execution") return <OperationsShell destination="execution" />;
+  if (pathname === "/system") return <OperationsShell destination="system" />;
+  if (pathname === "/strategy-arena") {
+    return <PlannedPage
+      eyebrow="策略竞技场"
+      title="策略证据工作面仍在建设"
+      detail="这里将比较策略版本、Research Shadow 与 Paper 证据；当前不会生成订单。"
+    />;
   }
   return <FoundationDiagnostic />;
 }
@@ -61,9 +69,13 @@ function FoundationDiagnostic() {
 
     return () => controller.abort();
   }, []);
+  useRouteLoadPhase(
+    apiState.kind === "loading" ? "loading_content" : apiState.kind === "error" ? "error" : "ready",
+    apiState.kind === "loading" ? "正在检查本地服务" : "本地服务检查完成",
+  );
 
   return (
-    <main>
+    <main className="foundation-diagnostic">
       <p className="eyebrow">ASTRAMIND OS MINI</p>
       <h1>本地量化交易工作台</h1>
       <p>行业相对轮动已经进入正式只读研究，其余产品界面仍按批准顺序实施。</p>
@@ -76,4 +88,21 @@ function FoundationDiagnostic() {
       </section>
     </main>
   );
+}
+
+function PlannedPage({
+  eyebrow,
+  title,
+  detail,
+}: {
+  eyebrow: string;
+  title: string;
+  detail: string;
+}) {
+  useRouteLoadPhase("ready", `${title}已就绪`);
+  return <main className="planned-page">
+    <p className="eyebrow">{eyebrow}</p>
+    <h1>{title}</h1>
+    <p>{detail}</p>
+  </main>;
 }

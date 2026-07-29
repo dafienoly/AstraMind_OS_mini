@@ -1,0 +1,46 @@
+from __future__ import annotations
+
+import asyncio
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from astramind_mini.data.adapters.miniqmt_bridge import (
+    MiniQMTBridgeClient,
+    MiniQMTBridgeError,
+)
+
+
+def test_request_timeout_force_stops_bridge(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = MiniQMTBridgeClient(
+        runner=Path("bridge.py"),
+        xtquant_path=Path("xtquant"),
+        quote_port=58610,
+    )
+    forced = False
+
+    class FakeStdin:
+        def write(self, payload: bytes) -> None:
+            assert payload
+
+        async def drain(self) -> None:
+            return None
+
+    async def start() -> None:
+        return None
+
+    async def force_stop() -> None:
+        nonlocal forced
+        forced = True
+
+    monkeypatch.setattr(client, "start", start)
+    monkeypatch.setattr(client, "_force_stop", force_stop)
+    client._process = SimpleNamespace(stdin=FakeStdin(), returncode=None)  # type: ignore[assignment]
+
+    async def request() -> None:
+        with pytest.raises(MiniQMTBridgeError, match="bridge_request_timeout"):
+            await client.request("health", timeout_seconds=0.001)
+
+    asyncio.run(request())
+    assert forced

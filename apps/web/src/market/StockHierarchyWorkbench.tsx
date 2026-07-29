@@ -1,8 +1,5 @@
-import { useEffect, useState } from "react";
-
 import type { IndustryHierarchyView } from "./rotationTypes";
-import { StockEvidencePanel } from "./StockEvidencePanel";
-import { StockPriceWorkbench } from "./StockPriceWorkbench";
+import { stockWorkbenchHref } from "../stock-workbench/focus";
 import { StockRotationNavigator } from "./StockRotationNavigator";
 
 export function StockHierarchyWorkbench({
@@ -21,9 +18,6 @@ export function StockHierarchyWorkbench({
   const updatingLabel = pendingInstrument
     ? `正在切换至 ${pendingName ?? pendingInstrument}`
     : undefined;
-  const [hoverDate, setHoverDate] = useState(view.as_of);
-  useEffect(() => setHoverDate(view.as_of), [view.as_of, view.selected_code]);
-
   return <div
     aria-busy={updatingLabel ? "true" : "false"}
     className="stock-evidence-workbench"
@@ -33,16 +27,20 @@ export function StockHierarchyWorkbench({
         股票证据切换失败：{refreshError}。当前仍显示上一只股票；再次点击目标节点可重试。
       </p>
     ) : null}
+    {updatingLabel ? <p className="stock-update-status" role="status">{updatingLabel}</p> : null}
     <StockRotationNavigator onInstrument={onInstrument} selected={selected} view={view} />
-    <StockPriceWorkbench
-      onHoverDate={setHoverDate}
-      updatingLabel={updatingLabel}
-      view={view}
-    />
-    <StockEvidencePanel
-      evidence={view.stock_evidence}
-      hoverDate={hoverDate}
-      updatingLabel={updatingLabel}
-    />
+    <aside className="stock-workbench-entry">
+      <p className="eyebrow">统一个股证据</p>
+      <h2>{view.stock_evidence?.instrument_name ?? (selected || "选择股票")}</h2>
+      <p>行业页只保留比较与选择；价格、分钟成交、五档盘口、估值和股东证据由通用个股工作面统一呈现。</p>
+      {selected ? <a href={stockWorkbenchHref(selected, {
+        origin: "industry_rotation",
+        mode: "completed",
+        returnTarget: "industry_rotation",
+        dataSnapshotId: view.data_snapshot_id,
+        asOf: view.as_of,
+        industryCode: view.parent_code ?? undefined,
+      })}>打开通用个股工作面 →</a> : null}
+    </aside>
   </div>;
 }

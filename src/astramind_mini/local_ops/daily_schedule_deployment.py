@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ TRIGGER_LABELS = (
     "每日 16:35 首次运行",
     "每日 16:50 提供方补跑",
     "每日 17:10 最后有界补跑",
+    "每日 20:10 ETF 日线与事件最终提交",
     "Windows 登录后错过窗口恢复",
 )
 TASK_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
@@ -28,15 +30,22 @@ class DailyTaskSpec:
 
     @property
     def action_arguments(self) -> str:
+        shell_command = shlex.join(
+            [
+                "/usr/bin/make",
+                "daily-schedule-trigger",
+                f"PROVIDER_ENV_FILE={self.provider_env_file.as_posix()}",
+            ]
+        )
         arguments = [
             "-d",
             self.distro,
             "--cd",
             self.repository_root.as_posix(),
             "--",
-            "/usr/bin/make",
-            "daily-schedule-trigger",
-            f"PROVIDER_ENV_FILE={self.provider_env_file.as_posix()}",
+            "/bin/bash",
+            "-lc",
+            shell_command,
         ]
         return subprocess.list2cmdline(arguments)
 
@@ -53,7 +62,7 @@ def task_xml(spec: DailyTaskSpec) -> bytes:
     ET.SubElement(principal, _tag("GroupId")).text = "S-1-5-32-545"
     ET.SubElement(principal, _tag("RunLevel")).text = "LeastPrivilege"
     triggers = ET.SubElement(task, _tag("Triggers"))
-    for clock in ("08:30:00", "16:35:00", "16:50:00", "17:10:00"):
+    for clock in ("08:30:00", "16:35:00", "16:50:00", "17:10:00", "20:10:00"):
         trigger = ET.SubElement(triggers, _tag("CalendarTrigger"))
         ET.SubElement(trigger, _tag("StartBoundary")).text = f"2026-01-01T{clock}"
         ET.SubElement(trigger, _tag("Enabled")).text = "true"

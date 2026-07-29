@@ -108,7 +108,7 @@ def normalize_shareholder_counts(
 
 def _source(table: ProviderTable, row: dict[str, object], available_date: date) -> _Source:
     return {
-        "provider": "tushare",
+        "provider": table.provider_id,
         "source_endpoint": table.source_endpoint,
         "retrieved_at": table.received_at,
         "available_at": datetime.combine(available_date, time(18), tzinfo=SHANGHAI),

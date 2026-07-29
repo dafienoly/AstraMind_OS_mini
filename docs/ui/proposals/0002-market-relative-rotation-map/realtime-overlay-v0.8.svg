@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0002 v0.8 行业相对轮动盘中临时端点</title><desc id="desc">完成日轮动尾迹保持不变，当前会话仅以虚线连接一个盘中临时端点。</desc>
+  <defs><style>
+    .bg{fill:#F2F4F3}.paper{fill:#fff}.ink{fill:#172129}.muted{fill:#68747C}.blue{fill:#2E5E84}.ochre{fill:#B47A22}.line{stroke:#D8DEDC}.grid{stroke:#DDE5E2;stroke-dasharray:4 5}.tail{fill:none;stroke:#8FA7B7;stroke-width:2}.live{fill:none;stroke:#B47A22;stroke-width:2;stroke-dasharray:7 5}.sans{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Segoe UI",sans-serif}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t16{font-size:16px}.t22{font-size:22px}.bold{font-weight:700}
+  </style></defs>
+  <rect class="bg" width="1440" height="900"/><rect class="paper" x="30" y="24" width="1380" height="852"/>
+  <text class="ink sans bold t22" x="62" y="64">行业相对轮动 · 盘中临时端点</text><text class="muted sans t11" x="62" y="87">完成日尾迹是正式证据；虚线只连接当前会话端点，不写入历史回放。</text>
+  <rect x="62" y="105" width="1316" height="58" fill="#F8FAF9" stroke="#CAD4D1"/><text class="blue sans bold t12" x="84" y="130">CURRENT · 市场 14:36:28</text><text class="muted sans t11" x="84" y="151">覆盖 31 / 31 行业　公式 intraday-rotation-overlay-v1.0.0　完成日 2026-07-28</text>
+  <rect x="62" y="184" width="960" height="620" fill="#fff" stroke="#D8DEDC"/><rect x="1040" y="184" width="338" height="620" fill="#fff" stroke="#D8DEDC"/>
+  <line class="grid" x1="542" y1="224" x2="542" y2="758"/><line class="grid" x1="112" y1="492" x2="972" y2="492"/>
+  <text class="muted sans t12" x="128" y="250">弱势改善</text><text class="muted sans t12" x="858" y="250">强势领先</text><text class="muted sans t12" x="128" y="736">弱势落后</text><text class="muted sans t12" x="858" y="736">强势降温</text>
+  <path class="tail" d="M410 610 C438 575 466 540 500 516 S558 470 598 444"/><circle cx="410" cy="610" r="5" fill="#B7C6CE"/><circle cx="500" cy="516" r="6" fill="#8FA7B7"/><circle cx="598" cy="444" r="8" fill="#2E5E84"/>
+  <path class="live" d="M598 444 C625 420 648 393 684 374"/><circle cx="684" cy="374" r="11" fill="#fff" stroke="#B47A22" stroke-width="3"/><text class="ink sans bold t12" x="700" y="378">电子 · 盘中</text>
+  <path class="tail" d="M720 580 C704 560 692 544 680 522"/><circle cx="680" cy="522" r="7" fill="#6E93AA"/><path class="live" d="M680 522 L650 542"/><circle cx="650" cy="542" r="8" fill="#fff" stroke="#B47A22" stroke-width="2"/><text class="muted sans t11" x="664" y="558">银行</text>
+  <circle cx="350" cy="330" r="7" fill="#789E8D"/><text class="muted sans t11" x="365" y="334">医药生物</text><circle cx="810" cy="620" r="7" fill="#B27C72"/><text class="muted sans t11" x="824" y="624">煤炭</text>
+  <text class="muted sans t10" x="460" y="788">相对趋势 X →</text><text class="muted sans t10" transform="translate(86 560) rotate(-90)">相对动量 Y →</text>
+  <text class="ink sans bold t16" x="1064" y="220">电子</text><text class="ochre sans bold t12" x="1064" y="246">盘中临时 · 强势领先</text>
+  <text class="muted sans t10" x="1064" y="278">完成日坐标</text><text class="ink num bold t12" x="1200" y="278">108.4 / 105.8</text><text class="muted sans t10" x="1064" y="306">盘中坐标</text><text class="ink num bold t12" x="1200" y="306">110.1 / 108.2</text>
+  <text class="muted sans t10" x="1064" y="334">本会话位移</text><text class="ochre num bold t12" x="1200" y="334">↗ +2.9</text><line class="line" x1="1064" y1="356" x2="1354" y2="356"/>
+  <text class="ink sans bold t12" x="1064" y="388">显示规则</text><text class="muted sans t11" x="1064" y="416">• 正式尾迹保持实线</text><text class="muted sans t11" x="1064" y="442">• 只保留一个盘中端点</text><text class="muted sans t11" x="1064" y="468">• 每秒替换端点，不累积尾迹</text><text class="muted sans t11" x="1064" y="494">• 断线后端点降级为非当前</text>
+  <rect x="1064" y="530" width="290" height="90" fill="#F7F2E8"/><text class="ochre sans bold t11" x="1080" y="554">研究边界</text><text class="muted sans t10" x="1080" y="578">盘中端点不是完成日轮动快照，</text><text class="muted sans t10" x="1080" y="596">不进入历史播放、策略或订单。</text>
+  <text class="blue sans bold t11" x="1064" y="666">显示盘中临时端点　●</text><text class="muted sans t11" x="1064" y="700">回到最新　　暂停正式历史播放</text>
+</svg>

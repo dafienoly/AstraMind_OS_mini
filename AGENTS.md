@@ -8,7 +8,9 @@ execution boundaries below.
 
 AstraMind OS Mini is a local-first, single-user A-share quantitative trading system.
 Its first goal is to move a small number of stock strategies from reproducible research
-to local Shadow and then, only after an explicit user decision, MiniQMT execution.
+through isolated multi-candidate Research Shadow, explicit policy selection, MiniQMT
+Paper operational validation, and then, only after an explicit user decision, limited
+Live execution. Deterministic Local Replay remains for tests and recovery drills.
 
 The product has two capital sleeves:
 
@@ -34,8 +36,8 @@ change. Update the affected document and implementation together.
 
 ## Authorization boundaries
 
-- Documentation, diagrams, fixtures, local tests, research, backtests, and local Shadow
-  are not broker authorization.
+- Documentation, diagrams, fixtures, local tests, research, backtests, Research Shadow,
+  and Local Replay are not broker authorization.
 - Do not connect MiniQMT, place a real order, enable Live, or use real capital without
   a separate explicit user instruction naming that step.
 - Strategy-promotion approval does not automatically authorize broker connectivity.
@@ -108,8 +110,11 @@ Keep these thin-waist contracts stable:
 - `OrderPlan`
 - `ExecutionEvent`
 
-Research, Shadow, Paper, and Live must use the same `OrderPlan` and execution state
-model. Broker-specific behavior belongs behind a gateway port.
+Research Shadow must reuse the executable `OrderPlan` semantics while keeping an
+isolated virtual ledger per exact candidate. It belongs to Strategy Research and is not
+a broker account or execution mode. MiniQMT Paper uses one broker simulation-account
+truth with internal tactical and core sleeve projections. Paper and Live share the
+execution state model; broker-specific behavior belongs behind a gateway port.
 
 Do not introduce a second data truth source, strategy registry, execution engine, job
 system, or UI component system without recording the reason and migration path.

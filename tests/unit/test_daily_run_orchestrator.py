@@ -126,6 +126,56 @@ def test_success_publishes_one_immutable_summary_and_reuses_it(tmp_path: Path) -
     assert pointer["run_id"] == first.status.run_id
 
 
+def test_explicit_recovery_reopens_current_run_and_archives_summary(
+    tmp_path: Path,
+) -> None:
+    control = store(tmp_path)
+    calls = {"data": 0, "decision": 0, "backup": 0}
+
+    def data() -> DailyDataOutcome:
+        calls["data"] += 1
+        suffix = calls["data"]
+        return DailyDataOutcome(
+            state="completed",
+            commit_id=f"daily-commit:{suffix}",
+            data_snapshot_id=f"snapshot:{suffix}",
+            rotation_snapshot_id=f"rotation:{suffix}",
+        )
+
+    def decision() -> DailyDecisionOutcome:
+        calls["decision"] += 1
+        suffix = calls["decision"]
+        return DailyDecisionOutcome(
+            state="completed",
+            feature_snapshot_id=f"feature:{suffix}",
+            prediction_batch_id=f"prediction:{suffix}",
+            portfolio_target_id=f"target:{suffix}",
+            order_plan_id=f"order-plan:{suffix}",
+        )
+
+    def backup() -> BackupReadinessOutcome:
+        calls["backup"] += 1
+        return BackupReadinessOutcome(
+            ready=True,
+            backup_id=f"local-backup:{calls['backup']}",
+        )
+
+    service = orchestrator(
+        control,
+        run_data=data,
+        run_decision=decision,
+        check_backup=backup,
+    )
+    first = run(service.run(target_date=TARGET, base_snapshot_id=BASE))
+    recovered = run(service.run(target_date=TARGET, base_snapshot_id=BASE, recover=True))
+
+    assert first.status.run_id == recovered.status.run_id
+    assert first.summary is not None and recovered.summary is not None
+    assert first.summary.summary_id != recovered.summary.summary_id
+    assert calls == {"data": 2, "decision": 2, "backup": 2}
+    assert control.summary_history(first.status.run_id) == (first.summary,)
+
+
 def test_waiting_provider_does_not_advance_decision_or_pointer(tmp_path: Path) -> None:
     control = store(tmp_path)
     completed = run(
@@ -277,3 +327,20 @@ def test_budget_exhaustion_fails_closed_before_next_step(tmp_path: Path) -> None
     assert result.status.state == "stale"
     assert result.status.blocker_codes == ("daily_budget_exhausted",)
     assert not decision_called
+
+    recovery_time = NOW + timedelta(minutes=32)
+    recovered = run(
+        orchestrator(
+            control,
+            run_decision=decision,
+            clock=lambda: recovery_time,
+        ).run(
+            target_date=TARGET,
+            base_snapshot_id=BASE,
+            recover=True,
+        )
+    )
+
+    assert recovered.status.state == "current"
+    assert recovered.status.run_id == result.status.run_id
+    assert decision_called

@@ -10,7 +10,7 @@ from pathlib import Path
 import duckdb
 from pydantic import BaseModel
 
-from ..contracts import DatasetManifest, IndustryTaxonomyObservation, RawRecordEnvelope
+from ..contracts import DatasetManifest, IndustryTaxonomyObservation
 from ..ports import HistoricalMarketDataProvider, ParquetEncoder, ProviderTable, RawRecordStore
 from .daily_reference_normalization import (
     DIVIDEND_FIELDS,
@@ -37,6 +37,7 @@ from .industry_foundation_support import (
 from .industry_normalization import normalize_memberships, normalize_taxonomy
 from .normalization import normalize_security_master
 from .publication_policy import SECURITY_FIELDS
+from .raw_records import preserve_provider_table_raw
 from .state_files import save_state, write_bytes_atomic
 
 
@@ -387,9 +388,18 @@ def _manifest(
     target_date: date,
 ) -> DatasetManifest:
     with duckdb.connect(":memory:") as connection:
-        row = connection.execute("SELECT count(*) FROM read_parquet(?)", [str(path)]).fetchone()
+        row = connection.execute(
+            """
+            SELECT count(*), min(provider), count(DISTINCT provider), min(source_endpoint)
+            FROM read_parquet(?)
+            """,
+            [str(path)],
+        ).fetchone()
         assert row is not None
         row_count = int(row[0])
+        if int(row[2]) != 1:
+            raise ValueError(f"{name} 同一版本混入多个提供方")
+        provider, source_endpoint = str(row[1]), str(row[3])
     gaps = tuple(
         gap
         for gap in base.known_gaps
@@ -401,14 +411,8 @@ def _manifest(
     return build_dataset_manifest_from_hashes(
         dataset_name=name,
         schema_version="1.1.0",
-        provider="tushare",
-        source_endpoint={
-            "security_master": "stock_basic",
-            "security_name_history": "namechange",
-            "corporate_action": "dividend",
-            "industry_taxonomy": "index_classify",
-            "industry_membership": "index_member_all",
-        }[name],
+        provider=provider,
+        source_endpoint=source_endpoint,
         request_identity=request_identity,
         retrieved_at=retrieved_at,
         market_timezone=base.market_timezone,
@@ -457,16 +461,7 @@ def _repair_name_intervals(path: Path) -> None:
 
 
 def _preserve_raw(table: ProviderTable, raw_store: RawRecordStore) -> None:
-    envelope = RawRecordEnvelope(
-        provider="tushare",
-        interface_name=table.api_name,
-        source_endpoint=table.source_endpoint,
-        request_identity=table.request_identity,
-        received_at=table.received_at,
-        schema_version="provider-v1",
-        content_hash=content_hash(table.raw_body),
-    )
-    raw_store.append(envelope, table.raw_body)
+    preserve_provider_table_raw(table, raw_store)
 
 
 def _membership_normalizer(

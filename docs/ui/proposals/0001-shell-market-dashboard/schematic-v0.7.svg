@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0001 v0.7 统一顶部导航与分层加载</title>
+  <desc id="desc">只保留顶部五入口导航，市场子导航始终一致；页面切换期间保留完整壳层，显示真实加载阶段和稳定骨架。</desc>
+  <defs>
+    <style>
+      .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans",Arial,sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",Consolas,monospace}
+      .ink{fill:#172129}.muted{fill:#68747c}.blue{fill:#2e5e84}.ochre{fill:#b47a22}.white{fill:#fff}
+      .t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t14{font-size:14px}.t16{font-size:16px}.t20{font-size:20px}.bold{font-weight:700}
+      .rule{stroke:#d8e0dd;stroke-width:1}.soft{fill:#edf1ef}.surface{fill:#fff;stroke:#d8e0dd;stroke-width:1}
+    </style>
+    <linearGradient id="progress" x1="0" x2="1">
+      <stop offset="0" stop-color="#2e5e84" stop-opacity=".25"/>
+      <stop offset=".55" stop-color="#2e5e84"/>
+      <stop offset="1" stop-color="#2e5e84" stop-opacity=".25"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="#f2f4f3"/>
+
+  <!-- one persistent application shell -->
+  <rect width="1440" height="64" fill="#172129"/>
+  <text x="36" y="39" class="white num bold t16">ASTRA<tspan fill="#9bb7c9">MIND</tspan></text>
+  <g class="cn t12">
+    <text x="260" y="39" class="white">今日</text>
+    <rect x="330" y="13" width="72" height="38" rx="3" fill="#2e5e84"/>
+    <text x="366" y="38" text-anchor="middle" class="white bold">市场</text>
+    <text x="446" y="39" class="white">策略竞技场</text>
+    <text x="562" y="39" class="white">组合</text>
+    <text x="632" y="39" class="white">系统</text>
+  </g>
+  <text x="1240" y="37" text-anchor="end" class="white cn t10">只读行情</text>
+  <rect x="1264" y="20" width="142" height="25" rx="12" fill="#2a3740"/>
+  <text x="1335" y="37" text-anchor="middle" class="white cn t10">需要你处理 · 2</text>
+  <rect x="0" y="61" width="824" height="3" fill="url(#progress)"/>
+
+  <!-- stable secondary navigation, all market pages share it -->
+  <rect x="0" y="64" width="1440" height="56" fill="#fff"/>
+  <text x="32" y="98" class="muted cn t11">市场</text>
+  <text x="100" y="98" class="muted cn t11">大盘</text>
+  <text x="160" y="98" class="muted cn t11">个股观察</text>
+  <text x="250" y="98" class="blue cn bold t11">行业</text>
+  <text x="310" y="98" class="muted cn t11">ETF 轮动</text>
+  <line x1="246" y1="116" x2="278" y2="116" stroke="#2e5e84" stroke-width="3"/>
+  <line x1="410" y1="82" x2="410" y2="104" class="rule"/>
+  <text x="438" y="98" class="muted cn t10">行业热力</text>
+  <text x="514" y="98" class="muted cn t10">生命周期结构</text>
+  <rect x="610" y="78" width="78" height="28" rx="3" fill="#edf3f7"/>
+  <text x="649" y="97" text-anchor="middle" class="blue cn bold t10">相对轮动</text>
+  <text x="1408" y="98" text-anchor="end" class="muted cn t9">一级与二级导航不因子页面而增减</text>
+  <line x1="0" y1="120" x2="1440" y2="120" class="rule"/>
+
+  <!-- decision status -->
+  <rect x="0" y="120" width="1440" height="42" fill="#f8faf8"/>
+  <text x="32" y="146" class="blue cn bold t10">数据 · 读取中</text>
+  <text x="156" y="146" class="muted cn t10">信号 · 暂不评估</text>
+  <text x="286" y="146" class="muted cn t10">风险 · 沿用上次结果</text>
+  <text x="442" y="146" class="muted cn t10">订单 · 未进入</text>
+  <text x="1408" y="146" text-anchor="end" class="ochre cn t10">切换页面不会卸载全局状态</text>
+  <line x1="0" y1="162" x2="1440" y2="162" class="rule"/>
+
+  <!-- loading explanation -->
+  <rect x="24" y="184" width="1392" height="74" rx="4" class="surface"/>
+  <circle cx="52" cy="220" r="9" fill="none" stroke="#2e5e84" stroke-width="3" stroke-dasharray="14 8"/>
+  <text x="76" y="213" class="ink cn bold t12">正在进入“行业 · 相对轮动”</text>
+  <text x="76" y="234" class="muted cn t10">读取正式快照 · 已完成身份解析，正在获取有界证据</text>
+  <g class="cn t9">
+    <circle cx="752" cy="218" r="7" fill="#2e5e84"/><text x="768" y="222" class="ink">路由已切换</text>
+    <line x1="844" y1="218" x2="898" y2="218" stroke="#9eb4c2" stroke-width="2"/>
+    <circle cx="914" cy="218" r="7" fill="#fff" stroke="#2e5e84" stroke-width="2"/><text x="930" y="222" class="blue bold">读取页面证据</text>
+    <line x1="1044" y1="218" x2="1098" y2="218" stroke="#d8e0dd" stroke-width="2"/>
+    <circle cx="1114" cy="218" r="7" fill="#fff" stroke="#b8c2bd"/><text x="1130" y="222" class="muted">建立实时覆盖</text>
+    <line x1="1232" y1="218" x2="1286" y2="218" stroke="#d8e0dd" stroke-width="2"/>
+    <circle cx="1302" cy="218" r="7" fill="#fff" stroke="#b8c2bd"/><text x="1318" y="222" class="muted">可交互</text>
+  </g>
+
+  <!-- stable page skeleton -->
+  <text x="24" y="292" class="muted cn t9">目标页面骨架保持稳定；未知耗时不伪造百分比，只有可计数批次才显示 n/N</text>
+  <rect x="24" y="310" width="1020" height="548" rx="4" class="surface"/>
+  <rect x="1062" y="310" width="354" height="548" rx="4" class="surface"/>
+
+  <rect x="48" y="338" width="280" height="18" rx="3" class="soft"/>
+  <rect x="48" y="370" width="580" height="12" rx="3" class="soft"/>
+  <rect x="48" y="412" width="972" height="54" rx="3" fill="#f6f8f7"/>
+  <g>
+    <rect x="64" y="427" width="132" height="12" rx="3" fill="#e1e7e4"/>
+    <rect x="218" y="427" width="132" height="12" rx="3" fill="#e1e7e4"/>
+    <rect x="372" y="427" width="132" height="12" rx="3" fill="#e1e7e4"/>
+    <rect x="526" y="427" width="132" height="12" rx="3" fill="#e1e7e4"/>
+  </g>
+  <rect x="48" y="488" width="972" height="286" rx="3" fill="#f8faf9" stroke="#e2e7e4"/>
+  <line x1="80" y1="536" x2="990" y2="536" stroke="#e5e9e7"/>
+  <line x1="80" y1="594" x2="990" y2="594" stroke="#e5e9e7"/>
+  <line x1="80" y1="652" x2="990" y2="652" stroke="#e5e9e7"/>
+  <line x1="252" y1="512" x2="252" y2="748" stroke="#e5e9e7"/>
+  <line x1="472" y1="512" x2="472" y2="748" stroke="#e5e9e7"/>
+  <line x1="692" y1="512" x2="692" y2="748" stroke="#e5e9e7"/>
+  <line x1="912" y1="512" x2="912" y2="748" stroke="#e5e9e7"/>
+  <rect x="48" y="796" width="744" height="12" rx="3" class="soft"/>
+  <rect x="48" y="824" width="520" height="10" rx="3" class="soft"/>
+
+  <text x="1086" y="344" class="ink cn bold t12">上下文检查器</text>
+  <rect x="1086" y="370" width="182" height="16" rx="3" class="soft"/>
+  <rect x="1086" y="402" width="300" height="10" rx="3" class="soft"/>
+  <rect x="1086" y="430" width="300" height="72" rx="3" fill="#f6f8f7"/>
+  <rect x="1086" y="526" width="300" height="12" rx="3" class="soft"/>
+  <rect x="1086" y="554" width="248" height="10" rx="3" class="soft"/>
+  <rect x="1086" y="582" width="270" height="10" rx="3" class="soft"/>
+  <rect x="1086" y="630" width="300" height="118" rx="3" fill="#f6f8f7"/>
+  <text x="1086" y="802" class="muted cn t9">失败时壳层、导航与上一页返回路径仍可用</text>
+  <rect x="1086" y="818" width="88" height="28" rx="3" fill="#edf3f7"/>
+  <text x="1130" y="837" text-anchor="middle" class="blue cn bold t9">取消加载</text>
+
+  <text x="24" y="884" class="muted cn t9">桌面：顶部一级导航 + 顶部二级导航。窄屏：顶部五入口横向滚动/折叠，不再生成底部或侧方的第二套一级导航。</text>
+</svg>

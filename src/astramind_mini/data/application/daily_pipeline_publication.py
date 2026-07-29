@@ -111,7 +111,10 @@ def _publish(
         **published.research,
         **published.events,
         **published.references,
+        **published.extensions,
     }
+    if published.broad_index is not None:
+        updated["broad_index_daily"] = published.broad_index
     complete_at = max(
         base.as_of,
         retrieved_at,
@@ -122,8 +125,11 @@ def _publish(
         as_of=complete_at,
         created_at=complete_at,
         code_identity=POLICY_VERSION,
-        known_gaps=base.known_gaps,
-        resolved_gaps=_resolved_reference_gaps(published),
+        known_gaps=(*base.known_gaps, *published.extension_known_gaps),
+        resolved_gaps=(
+            *_resolved_reference_gaps(published),
+            *published.extension_resolved_gaps,
+        ),
     )
     snapshot_path = snapshots.publish(snapshot)
     ledger.record_snapshot(snapshot, snapshot_path)
@@ -137,7 +143,11 @@ def _publish(
     checkpoint(run_id, "rotation", complete_at, rotation.rotation_snapshot_id)
     interrupt(interrupt_after_step, "rotation")
     _activate_datasets(published, datasets)
-    snapshots.activate(snapshot, snapshot_path)
+    snapshots.activate(
+        snapshot,
+        snapshot_path,
+        expected_snapshot_id=base.snapshot_id,
+    )
     rotations.activate(rotation, rotation_path)
     commit = build_commit(
         run_id,
@@ -168,12 +178,15 @@ def _activate_datasets(
     published: PublishedDailyDatasets,
     datasets: FilesystemDatasetStore,
 ) -> None:
+    if published.broad_index is not None and published.broad_index_path is not None:
+        datasets.activate(published.broad_index, published.broad_index_path)
     datasets.activate(published.industry, published.industry_path)
     datasets.activate(published.calendar, published.calendar_path)
     groups = (
         (published.research, published.research_paths),
         (published.events, published.event_paths),
         (published.references, published.reference_paths),
+        (published.extensions, published.extension_paths),
     )
     for manifests, paths in groups:
         for name, manifest in manifests.items():

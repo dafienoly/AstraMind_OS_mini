@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping, Sequence
+import json
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Literal, TypedDict
@@ -21,6 +22,7 @@ from astramind_mini.data.application.daily_pipeline import (
     DailyIndustryPipeline,
     DailyPipelineInterrupted,
 )
+from astramind_mini.data.application.daily_pipeline_inputs import DailyDatasetExtensions
 from astramind_mini.data.application.dataset_schemas import (
     INDUSTRY_INDEX_DAILY_COLUMNS,
     INDUSTRY_MEMBERSHIP_COLUMNS,
@@ -160,11 +162,122 @@ def test_daily_pipeline_recovers_and_idempotently_commits_l1_l2(
     assert store.journal_mode() == "wal"
 
 
+def test_daily_pipeline_atomically_includes_dataset_extensions(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    rotation_root = tmp_path / "rotation"
+    control_db = tmp_path / "control.sqlite3"
+    base_snapshot, target, names = _base_snapshot(data_root)
+    payload = b"etf-daily-extension"
+    manifest = build_dataset_manifest(
+        dataset_name="etf_daily",
+        schema_version="test-v1",
+        provider="fixture",
+        source_endpoint="fixture",
+        request_identity=content_hash("etf-extension"),
+        retrieved_at=datetime.combine(target, time(18, 10), tzinfo=UTC),
+        market_timezone="Asia/Shanghai",
+        date_range=(target, target),
+        universe=("159825.SZ",),
+        primary_key=("instrument_id", "trade_date"),
+        availability_rule="trade_date 18:00 Asia/Shanghai",
+        units=("price:CNY",),
+        row_count=1,
+        artifacts={"etf_daily.parquet": payload},
+    )
+    extension_path = FilesystemDatasetStore(data_root).publish(
+        manifest,
+        {"etf_daily.parquet": payload},
+    )
+
+    async def prepare_extensions(
+        _base_snapshot_id: str,
+        _target_date: date,
+    ) -> DailyDatasetExtensions:
+        return DailyDatasetExtensions(
+            manifests={"etf_daily": manifest},
+            paths={"etf_daily": extension_path},
+            retrieved_at=manifest.retrieved_at,
+            known_gaps=("etf_extension_evidence_gap",),
+        )
+
+    publication = asyncio.run(
+        _service(
+            data_root,
+            rotation_root,
+            control_db,
+            SyntheticDailyProvider(target, names),
+            prepare_extensions=prepare_extensions,
+        ).run(
+            base_snapshot_id=base_snapshot,
+            target_date=target,
+            started_at=datetime.combine(target, time(18, 15), tzinfo=UTC),
+            include_research_inputs=False,
+            include_event_inputs=False,
+        )
+    )
+
+    assert publication.commit is not None
+    snapshot = FilesystemSnapshotStore(data_root).get(publication.commit.data_snapshot_id)
+    assert "etf_daily" in {item.dataset_name for item in snapshot.datasets}
+    assert "etf_extension_evidence_gap" in snapshot.known_gaps
+    current = json.loads((data_root / "current/etf_daily.json").read_text(encoding="utf-8"))
+    assert current["dataset_version"] == manifest.dataset_version
+
+
+def test_explicit_recovery_supersedes_checkpoints_with_audit_history(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    rotation_root = tmp_path / "rotation"
+    control_db = tmp_path / "control.sqlite3"
+    base_snapshot, target, names = _base_snapshot(data_root)
+    service = _service(
+        data_root,
+        rotation_root,
+        control_db,
+        SyntheticDailyProvider(target, names),
+    )
+    started_at = datetime.combine(target, time(18, 10), tzinfo=UTC)
+
+    with pytest.raises(DailyPipelineInterrupted):
+        asyncio.run(
+            service.run(
+                base_snapshot_id=base_snapshot,
+                target_date=target,
+                started_at=started_at,
+                interrupt_after_step="dataset",
+                include_research_inputs=False,
+            )
+        )
+    store = DailyPipelineStore(control_db, data_root)
+    interrupted = store.latest_status()
+    assert interrupted is not None
+    assert store.checkpoint(interrupted.run_id, "provider_collect") is not None
+    assert store.checkpoint(interrupted.run_id, "dataset") is not None
+
+    recovered = asyncio.run(
+        service.run(
+            base_snapshot_id=base_snapshot,
+            target_date=target,
+            started_at=started_at + timedelta(minutes=1),
+            recover=True,
+            include_research_inputs=False,
+        )
+    )
+
+    assert recovered.status.state == "current"
+    assert {value.step_id for value in store.checkpoint_history(interrupted.run_id)} == {
+        "provider_collect",
+        "dataset",
+    }
+
+
 def _service(
     data_root: Path,
     rotation_root: Path,
     control_db: Path,
     provider: SyntheticDailyProvider,
+    prepare_extensions: (Callable[[str, date], Awaitable[DailyDatasetExtensions]] | None) = None,
 ) -> DailyIndustryPipeline:
     ledger = DataControlLedger(control_db)
     ledger.migrate()
@@ -179,6 +292,7 @@ def _service(
         rotation_store=FilesystemRotationStore(rotation_root),
         control_store=DailyPipelineStore(control_db, data_root),
         ledger=ledger,
+        prepare_extensions=prepare_extensions,
     )
 
 

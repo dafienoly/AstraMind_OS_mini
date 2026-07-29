@@ -1,8 +1,12 @@
 ---
-status: accepted
+status: partially_superseded
+superseded_by: ADR-0008（仅本地 Shadow 继续作为独立执行级别的部分）
 ---
 
 # ADR-0005：Paper 接管完整模拟盘账户事实
+
+> Paper 接管完整模拟账户的决定继续有效；“本地 Shadow 继续作为独立执行级别”的
+> 部分最终由 ADR-0008 替代。Research Shadow 是研究证据，不是账户权威。
 
 本地 Shadow 继续使用合成 50,000 元事件账本作为权威；MiniQMT Paper 则在每次启动时
 读取准确 `simulation` 账户，并接管该账户全部现金、持仓、未完成委托和当日成交作为

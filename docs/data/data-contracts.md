@@ -12,14 +12,25 @@
 | 快照层 | 一次请求使用的一组明确数据版本 | 不可变 |
 | 特征层 | 绑定快照和定义版本的点时正确派生值 | 不可变 |
 | 模型层 | 绑定特征和代码身份的模型或预测 | 不可变 |
+| 研究证据层 | 回测、封存回放与候选独立 Research Shadow 事实 | 不可变事件历史 |
 | 组合层 | 优化问题、结果和目标持仓 | 不可变事件历史 |
-| 执行层 | 订单计划与 Broker/Shadow 事件 | 不可变事件历史 |
+| 执行层 | 订单计划、Local Replay 测试事件与 Broker Paper/Live 事件 | 不可变事件历史 |
 
 “最新”只能是指针，不能成为研究、模型、组合或执行记录的真实身份。
 
-持续 Shadow 的日度推进只接受一个准确 `DataSnapshot` 中明确列出的交易日历、原始
+Local Replay 的日度推进只接受一个准确 `DataSnapshot` 中明确列出的交易日历、原始
 日线和逐日可交易状态。入口、估值和退出检查点记录快照身份与行情证据哈希；不能查询
-`latest`、扫描目录、跨快照补值或把盘后日线描述为实时成交。
+`latest`、扫描目录、跨快照补值或把盘后日线描述为实时/Paper 成交。前向证据必须按
+类别解释：Research Shadow 记录候选登记后新到达数据上的研究事实；MiniQMT
+Paper 才记录券商成交、账户恢复和运营成熟度。两者不得合并或互相补写。
+
+Research Shadow 每个候选至少固定 `strategy_version_id`/`core_policy_version_id`、
+`sleeve_id`、周期、登记时间、首个合法决策时点、数据/特征/成本/股票池版本和独立
+虚拟账本身份。其现金、持仓、订单、费用、失败和净值不能跨候选共享。
+
+Paper 账户投影至少把每个本系统增量绑定到 `sleeve_id`、准确政策版本、
+`order_intent_id`、`managed_lot_id` 和券商订单指纹。内部短线/核心虚拟分仓不改变
+MiniQMT 完整账户快照作为唯一券商事实的地位。
 
 ## 标准化数据集必备元数据
 
@@ -29,6 +40,7 @@ dataset_version
 schema_version
 provider
 source_endpoint
+provider_lineage
 request_identity
 retrieved_at
 market_timezone
@@ -64,6 +76,41 @@ known_gaps
 - 宽基指数与行业指数。
 
 复权收盘价不能覆盖标准化源数据中的原始收盘价。
+
+#### 宽基指数日线
+
+WP-0038 新增 `broad_index_daily`，固定注册表版本
+`a-share-broad-index-v1`，首期只包含上证指数、深证成指、创业板指、科创 50、沪深
+300 和中证 1000：
+
+```text
+BroadIndexDailyObservation
+  provider
+  source_endpoint
+  retrieved_at
+  available_at
+  schema_version
+  source_record_hash
+  registry_version
+  instrument_id
+  instrument_name
+  trade_date
+  open
+  high
+  low
+  close
+  previous_close
+  change
+  percent_change
+  volume_lots
+  amount_cny
+```
+
+Tushare `index_daily.amount` 的提供方单位为千元，规范化时乘以 1,000 写入
+`amount_cny`；`volume_lots` 保留提供方手数口径。日线在交易日 18:00
+（Asia/Shanghai）后可用。缺失部分 OHLC、重复 `(instrument_id, trade_date)`、非法
+高低价关系或注册表外身份时阻断发布。页面周/月 K 只能从同一
+`broad_index_daily` 版本确定性聚合。
 
 ### 统一价格图表切片
 
@@ -239,6 +286,50 @@ WP-0035 将一次性 2023–2025 事件版本扩展为连续数据产品：
 
 银行等特殊行业可以使用独立定义。初期不迁移提供方全部财务报表仓库。
 
+### 周度核心因子数据语义（已批准需求，未实现）
+
+REQ-2026-0007 v2.0.0 未来使用独立 `data_semantics_version` 固定连续研究价与原始执行
+事实的映射。该登记不改变当前生产快照：
+
+- OHLC 使用连续研究价格指数；
+- VWAP 从原始成交额/成交量构造后缩放到同一研究价格指数；
+- 因子收益使用研究收盘价；
+- 成交量、成交额、换手、市值、容量、整数手、费用和成交使用原始点时值；
+- 前/后复权兼容价只用于审计。
+
+计划的特征值最小结构为：
+
+```text
+CoreFeatureValue
+  feature_snapshot_id
+  instrument_id
+  decision_time
+  feature_definition_id
+  feature_definition_version
+  value_raw
+  availability_state       # observed / missing / not_applicable
+  missing_reason_code
+  value_winsorized
+  value_standardized
+  imputation_source        # none / sw_l1_median / u0_median
+  missing_indicator
+  not_applicable_indicator
+  neutralized_diagnostic
+  data_semantics_version
+```
+
+数值占位不能覆盖 `availability_state`。`full` 因子顺序、`selected` 冻结清单、模型
+输入维数、覆盖统计和去重理由属于 `FeatureSnapshot` 清单；24/158/101 只表示规范
+因子值，不包含缺失指示、行业 one-hot 或规模控制。
+
+财务观察还必须保留报告期、累计/单季口径、准确公告或修订时间、修订身份和源记录
+哈希。只有公告日期时，从下一沪深共同交易日收盘后可用；修订不回写旧快照。TTM 流量
+固定为“本年累计 + 上年全年 − 上年同期累计”，缺期或不可比时失败关闭，不机械年化。
+
+Alpha158 公式固定到 Qlib 提交
+`79633dd9506ea689e5400dea0197717b5b3d74b7`；Alpha101 固定到论文 v3 和本地算子注册表。
+运行时不得访问 GitHub，实施必须用带输入/输出哈希的本地 golden fixture 验证。
+
 ### 行业归属与生命周期
 
 ```text
@@ -345,47 +436,67 @@ trade_calendar
 
 `DailyPipelineStatus` 记录目标交易日、基础快照、运行状态、L1/L2 预期及实际覆盖、当前
 步骤、阻断和恢复动作。`DailyPipelineCommit` 同时绑定准确 `DataSnapshot` 与
-`MarketRotationSnapshot`；只有该提交存在，消费者才把整组产物视为共同完成。
+`MarketRotationSnapshot`；只有该提交存在，消费者才把整组产物视为共同完成。每次
+提交同时保留按内容寻址的不可变制品；历史恢复按
+`base_snapshot_id + target_date` 的准确数据运行身份取回提交，禁止读取全局最新日期
+或当前提交指针代替本次输入。旧版本只保存完成状态时，可以由状态中的准确快照、
+轮动与完成时间重建同一提交身份。
+
+日度运行冻结基础快照，但最终激活必须对 `current/data-snapshot.json` 做带文件锁的
+比较并交换：当前身份仍等于冻结基础时才可切换。若 ETF 等独立发布在日度运行期间已
+推进当前快照，旧运行以 `concurrent_snapshot_advanced` 阻断，并从最新快照重新启动，
+不得恢复旧基线覆盖新数据集。已发布的不可变数据集可通过显式修复命令重新组合进一个
+新快照；修复不重新抓取提供方、不改写旧快照，也不触碰券商。
 
 WP-0029 只接受上述提交，并按身份生成：
 
 ```text
 FeatureSnapshot → PredictionBatch
 → OptimizationProblem / OptimizationResult
-→ PortfolioTarget → OrderPlan (Shadow)
-→ 本地 Shadow / Paper 预检
+→ PortfolioTarget → OrderPlan (Local Replay test)
+→ Local Replay / Paper 就绪预检
 ```
 
 决策链制品和状态固定记录 `paper_dispatch_state=disabled`、
 `broker_connection_attempts=0`、`broker_write_attempts=0` 和
-`broker_actions_allowed=false`，不包含持续 Shadow `cycle` 或执行事件。
+`broker_actions_allowed=false`，不包含活动 Paper 周期或券商执行事件。
 
 ```text
-IndustryLifecycleSnapshot
+IndustryLifecycleProjection
+  status
+  data_snapshot_id
   as_of
+  evidence_cutoff
   taxonomy_version
-  industry_code
-  stage
-  confidence
-  strong_participation
-  low_position_repair_participation
-  turnover_share_20d
-  breadth
-  relative_strength
-  liquidity
-  valuation_context
-  overheat_or_reversal_risk
-  eligible_constituent_count
-  covered_constituent_count
-  state_duration_sessions
-  transition_date
-  evidence_snapshot_id
-  definition_version
+  method_version
+  industries[]
+    industry_code
+    industry_name
+    stage
+    confidence
+    strong_participation
+    low_participation
+    strong_change_5d
+    low_change_5d
+    strong_peak_20d
+    strong_drawdown_20d
+    amount_share_20d
+    eligible_member_count
+    valid_member_count
+    coverage_ratio
+    recently_transitioned
+    trajectory[]
+    known_gaps[]
+  known_gaps[]
 ```
 
 旧 AstraMind 的生命周期公式与 Fixture 是复用候选。旧项目“56 行业”只是某个注册表版本，不是领域不变量。
 
-结构地图首案将 `strong_participation` 作为横轴 `S`，将 `low_position_repair_participation` 作为纵轴 `L`，并以 `turnover_share_20d` 表示气泡面积。坐标、阶段、置信度、行业索引和后续研究排序必须绑定同一个生命周期快照和数据快照。最终窗口、阈值和公式在阶段 6 版本化冻结；覆盖不足的行业保留身份和缺口原因，不能放到坐标原点。
+WP-0040 已将 `lifecycle-structure-v1.0.0` 冻结为首个结构方法：
+`strong_participation` 是横轴 `S`，`low_participation` 是纵轴 `L`，
+`amount_share_20d` 表示气泡面积。坐标、阶段、置信度和行业索引绑定同一个
+`DataSnapshot`；后续研究排序也必须复用该身份。覆盖不足的行业保留身份和缺口原因，
+不放到坐标原点。该投影可由快照重建，不是第二份数据真相。
 
 ### 行业内研究排序
 
@@ -421,7 +532,8 @@ IndustryResearchRow
 
 - 成分股归属按 `as_of` 选择，不能用当前行业归属静默重写历史排序；
 - 所有分项和综合分绑定 `scoring_definition_version`，综合分不能只暴露不可解释的 AI 结果；
-- `research_label` 首期只使用“优先研究”“积极关注”“中性观察”，它不是投资决定、组合目标或订单；
+- `research_label` 在覆盖达标时只使用“优先研究”“积极关注”“中性观察”；覆盖低于
+  60% 时使用“数据不足”，它不是投资决定、组合目标或订单；
 - 排序表和所选股票 `PriceChartSlice` 必须使用同一 `data_snapshot_id`、`as_of`、分类版本和证据截止时间；
 - 覆盖不足的股票显示缺失原因，不用零分填补后继续排名。
 
@@ -512,6 +624,194 @@ EtfDirection
 
 ETF 候选必须独立通过上市时间、流动性、成交额、价差/代理、跟踪、停牌和可交易性检查。静态映射本身不是价格确认。
 
+WP-0043 首版数据基础固定发布四个数据集：
+
+| 数据集 | 主键 | 核心内容 | 可用时间 |
+| --- | --- | --- | --- |
+| `etf_master` | `instrument_id` | 名称、类型、基准、上市/退市日与状态 | 提供方检索时点；上市日不得替代检索时点 |
+| `etf_daily` | `instrument_id, trade_date` | OHLC、昨收、涨跌、成交量与人民币成交额 | 交易日 18:00 Asia/Shanghai |
+| `etf_share` | `instrument_id, trade_date` | 规范为“份”的基金份额 | 提供方检索时点；首版不假设历史发布日期 |
+| `etf_industry_mapping` | `industry_code, etf_code, effective_from` | SW2021 L1、ETF、语义层级与映射版本 | `effective_from` 当日 18:00 Asia/Shanghai |
+
+首版映射 `sw2021-l1-etf-mapping-v1.0.0` 从 2026-07-29 起有效；更早的 ETF
+价格只能预热，不能据此声称当时已知该行业映射。语义层级为 `exact`、
+`subindustry`、`composite_proxy`、`theme_context` 或 `unavailable`，只有 `exact`
+可以进入基础资格。
+
+`EtfFoundationQualification` 必须绑定 `data_snapshot_id`、`evidence_cutoff` 和
+`mapping_version`。基础门槛为至少 252 个已完成交易日、20 日成交额中位数不低于
+2,000 万元、最新份额乘收盘价不低于 1 亿元且证据不陈旧。其
+`strategy_gate_ready` 固定为 `false`；价差、跟踪误差、停牌/可交易性、成本和
+样本外证据缺失时不得提升为 ETF 策略候选。
+
+WP-0044 的只读 `EtfRotationProjection` 绑定同一个 `data_snapshot_id`、
+`evidence_cutoff`、映射版本和 `etf-rotation-research-v1.0.0`。首版综合分为：
+
+```text
+0.35 × lifecycle + 0.30 × relative_strength
++ 0.20 × price_structure + 0.15 × liquidity
+```
+
+候选额外要求 Corwin–Schultz 20 日 OHLC 价差代理不高于 35 bp，以及相对映射申万
+L1 指数的 60 日年化跟踪偏离代理不高于 12%。两者分别标记为价格代理和行业暴露
+代理，不得称为真实 bid/ask 或基金官方基准跟踪误差。`EtfTargetDraft` 最多两只、
+单只 30%、总暴露 60%，允许现金；它不是公共 `PortfolioTarget` 或 `OrderPlan`。
+映射尚未点时可用、历史不足或数据陈旧时，回放和目标失败关闭，不补造绩效。
+
+### 市场研究学习模型
+
+WP-0050 为行业热力、相对轮动、生命周期、行业内研究顺序和 ETF 轮动增加独立的只读
+模型身份。训练产物由 Strategy Research 拥有，Market Regime 只能通过公共契约消费；
+它们不得替代 Data 的观察或快照真相。
+
+```text
+MarketModelManifest
+  manifest_id
+  model_family
+  method_version
+  target_definition_version
+  data_snapshot_id
+  feature_snapshot_id
+  training_window
+  maturity_cutoff
+  feature_names
+  estimator
+  hyperparameters
+  random_seed
+  code_identity
+  dependency_versions
+  artifact_hash
+  created_at
+
+ModelValidationSummary
+  validation_id
+  manifest_id
+  validation_window
+  metric_name
+  candidate_value
+  reference_value
+  bootstrap_lower_bound
+  subperiods_supporting
+  subperiods_total
+  coverage_not_worse
+  risk_not_worse
+  turnover_not_worse
+  cost_not_worse
+  decision
+  reason_codes
+
+MarketModelEvidenceBundle
+  evidence_bundle_id
+  manifest_id
+  development_window
+  sealed_window
+  audit_window
+  validation_summaries
+  data_gate_states
+  evidence_state
+  content_hash
+  created_at
+
+ModelActivation
+  activation_id
+  model_family
+  active_method_version
+  active_manifest_id
+  evidence_bundle_id
+  state
+  fallback_method_version
+  reason_codes
+  effective_at
+  broker_actions_allowed = false
+
+ModelPredictionContext
+  model_family
+  method_version
+  manifest_id
+  prediction_batch_id
+  data_snapshot_id
+  feature_snapshot_id
+  as_of
+  horizon_sessions
+  evidence_state
+  activation_state
+  fallback_reason_codes
+
+MarketPredictionBatch
+  prediction_batch_id
+  model_family
+  manifest_id
+  data_snapshot_id
+  feature_snapshot_id
+  as_of
+  horizons
+  regressions[] / classifications[]  # 两者严格二选一
+  evidence_state
+  content_hash
+  broker_actions_allowed = false
+```
+
+每个预测批次还必须绑定标签成熟截止、训练截止、模型/特征内容哈希和原始结构方法
+版本。`unvalidated`、`fallback_v1`、`blocked` 和 `corrupt` 是不同状态；未知状态
+不能写成已验证。
+
+SW2021 在 2021 年以前的成员记录带
+`reconstructed_not_then_known` 数据门，不能进入封存 OOS 或模型比较。ETF 的真实
+官方证据和 L1 价差必须分开保存原始提供方记录与规范观察：
+
+```text
+EtfOfficialBenchmarkObservation
+  provider / source_endpoint / retrieved_at / available_at
+  instrument_id
+  benchmark_code / benchmark_name
+  effective_from
+  historical_availability_known
+  evidence_kind
+  source_record_hash / schema_version
+
+EtfNavObservation
+  provider / source_endpoint / retrieved_at / available_at
+  instrument_id / nav_date / announced_on
+  unit_nav / accumulated_nav / adjusted_nav
+  source_record_hash / schema_version
+
+OfficialIndexDailyObservation
+  provider / source_endpoint / retrieved_at / available_at
+  index_code / trade_date
+  open / high / low / close / previous_close
+  change / percent_change / volume / amount
+  source_record_hash / schema_version
+```
+
+当前 `etf_basic` 查询只证明检索时的官方跟踪关系；在取得历史公告或版本证据前，
+`historical_availability_known=false`，不能倒灌为 2024—2025 封存期已知事实。
+NAV 以 `ann_date` 18:00 为可用时点；缺失公告日时失败关闭。指数日线的提供方 0 值
+OHLC 显式保存为缺失，不用收盘价或其他日期填造。
+
+真实 L1 价差观察继续分开保存原始报价和规范分钟统计：
+
+```text
+EtfSpreadMinuteObservation
+  provider
+  feed_session_id
+  instrument_id
+  market_date
+  minute
+  first_market_time
+  last_market_time
+  quote_count
+  valid_quote_count
+  quoted_spread_bps_median
+  quoted_spread_bps_p90
+  available_at
+  source_content_hash
+  schema_version
+```
+
+真实价差只从采集登记后前向积累，不用 OHLC 代理补历史。连续 60 个交易日、交易日
+覆盖、分钟覆盖、中位数和 P90 门禁必须进入单独的数据门证据；未满足时 ETF v2
+保持阻断。
+
 ### MiniQMT 行情、资料与本地缓存
 
 东莞证券 MiniQMT 是实时行情和本地资料的已验证/候选提供方之一：
@@ -521,6 +821,59 @@ ETF 候选必须独立通过上市时间、流动性、成交额、价差/代理
 - K 线、Tick、历史下载、交易日历、合约、板块/行业/指数权重、财务、复权因子、
   ETF 和可转债资料按数据集逐项核验；
 - L2 是否有实际数据取决于券商权限，默认不得宣称可用。
+
+提供方中立采集使用以下薄腰契约：
+
+```text
+CanonicalDatasetRequest
+  dataset_name
+  as_of
+  start_date / end_date
+  universe
+  fields
+  allow_empty
+  frequency
+  adjustment
+  point_in_time_policy
+
+DatasetSourceRoute
+  dataset_name
+  providers
+  provider_lineage
+  adapter_versions
+  timeout_seconds
+  primary_key
+  required_fields
+  quality_gate_version
+
+ProviderBatch
+  provider_id
+  provider_version
+  native_interface
+  request_identity
+  retrieved_at
+  rows
+  raw_payload
+  completeness
+  known_gaps
+  latency_breakdown
+```
+
+`allow_empty` 默认关闭，只能用于语义上允许零行的已冻结子请求，例如
+`security_master` 的暂停上市状态切片；它不改变数据集路由的默认失败关闭策略，也
+不能让在市或退市证券主表空结果通过。
+
+每次管线运行开始时冻结完整路由。主源超时、空响应、缺字段、覆盖不足、重复主键或
+校验失败时，路由层保留失败原始证据并丢弃其规范化结果，再让当前提供方时期允许的
+回退源完整重取该数据集。默认同一数据集版本只有一个实际提供方；明确批准的日期切源
+例外必须在路由和 `DatasetManifest.provider_lineage` 中记录非重叠时期，并保持逐行
+来源。单个请求不得跨越切源日，同一交易日不得混用提供方。
+
+`daily_market` 与 `broad_index_daily` 的首个日期切源固定为：Tushare
+`effective_to=2026-07-28`，MiniQMT `effective_from=2026-07-29` 且结束日开放。
+2026-07-28 及以前不重抓 MiniQMT 历史；2026-07-29 及以后不回退到 Tushare。
+`daily_market` 的当日证券集合至少覆盖同日 `daily_basic` 证券集合；MiniQMT 本地
+缓存只返回部分证券时必须失效当日暂存并重取，不能仅凭提供方字段正确而发布。
 
 ```text
 ProviderCapabilityProbe
@@ -578,6 +931,27 @@ WP-0002A 已将能力证据实现为冻结的 `ProbeReport` 与 `ProviderCapabil
 - Tushare 与 MiniQMT 混合时，快照清单按数据集记录提供方、版本、时间规则和哈希；
 - 来源冲突必须输出差异和选源规则版本，不能静默以前值或“最新值”覆盖；
 - L2 权限或连续性不足时失败关闭，并明确保留 L1 状态。
+
+MiniQMT 财务、股东和当前资料分别发布为独立数据集。财务事实采用长表，显式记录
+报告期、累计/单季口径、币种、单位、公告时间、保守 `available_at` 和修订身份；
+修订产生新版本，不回写旧快照。银行等特殊行业允许 `not_applicable`。十大股东和
+十大流通股东按公告时间进入点时快照，不能塞入 `daily_basic`。
+
+## 不可变制品物理发布
+
+内容寻址目录中的 Parquet、JSON、模型或证据文件不得与后续仍会更新的工作文件共享
+inode。禁止使用硬链接把可变工作文件发布为不可变制品。
+
+发布器必须在原子切换前后复核：
+
+- 每个制品的字节 SHA-256；
+- 行数与主键唯一性；
+- 最小/最大市场日期和可用时间；
+- 清单声明的内容哈希、日期范围与制品实际内容。
+
+任一复核失败时，当前数据集和 `DataSnapshot` 指针保持不变。已发布制品发生漂移时，
+旧身份保留审计但暂停用于正式训练、封存回放和晋级证据；恢复只能发布新版本并重组
+新快照，不能修改旧清单。ADR-0013 与 WP-0057 是该规则的架构决定和修复工作包。
 
 ## 快照清单
 
@@ -658,14 +1032,91 @@ SW2021 L1/L2 分类/成员每日按提供方完整视图对账；名称历史由
 
 WP-0002C 新增实时行情内部契约：
 
-- `FeedSessionReport`：提供方、客户端版本、市场、订阅起止、消息数、重复数、断线数
-  与已知缺口；
+- `FeedSessionReport`：提供方、客户端版本、上海市场日期、市场、订阅起止、消息数、
+  重复数、断线数与已知缺口；
 - `RealtimeQuoteObservation`：证券、市场毫秒时间、接收时间、L1 价量字段和原始内容
   哈希；
 - `QuoteMicroBatch`：会话、顺序、时间窗、原始/规范化内容哈希和行数。
 
 原始全推与规范化观察分开压缩、只追加保存。相同会话/批次身份内容不一致时阻断。
 MiniQMT 全推是当前观察输入，不会改写生产 `DataSnapshot`，也不是第二个历史真相源。
+
+WP-0041 将 MiniQMT 行情接入改为 Windows Python 3.11 常驻只读桥。桥只导入
+`xtquant.xtdata`，通过带请求身份的 NDJSON 长连接传递查询、行情事件、心跳和错误；
+客户端版本、行情端口和本机客户端指纹固定进入会话身份。断线重启必须创建新会话。
+
+原始 L1 与逐条规范化观察按上海交易日、会话和微批只追加保留五个交易日；只有
+一分钟聚合分区和哈希验证成功后才能清理，异常会话带保留锁。会话清单、微批清单、
+缺口、内容哈希和删除台账永久保留。全 A 股长期保存一分钟 OHLCV/成交额；六个宽基、
+市场广度和行业热力的一秒结果只存在于可重建的当前投影，不建立长期一秒分区。
+当前投影按一秒节奏发布，服务端通过 SSE 推送；十秒无有效更新标记 `stale`，连接
+中断标记 `disconnected`，闭市等待不伪报连接故障。
+
+订阅建立后的首张全市场快照只用于设置累计成交量/成交额基线；只有后续量额出现
+正增量才创建分钟 Bar，停牌、隔夜或无成交快照不得伪造成零成交 K 线。
+
+WP-0046 增加证券级当前投影：`RealtimeInstrumentQuote` 保存证券名称/类型、行业、
+最后价、涨跌、累计量额、MiniQMT 状态代码和五档；当日 `price_limit` 点时记录存在时
+附涨跌停价，不存在时保持空值并登记缺口，不按板块规则猜测。`RealtimeMinuteBar`
+继续只追加进入一分钟分区，形成中的最后一分钟只存在当前投影并以同一分钟原位替换。
+自选清单属于本地观察配置，不进入 `DataSnapshot`、策略、组合或订单。
+
+2026-07-29 的 WP-0047 运营审计发现，本地 `aggregates/1m` 只有日期目录而没有实际
+一分钟聚合文件；现有收盘后累计快照不能反推日内路径。因此“全 A 股长期保存一分钟
+OHLCV/成交额”仍是有效目标契约，但在交易时段暖启动、持续增量聚合、跨重启去重和
+内容哈希验证通过前，不得把它标记为已完成能力，也不得据此计算多分钟 MA/MACD。
+原始/规范化微批仍保留，不能用零成交 Bar 填补这一缺口。
+
+`IndustryLifecycleIntradayProjection` 以最近完成日为锚，把当前会话价格按完成日调整
+比例映射到研究价格索引，再以 `lifecycle-intraday-overlay-v1.0.0` 重算临时 S/L；
+`intraday-rotation-overlay-v1.0.0` 只生成完成日锚点到当前行业横截面端点。两者均不
+保存秒级轨迹、不改变正式阶段/象限，也不进入历史播放。
+
+WP-0022 v1.1 的 Paper 金丝雀行情读取仍使用相同的 `market_time`/`received_at` 语义：
+Windows runner 最多等待8秒取得一条年龄不超过3秒的新 tick，领域与提交校验继续固定
+3秒阈值。等待期耗尽只形成 `canary_quote_stale` 阻断，不把陈旧缓存发布为提案。
+
+Paper Windows runner 另保存内部 `PaperRunnerDiagnostic`：runner 名称、观察时间、
+退出码、稳定 outcome，以及脱敏且最多32,000字符的 stdout/stderr。账户选择器、密钥、
+Windows/WSL 用户目录和私有路径不得进入记录；诊断只用于本地排障，不是行情观察、
+账户快照或订单事实。
+
+## 多时标行情、当前投影与候选级日内研究
+
+REQ-2026-0004 v2.3.0 和 ADR-0010 冻结下列规划契约；该节是已批准但尚未授权实施的
+数据语义，不表示相应数据已经通过真实覆盖验收。
+
+行情数据分为三个不能互相冒充的层次：
+
+1. **当前会话投影**：由追加式实时微批合并的可刷新视图，绑定一个
+   `MarketFeedSession` 和最后完成日参考快照；服务盘中页面、风险预检和临时诊断；
+2. **不可变实时微批**：保存原始与规范观察、市场时间、接收时间、序号、会话、缺口
+   和内容哈希，是当前投影的重建来源；
+3. **会话封存日内数据集**：在声明截止后完成覆盖、顺序、交易状态、单位、企业行为和
+   来源校验的分钟/Tick 数据集，只有它可以作为 `DataSnapshot` 组件进入研究。
+
+当前会话投影不得被命名为“今日 `DataSnapshot`”或直接成为特征输入。收盘后状态从
+`sealing` 进入 `reconciled` 或 `blocked`；没有通过封存与日线对账时，上一完成日
+指针保持不变。
+
+候选级日内请求是一个 `CanonicalDatasetRequest` 的受限用法，至少固定：
+
+- 上游 `CoarseScreeningBatch` 身份及其先于日内取值冻结的候选全集；
+- 证据截止时间、市场日期、频率、字段、回看窗口、交易时段、复权与单位；
+- 提供方路由、权限、超时、覆盖/缺口和质量策略；
+- 请求配方版本、幂等键和预期候选数量。
+
+首个短线配方由 REQ-2026-0005 v1.4.0 固定为 Top 20、最近 20 个完整交易日一分钟
+数据和最近 3 个完整交易日 Tick/L1。Data 必须请求完整 Top 20；提供方传输缺页先按
+整数据集回退处理，合法停牌或无成交保留真实状态。任何候选失败都必须进入覆盖证据，
+不得以第 21 名或人工关注标的替换。
+
+每次请求分别保存原始响应、规范化数据集、候选覆盖、来源选择证据和内容身份。相同
+参数重复执行时幂等复用；内容变化发布新版本和差异，不覆盖已被策略引用的旧版本。
+
+历史两阶段研究先逐决策日重放日频粗筛，再请求该日冻结候选在证据截止前的数据。
+这形成的是粗筛条件样本，不能宣称为全市场分钟/Tick 因子面板。人工关注补拉可以共享
+Data 适配器和缓存，但使用独立诊断身份，不能进入策略净值、Research Shadow 或晋级。
 
 ## MiniQMT 只读账户与对账
 
@@ -676,8 +1127,9 @@ WP-0011 在 Trading Execution 上下文新增 `AccountSnapshot` 与
 
 资产、持仓、委托和成交由四个有独立超时的只读进程顺序查询。因为 MiniQMT 不提供
 跨查询原子快照，成功快照固定声明 `non_atomic_sequential_account_queries` 缺口；
-任一查询失败时不发布部分快照。本地 Shadow 账本不被券商事实覆盖，对账差异只生成
-不可变报告并保持 `broker_actions_allowed=false`。证据按内容寻址只追加写入
+任一查询失败时不发布部分快照。历史 Local Replay 账本不被券商事实覆盖，也不得成为
+Paper 回退账户；对账差异只生成不可变报告并保持 `broker_actions_allowed=false`。
+证据按内容寻址只追加写入
 Git 忽略的 `var/control/`，SQLite/WAL 仅索引脱敏身份和发布状态。
 
 ## 初期质量门

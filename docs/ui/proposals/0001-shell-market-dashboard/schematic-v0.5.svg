@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">UI-PROP-0001 v0.5 个股实时观察台</title>
+  <desc id="desc">市场页中的自选股和行业成分实时列表、分钟K线、交易状态、涨跌停价格与五档盘口。</desc>
+  <defs><style>
+    .bg{fill:#F2F4F3}.paper{fill:#fff}.ink{fill:#172129}.muted{fill:#68747C}.blue{fill:#2E5E84}.ochre{fill:#B47A22}.up{fill:#C34B43}.down{fill:#238267}
+    .line{stroke:#D8DEDC}.grid{stroke:#E7ECEA}.dash{stroke:#2E5E84;stroke-width:2;stroke-dasharray:6 5;fill:none}
+    .sans{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif}.num{font-family:"IBM Plex Sans","Segoe UI",sans-serif;font-variant-numeric:tabular-nums}.mono{font-family:"IBM Plex Mono",Consolas,monospace}
+    .t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t14{font-size:14px}.t18{font-size:18px}.t24{font-size:24px}.bold{font-weight:700}
+  </style></defs>
+  <rect class="bg" width="1440" height="900"/><rect class="paper" x="0" y="0" width="76" height="900"/><line class="line" x1="76" x2="76" y2="900"/>
+  <text class="ink mono bold t14" x="18" y="38">ASTRA</text><text class="blue sans bold t12" x="22" y="160">市场</text>
+  <text class="muted sans t11" x="22" y="108">今日</text><text class="muted sans t11" x="18" y="220">策略</text><text class="muted sans t11" x="18" y="274">组合</text><text class="muted sans t11" x="18" y="328">系统</text>
+  <rect class="paper" x="77" width="1363" height="120"/><text class="ink sans bold t18" x="104" y="32">市场 / 个股实时观察</text>
+  <text class="muted sans t11" x="104" y="55">完成日证据保持不变 · 当前会话只读 · 不产生交易动作</text>
+  <text class="blue sans bold t12" x="104" y="94">大盘</text><text class="muted sans t12" x="164" y="94">行业</text><text class="muted sans t12" x="220" y="94">ETF 轮动</text><text class="blue sans bold t12" x="314" y="94">个股观察</text>
+  <rect x="96" y="134" width="1324" height="64" rx="3" fill="#F8FAF9" stroke="#CAD4D1"/><rect class="blue" x="96" y="134" width="5" height="64"/>
+  <text class="ink sans bold t12" x="118" y="158">盘中会话脉冲</text><text class="blue sans bold t12" x="238" y="158">CURRENT · 正在更新</text>
+  <text class="muted sans t11" x="118" y="182">市场 14:36:28.542　接收 14:36:28.807　延迟 265ms　覆盖 5,481 / 5,524　会话 91af…6c20</text>
+
+  <rect class="paper" x="96" y="214" width="326" height="638"/><rect class="paper" x="438" y="214" width="610" height="638"/><rect class="paper" x="1064" y="214" width="356" height="638"/>
+  <line class="line" x1="430" y1="214" x2="430" y2="852"/><line class="line" x1="1056" y1="214" x2="1056" y2="852"/>
+  <text class="ink sans bold t18" x="116" y="246">实时个股列表</text>
+  <rect x="116" y="263" width="74" height="30" rx="3" fill="#EDF3F7"/><text class="blue sans bold t11" x="137" y="283">自选 8</text>
+  <text class="muted sans t11" x="212" y="283">行业成分 83</text><rect x="116" y="308" width="284" height="34" rx="3" fill="#F5F7F6"/>
+  <text class="muted sans t11" x="130" y="330">搜索代码/名称　　＋ 加入自选</text>
+  <text class="muted sans t10" x="116" y="370">证券　　　　 最新　　 涨跌　　 状态</text>
+  <g class="sans t11"><rect x="108" y="380" width="302" height="56" fill="#EDF3F7"/>
+    <text class="ink bold" x="120" y="402">贵州茅台</text><text class="muted mono t10" x="120" y="420">600519.SH</text><text class="ink num bold" x="246" y="407">1,448.20</text><text class="up num" x="330" y="407">+1.18% ↑</text>
+    <text class="blue t10" x="330" y="424">连续交易</text>
+    <text class="ink bold" x="120" y="466">宁德时代</text><text class="muted mono t10" x="120" y="484">300750.SZ</text><text class="ink num" x="246" y="471">192.35</text><text class="down num" x="330" y="471">-0.42% ↓</text>
+    <line class="line" x1="116" y1="496" x2="400" y2="496"/><text class="ink bold" x="120" y="526">浦发银行</text><text class="muted mono t10" x="120" y="544">600000.SH</text><text class="ink num" x="246" y="531">10.82</text><text class="ochre" x="330" y="531">停牌</text>
+    <line class="line" x1="116" y1="558" x2="400" y2="558"/><text class="ink bold" x="120" y="588">半导体龙头</text><text class="muted mono t10" x="120" y="606">示意代码</text><text class="ink num" x="246" y="593">52.61</text><text class="up num" x="330" y="593">+3.12% ↑</text>
+  </g>
+  <text class="muted sans t10" x="116" y="826">自选仅为本地观察清单，不进入策略、组合或订单。</text>
+
+  <text class="muted sans t11" x="460" y="242">贵州茅台 · 600519.SH · 分钟数据从本会话 09:30 起</text><text class="ink sans bold t24" x="460" y="276">1,448.20</text><text class="up num bold t14" x="584" y="274">+1.18% ↑</text>
+  <text class="blue sans bold t11" x="842" y="270">1 分钟</text><text class="muted sans t11" x="910" y="270">日　周　月</text>
+  <rect x="460" y="294" width="566" height="38" fill="#F8FAF9"/><text class="muted num t10" x="474" y="318">14:35　开 1446.80　高 1449.00　低 1446.20　收 1448.20　额 2,840 万</text>
+  <g class="grid"><line x1="470" y1="382" x2="1016" y2="382"/><line x1="470" y1="462" x2="1016" y2="462"/><line x1="470" y1="542" x2="1016" y2="542"/><line x1="470" y1="622" x2="1016" y2="622"/></g>
+  <path class="dash" d="M478 578 C540 548 586 575 636 510 S728 470 780 496 S866 420 930 452 S982 398 1010 410"/>
+  <g><rect class="up" x="500" y="652" width="8" height="42"/><rect class="down" x="526" y="664" width="8" height="30"/><rect class="up" x="552" y="642" width="8" height="52"/><rect class="up" x="578" y="630" width="8" height="64"/><rect class="down" x="604" y="670" width="8" height="24"/></g>
+  <text class="muted sans t10" x="460" y="724">形成中的最后一分钟使用 update() 原位更新；缺口保留为空，不补零。</text>
+  <rect x="460" y="758" width="566" height="56" rx="3" fill="#F7F2E8"/><text class="ochre sans bold t11" x="476" y="782">分钟留存状态</text><text class="muted sans t10" x="476" y="802">今日 09:30–14:35 · 会话完整 · 1m 长期保存 · 秒聚合不长期保存</text>
+
+  <text class="ink sans bold t18" x="1086" y="246">报价与五档</text><text class="blue sans bold t11" x="1086" y="276">连续交易</text>
+  <text class="muted sans t10" x="1086" y="305">涨停</text><text class="up num bold t12" x="1160" y="305">1,589.60</text><text class="muted sans t10" x="1268" y="305">跌停</text><text class="down num bold t12" x="1320" y="305">1,300.60</text>
+  <line class="line" x1="1086" y1="326" x2="1396" y2="326"/>
+  <text class="muted sans t10" x="1086" y="354">档位</text><text class="muted sans t10" x="1160" y="354">卖价</text><text class="muted sans t10" x="1250" y="354">卖量</text>
+  <g class="num t12"><text class="down" x="1088" y="382">卖五</text><text class="down" x="1160" y="382">1448.80</text><text class="ink" x="1250" y="382">36</text>
+    <text class="down" x="1088" y="410">卖四</text><text class="down" x="1160" y="410">1448.70</text><text class="ink" x="1250" y="410">52</text>
+    <text class="down" x="1088" y="438">卖三</text><text class="down" x="1160" y="438">1448.60</text><text class="ink" x="1250" y="438">81</text>
+    <text class="down" x="1088" y="466">卖二</text><text class="down" x="1160" y="466">1448.50</text><text class="ink" x="1250" y="466">43</text>
+    <text class="down bold" x="1088" y="494">卖一</text><text class="down bold" x="1160" y="494">1448.40</text><text class="ink bold" x="1250" y="494">127</text>
+  </g>
+  <rect x="1086" y="510" width="310" height="42" fill="#F8FAF9"/><text class="muted sans t10" x="1098" y="536">价差</text><text class="ink num bold t14" x="1152" y="536">0.10 · 0.69 bp</text>
+  <g class="num t12"><text class="up bold" x="1088" y="582">买一</text><text class="up bold" x="1160" y="582">1448.30</text><text class="ink bold" x="1250" y="582">96</text>
+    <text class="up" x="1088" y="610">买二</text><text class="up" x="1160" y="610">1448.20</text><text class="ink" x="1250" y="610">114</text>
+    <text class="up" x="1088" y="638">买三</text><text class="up" x="1160" y="638">1448.10</text><text class="ink" x="1250" y="638">62</text>
+    <text class="up" x="1088" y="666">买四</text><text class="up" x="1160" y="666">1448.00</text><text class="ink" x="1250" y="666">88</text>
+    <text class="up" x="1088" y="694">买五</text><text class="up" x="1160" y="694">1447.90</text><text class="ink" x="1250" y="694">41</text>
+  </g>
+  <text class="muted sans t10" x="1086" y="754">盘口市场时间 14:36:28.542</text><text class="muted sans t10" x="1086" y="776">超过 10 秒降级为陈旧；断线后禁止标为当前。</text>
+  <rect x="1086" y="802" width="310" height="32" fill="#F2F4F3"/><text class="muted sans t10" x="1102" y="823">只读行情 · 无买入/卖出按钮</text>
+</svg>

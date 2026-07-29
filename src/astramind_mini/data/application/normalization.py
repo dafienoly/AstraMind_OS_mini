@@ -184,7 +184,7 @@ def normalize_suspension_events(
 
 def _source(table: ProviderTable, row: dict[str, object]) -> dict[str, Any]:
     return {
-        "provider": "tushare",
+        "provider": table.provider_id,
         "source_endpoint": table.source_endpoint,
         "retrieved_at": table.received_at,
         "available_at": table.received_at,

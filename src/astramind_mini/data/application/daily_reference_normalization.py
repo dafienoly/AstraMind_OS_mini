@@ -75,8 +75,8 @@ def normalize_name_history(
             )
             result.append(
                 SecurityNameHistoryObservation(
-                    provider="tushare",
-                    source_endpoint=source_table.api_name,
+                    provider=source_table.provider_id,
+                    source_endpoint=source_table.source_endpoint,
                     retrieved_at=source_table.received_at,
                     available_at=available_at,
                     schema_version="1.1.0",
@@ -128,8 +128,8 @@ def normalize_corporate_actions(
             )
             cash = _optional_float(row, "cash_div")
             result[digest] = CorporateActionObservation(
-                provider="tushare",
-                source_endpoint=table.api_name,
+                provider=table.provider_id,
+                source_endpoint=table.source_endpoint,
                 retrieved_at=table.received_at,
                 available_at=available_at,
                 schema_version="1.1.0",

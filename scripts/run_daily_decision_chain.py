@@ -20,6 +20,7 @@ SHANGHAI = ZoneInfo("Asia/Shanghai")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--status", action="store_true")
+    parser.add_argument("--pipeline-run-id")
     return parser.parse_args()
 
 
@@ -50,7 +51,10 @@ def main() -> int:
         authorization_root=Path("var/control/paper-canary"),
     )
     with chain_lock(Path("var/control/daily-decision.lock")):
-        result = orchestrator.run(started_at=datetime.now(SHANGHAI))
+        result = orchestrator.run(
+            started_at=datetime.now(SHANGHAI),
+            pipeline_run_id=args.pipeline_run_id,
+        )
     _print_status(result.status.model_dump(mode="json"))
     if result.artifact_path:
         print(f"artifact_path={result.artifact_path}")

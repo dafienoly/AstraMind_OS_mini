@@ -128,25 +128,16 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-test("stock quadrant, period, indicators and same-snapshot evidence stay interactive", async () => {
+test("stock quadrant stays interactive and opens the same-snapshot common workbench", () => {
   const onInstrument = vi.fn();
   render(<StockHierarchyWorkbench onInstrument={onInstrument} view={view} />);
 
   expect(screen.getByRole("region", { name: "个股相对轮动四象限" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: /华虹公司.*强势领先/ }));
   expect(onInstrument).toHaveBeenCalledWith("688347.SH");
-  expect(screen.getByRole("button", { name: "日K" })).toHaveAttribute("aria-pressed", "true");
-  fireEvent.click(screen.getByRole("button", { name: "周K" }));
-  fireEvent.click(screen.getByRole("button", { name: "RSI" }));
-  fireEvent.click(screen.getByRole("button", { name: "MA120" }));
-  await waitFor(() => {
-    expect(window.location.search).toContain("stock_period=week");
-    expect(window.location.search).toContain("stock_indicator=rsi");
-    expect(window.location.search).toContain("120");
-  });
-  expect(screen.getByText("243.93×")).toBeInTheDocument();
-  expect(screen.getByText(/未纳入当前数据快照/)).toBeInTheDocument();
-  expect(screen.getByText(/不代表真实筹码峰/)).toBeInTheDocument();
+  const link = screen.getByRole("link", { name: /打开通用个股工作面/ });
+  expect(link).toHaveAttribute("href", expect.stringContaining("/stocks/688981.SH"));
+  expect(link).toHaveAttribute("href", expect.stringContaining("data_snapshot_id="));
 });
 
 test("stock screening dims the plot, sorts the list, and stays client-side", async () => {
@@ -174,18 +165,18 @@ test("stock screening dims the plot, sorts the list, and stays client-side", asy
   expect(screen.getAllByText(/速度 — · 平稳/)).toHaveLength(2);
 });
 
-test("stock rotation focus expands locally and keeps price evidence mounted", () => {
+test("stock rotation focus expands locally and keeps the common-workbench entry mounted", () => {
   const onInstrument = vi.fn();
   const fetch = vi.spyOn(globalThis, "fetch");
   render(<StockHierarchyWorkbench onInstrument={onInstrument} view={view} />);
 
   const plot = screen.getByRole("region", { name: "个股相对轮动四象限" });
-  const chart = document.querySelector(".stock-price-workbench .chart-shell");
+  const entry = document.querySelector(".stock-workbench-entry");
   fireEvent.click(screen.getByRole("button", { name: "展开聚焦" }));
 
   expect(screen.getByRole("button", { name: "收起" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "个股相对轮动四象限" })).toBe(plot);
-  expect(document.querySelector(".stock-price-workbench .chart-shell")).toBe(chart);
+  expect(document.querySelector(".stock-workbench-entry")).toBe(entry);
   expect(plot).toHaveAttribute("data-trail-count", "1");
   expect(plot).toHaveAttribute("data-label-count", "2");
   expect(plot).toHaveTextContent("华虹公司");
@@ -202,7 +193,7 @@ test("stock rotation focus expands locally and keeps price evidence mounted", ()
   fireEvent.keyDown(navigation, { key: "Escape" });
   expect(screen.queryByRole("button", { name: "收起" })).not.toBeInTheDocument();
   expect(screen.getByRole("region", { name: "个股相对轮动四象限" })).toBe(plot);
-  expect(document.querySelector(".stock-price-workbench .chart-shell")).toBe(chart);
+  expect(document.querySelector(".stock-workbench-entry")).toBe(entry);
   expect(fetch).not.toHaveBeenCalled();
 });
 
@@ -235,13 +226,13 @@ test("stock selection keeps navigation mounted and refreshes evidence locally", 
 
   expect(await screen.findByRole("heading", { name: "中芯国际" })).toBeInTheDocument();
   const plot = screen.getByRole("region", { name: "个股相对轮动四象限" });
-  const chart = document.querySelector(".stock-price-workbench .chart-shell");
+  const entry = document.querySelector(".stock-workbench-entry");
   fireEvent.click(screen.getByRole("button", { name: /华虹公司.*强势领先/ }));
 
   expect(screen.getByRole("status")).toHaveTextContent("正在切换至 华虹公司");
   expect(screen.queryByRole("heading", { name: "正在读取同一快照" })).not.toBeInTheDocument();
   expect(screen.getByRole("region", { name: "个股相对轮动四象限" })).toBe(plot);
-  expect(document.querySelector(".stock-price-workbench .chart-shell")).toBe(chart);
+  expect(document.querySelector(".stock-workbench-entry")).toBe(entry);
 
   const nextView: IndustryHierarchyView = {
     ...view,

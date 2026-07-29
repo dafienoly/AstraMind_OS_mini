@@ -169,6 +169,13 @@ def test_event_window_allows_next_morning_recovery(tmp_path: Path) -> None:
     assert not events_waiting(
         tmp_path,
         manifests,
+        datetime(2026, 1, 16, 12, 6, tzinfo=UTC),
+        date(2026, 1, 16),
+        True,
+    )
+    assert not events_waiting(
+        tmp_path,
+        manifests,
         datetime(2026, 1, 17, 0, 30, tzinfo=UTC),
         date(2026, 1, 16),
         True,

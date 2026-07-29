@@ -1,4 +1,4 @@
-.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe historical-price-limit-probe miniqmt-l1-capture miniqmt-account-reconcile miniqmt-paper-readonly-handshake paper-canary-authorize paper-canary-run paper-canary-settle paper-canary-stage-limit paper-canary-approve paper-canary-submit paper-canary-status paper-canary-recover paper-canary-cancel paper-canary-converge paper-offline-guard paper-offline-fault-drill continuous-shadow-initialize continuous-shadow-start continuous-shadow-advance ops-plan ops-backup ops-recovery-drill tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation daily-data-update daily-data-status daily-decision-run daily-decision-status daily-run daily-run-status daily-run-recover daily-schedule-trigger daily-schedule-preview daily-schedule-status daily-schedule-install daily-schedule-pause daily-schedule-uninstall contracts-generate contracts-check
+.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe historical-price-limit-probe miniqmt-l1-capture miniqmt-catalog-probe miniqmt-realtime realtime-market-service-run realtime-market-service-preview realtime-market-service-status realtime-market-service-install realtime-market-service-start realtime-market-service-pause realtime-market-service-uninstall miniqmt-source-benchmark miniqmt-account-reconcile miniqmt-paper-readonly-handshake paper-canary-authorize paper-canary-preflight paper-canary-run paper-canary-settle paper-canary-stage-limit paper-canary-approve paper-canary-submit paper-canary-status paper-canary-recover paper-canary-cancel paper-canary-converge paper-offline-guard paper-offline-fault-drill continuous-shadow-initialize continuous-shadow-start continuous-shadow-advance ops-plan ops-backup ops-recovery-drill tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation daily-data-update daily-data-status daily-decision-run daily-decision-status daily-run daily-run-recover daily-schedule-trigger daily-schedule-preview daily-schedule-status daily-schedule-install daily-schedule-pause daily-schedule-uninstall contracts-generate contracts-check
 
 bootstrap:
 	uv sync --locked
@@ -37,6 +37,46 @@ provider-probe:
 miniqmt-l1-capture:
 	uv run python scripts/capture_miniqmt_l1.py --seconds "$(or $(CAPTURE_SECONDS),5)"
 
+miniqmt-realtime:
+	uv run python scripts/run_miniqmt_realtime_pipeline.py \
+		$(if $(DURATION_SECONDS),--duration-seconds "$(DURATION_SECONDS)",)
+
+realtime-market-service-run:
+	uv run python scripts/run_miniqmt_realtime_pipeline.py
+
+realtime-market-service-preview:
+	uv run python scripts/manage_realtime_market_service.py preview
+
+realtime-market-service-status:
+	uv run python scripts/manage_realtime_market_service.py status
+
+realtime-market-service-install:
+	uv run python scripts/manage_realtime_market_service.py install \
+		--confirm-task-name "AstraMind OS Mini - Realtime Market" \
+		--confirm-workdir "$(CURDIR)"
+
+realtime-market-service-start:
+	uv run python scripts/manage_realtime_market_service.py start
+
+realtime-market-service-pause:
+	uv run python scripts/manage_realtime_market_service.py pause
+
+realtime-market-service-uninstall:
+	uv run python scripts/manage_realtime_market_service.py uninstall
+
+miniqmt-catalog-probe:
+	uv run python scripts/probe_miniqmt_data_catalog.py
+
+miniqmt-source-benchmark:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env" && exit 2)
+	uv run python scripts/benchmark_market_data_sources.py \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		--repetitions "$(or $(REPETITIONS),30)" \
+		--cache-state "$(or $(CACHE_STATE),warm)" \
+		--coverage-scope "$(or $(COVERAGE_SCOPE),diagnostic)" \
+		$(if $(UNIVERSE_FILE),--universe-file "$(UNIVERSE_FILE)",) \
+		$(if $(filter true,$(ACTIVATE)),--activate,)
+
 miniqmt-account-reconcile:
 	uv run python scripts/reconcile_miniqmt_account.py
 
@@ -52,13 +92,16 @@ paper-canary-authorize:
 		--quantity 100 \
 		--max-notional 50000 \
 		--mandate-start "2026-07-29T09:30:00+08:00" \
-		--mandate-end "2026-07-29T10:00:00+08:00" \
+		--mandate-end "2026-07-29T15:00:00+08:00" \
 		--submission-start "2026-07-29T09:35:00+08:00" \
-		--submission-end "2026-07-29T09:45:00+08:00" \
+		--submission-end "2026-07-29T15:00:00+08:00" \
 		--approved-at "$(APPROVED_AT)"
 
 paper-canary-run:
 	uv run python scripts/run_paper_canary.py
+
+paper-canary-preflight:
+	uv run python scripts/preflight_paper_canary.py
 
 paper-canary-settle:
 	uv run python scripts/settle_paper_canary.py
@@ -71,7 +114,7 @@ paper-canary-approve:
 	@test -n "$(PROPOSAL_ID)" || (echo "请设置 PROPOSAL_ID" && exit 2)
 	@test -n "$(EXACT_LIMIT_PRICE)" || (echo "请设置 EXACT_LIMIT_PRICE" && exit 2)
 	@test -n "$(APPROVED_AT)" || (echo "请设置 APPROVED_AT=带时区ISO时间" && exit 2)
-	@test -n "$(EFFECTIVE_TO)" || (echo "请设置 EFFECTIVE_TO=不超过3分钟且不晚于09:45" && exit 2)
+	@test -n "$(EFFECTIVE_TO)" || (echo "请设置 EFFECTIVE_TO=不超过3分钟且不晚于当前授权截止时间" && exit 2)
 	uv run python scripts/approve_paper_canary_limit.py \
 		--proposal-id "$(PROPOSAL_ID)" \
 		--confirm-limit-price "$(EXACT_LIMIT_PRICE)" \

@@ -1,8 +1,11 @@
 ---
-status: accepted
+status: superseded
+superseded_by: ADR-0007
 ---
 
 # ADR-0002：券商执行前必须跑通本地 Shadow
+
+> 已由 ADR-0007 替代。下文只保留历史决策，不再约束活动晋级链。
 
 每个可执行策略必须先通过本地 Shadow 适配器，并使用未来 MiniQMT 同一套 `OrderPlan` 契约。策略可以手动晋级，不设固定等待期；但连接 MiniQMT 和启用真实资金始终是另外的明确决策。
 

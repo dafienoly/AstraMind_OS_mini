@@ -22,6 +22,7 @@ from ..domain.paper_startup import (
 )
 from .miniqmt_account import MiniQMTAccountError, _parse_body, _terminate_process_tree
 from .miniqmt_account_normalization import build_account_snapshot
+from .windows_runner_diagnostics import classify_runner_failure, record_runner_diagnostic
 
 
 class MiniQMTPaperReadonlyClient:
@@ -37,6 +38,7 @@ class MiniQMTPaperReadonlyClient:
         fingerprint_key: str,
         callback_wait_seconds: float = 2,
         timeout_seconds: float = 20,
+        diagnostic_root: Path | None = None,
     ) -> None:
         self._runner = runner
         self._python_command = python_command
@@ -47,6 +49,7 @@ class MiniQMTPaperReadonlyClient:
         self._fingerprint_key = fingerprint_key
         self._callback_wait = callback_wait_seconds
         self._timeout = timeout_seconds
+        self._diagnostic_root = diagnostic_root
 
     async def read(self) -> PaperStartupEvidence:
         if self._account_mode != "simulation":
@@ -112,17 +115,53 @@ class MiniQMTPaperReadonlyClient:
                 stderr=asyncio.subprocess.PIPE,
             )
             try:
-                stdout, _ = await asyncio.wait_for(
+                stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
                     timeout=self._timeout,
                 )
             except TimeoutError:
                 await _terminate_process_tree(process)
+                self._record(b"", b"", process.returncode, "paper_readonly_handshake_timeout")
                 raise MiniQMTAccountError("paper_readonly_handshake_timeout") from None
-            body = _parse_body(stdout)
+            try:
+                body = _parse_body(stdout)
+            except MiniQMTAccountError:
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=None,
+                    default="invalid_runner_json",
+                )
+                self._record(stdout, stderr, process.returncode, code)
+                raise MiniQMTAccountError(code) from None
             if process.returncode != 0 or body.get("runner_error_code"):
-                raise MiniQMTAccountError("paper_readonly_handshake_failed")
+                code = classify_runner_failure(
+                    stdout=stdout,
+                    stderr=stderr,
+                    body=body,
+                    default="paper_readonly_handshake_failed",
+                )
+                self._record(stdout, stderr, process.returncode, code)
+                raise MiniQMTAccountError(code)
+            self._record(stdout, stderr, process.returncode, "ok")
             return body
+
+    def _record(
+        self,
+        stdout: bytes,
+        stderr: bytes,
+        returncode: int | None,
+        outcome: str,
+    ) -> None:
+        record_runner_diagnostic(
+            root=self._diagnostic_root,
+            runner="paper-readonly",
+            stdout=stdout,
+            stderr=stderr,
+            returncode=returncode,
+            outcome=outcome,
+            secrets=(self._account_selector, self._userdata_path, self._fingerprint_key),
+        )
 
     def _staged_command(self, temporary: Path) -> list[str]:
         staged_runner = temporary / "runner.py"
