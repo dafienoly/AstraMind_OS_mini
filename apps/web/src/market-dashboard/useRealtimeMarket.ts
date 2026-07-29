@@ -38,7 +38,7 @@ export function useRealtimeMarket(): RealtimeMarketView {
         connection: "connected",
         projection,
         message: null,
-        effectiveState: projection.state,
+        effectiveState: effectiveState(projection),
       });
     };
     const source = openRealtimeStream(
@@ -58,7 +58,9 @@ export function useRealtimeMarket(): RealtimeMarketView {
         setView((current) => ({
           ...current,
           connection: "connected",
-          effectiveState: current.projection?.state ?? "disconnected",
+          effectiveState: current.projection
+            ? effectiveState(current.projection)
+            : "disconnected",
         }));
       },
     );
@@ -70,7 +72,7 @@ export function useRealtimeMarket(): RealtimeMarketView {
             connection: source ? "connecting" : "disconnected",
             projection,
             message: null,
-            effectiveState: projection.state,
+            effectiveState: effectiveState(projection),
           });
         }
       })
@@ -94,6 +96,13 @@ export function useRealtimeMarket(): RealtimeMarketView {
   }, []);
 
   return view;
+}
+
+function effectiveState(
+  projection: RealtimeMarketProjection,
+): RealtimeMarketView["effectiveState"] {
+  if (projection.operational_state === "disconnected") return "disconnected";
+  return projection.operational_state === "updating" ? "current" : "stale";
 }
 
 type StreamEvent = MessageEvent<string>;

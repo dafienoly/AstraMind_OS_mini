@@ -14,6 +14,28 @@ from astramind_mini.contracts.base import (
     Identifier,
 )
 
+type MarketSessionPhase = Literal[
+    "pre_open",
+    "continuous_auction",
+    "lunch_break",
+    "closed",
+    "non_trading_day",
+    "unknown",
+]
+type TransportHealth = Literal["connected", "disconnected"]
+type DailyDataState = Literal["current", "lagging", "unknown"]
+type RealtimeOperationalState = Literal[
+    "updating",
+    "update_delayed",
+    "pre_open",
+    "lunch_break",
+    "closed",
+    "non_trading_day",
+    "disconnected",
+    "daily_lagging",
+    "unknown",
+]
+
 
 class RealtimeIndexQuote(ContractModel):
     instrument_id: Identifier
@@ -33,7 +55,13 @@ class RealtimeMarketProjection(ContractModel):
     provider: Identifier
     session_id: ContentHash
     state: Literal["current", "stale", "disconnected"]
+    transport_health: TransportHealth = "connected"
+    market_session: MarketSessionPhase = "unknown"
+    daily_data_state: DailyDataState = "unknown"
+    operational_state: RealtimeOperationalState = "unknown"
     as_of: AwareDatetime
+    latest_completed_trade_date: date | None = None
+    latest_trading_date: date | None = None
     latest_received_at: AwareDatetime | None = None
     latest_market_time_ms: int | None = Field(default=None, ge=0)
     granularity_ms: int = Field(ge=250)
@@ -106,6 +134,8 @@ class RealtimeInstrumentProjection(ContractModel):
 
 
 __all__ = [
+    "DailyDataState",
+    "MarketSessionPhase",
     "RealtimeBookLevel",
     "RealtimeIndexQuote",
     "RealtimeIndustryHeat",
@@ -113,4 +143,6 @@ __all__ = [
     "RealtimeInstrumentQuote",
     "RealtimeMarketProjection",
     "RealtimeMinuteBar",
+    "RealtimeOperationalState",
+    "TransportHealth",
 ]

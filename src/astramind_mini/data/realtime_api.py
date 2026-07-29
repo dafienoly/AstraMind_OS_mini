@@ -12,8 +12,14 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .adapters.market_session_context import SnapshotMarketSessionContext
 from .adapters.realtime_projection_store import RealtimeProjectionStore
 from .adapters.realtime_watchlist_store import RealtimeWatchlistStore
+from .application.market_session_status import (
+    SHANGHAI,
+    MarketSessionContext,
+    enrich_market_projection,
+)
 from .contracts.realtime_projection import (
     RealtimeInstrumentProjection,
     RealtimeInstrumentQuote,
@@ -50,6 +56,7 @@ class RealtimeInstrumentSearchResult(BaseModel):
 
 def register_realtime_routes(app: FastAPI, data_root: Path) -> None:
     store = RealtimeProjectionStore(data_root)
+    session_context = SnapshotMarketSessionContext(data_root)
     watchlist = RealtimeWatchlistStore(data_root.parent / "control")
     _register_instrument_routes(app, store)
     _register_watchlist_routes(app, watchlist)
@@ -61,7 +68,12 @@ def register_realtime_routes(app: FastAPI, data_root: Path) -> None:
     )
     def realtime_current() -> RealtimeMarketProjection:
         try:
-            return _freshness(store.current(), datetime.now(UTC))
+            now = datetime.now(UTC)
+            return _freshness(
+                store.current(),
+                now,
+                context=session_context.read_if_available(today=now.astimezone(SHANGHAI).date()),
+            )
         except FileNotFoundError as error:
             raise HTTPException(
                 status_code=404,
@@ -76,7 +88,7 @@ def register_realtime_routes(app: FastAPI, data_root: Path) -> None:
     @app.get("/api/market/realtime/stream")
     async def realtime_stream(request: Request) -> StreamingResponse:
         return StreamingResponse(
-            _events(store, request),
+            _events(store, request, session_context),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -214,6 +226,7 @@ def _register_watchlist_routes(
 async def _events(
     store: RealtimeProjectionStore,
     request: Request | None = None,
+    session_context: SnapshotMarketSessionContext | None = None,
 ) -> AsyncIterator[str]:
     last_id = ""
     last_heartbeat = datetime.now(UTC)
@@ -222,8 +235,22 @@ async def _events(
             return
         now = datetime.now(UTC)
         try:
-            projection = _freshness(await asyncio.to_thread(store.current), now)
-            identity = f"{projection.projection_id}:{projection.state}"
+            projection = _freshness(
+                await asyncio.to_thread(store.current),
+                now,
+                context=(
+                    await asyncio.to_thread(
+                        session_context.read_if_available,
+                        today=now.astimezone(SHANGHAI).date(),
+                    )
+                    if session_context is not None
+                    else None
+                ),
+            )
+            identity = (
+                f"{projection.projection_id}:{projection.state}:"
+                f"{projection.operational_state}:{projection.daily_data_state}"
+            )
             if identity != last_id:
                 payload = json.dumps(
                     projection.model_dump(mode="json"),
@@ -291,13 +318,10 @@ async def _instrument_events(
 def _freshness(
     projection: RealtimeMarketProjection,
     now: datetime,
+    *,
+    context: MarketSessionContext | None = None,
 ) -> RealtimeMarketProjection:
-    if projection.state == "disconnected":
-        return projection.model_copy(update={"as_of": now})
-    latest = projection.latest_received_at
-    if latest is None or now - latest > timedelta(seconds=10):
-        return projection.model_copy(update={"state": "stale", "as_of": now})
-    return projection
+    return enrich_market_projection(projection, now=now, context=context)
 
 
 def _instrument_freshness(

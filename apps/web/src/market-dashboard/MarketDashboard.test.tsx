@@ -139,7 +139,7 @@ describe("MarketDashboard", () => {
 
   it("applies SSE updates and closes the stream on unmount", async () => {
     const view = render(<MarketDashboard view="overview" />);
-    expect(await screen.findByText("CURRENT · 正在更新")).toBeInTheDocument();
+    expect(await screen.findByText("正在更新")).toBeInTheDocument();
     expect(screen.getByText("3200 ↑ / 1800 ↓ / 100 —")).toBeInTheDocument();
 
     act(() => FakeEventSource.instances[0]?.emit(
@@ -151,6 +151,7 @@ describe("MarketDashboard", () => {
     view.unmount();
     expect(FakeEventSource.instances[0]?.closed).toBe(true);
   });
+
 });
 
 function projection(): MarketDashboardProjection {

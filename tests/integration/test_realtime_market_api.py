@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
@@ -13,12 +13,16 @@ from astramind_mini.composition import create_app
 from astramind_mini.config import Settings
 from astramind_mini.data.adapters.realtime_projection_store import RealtimeProjectionStore
 from astramind_mini.data.application.identity import content_hash
+from astramind_mini.data.application.market_session_status import (
+    SHANGHAI,
+    MarketSessionContext,
+)
 from astramind_mini.data.contracts import RealtimeMarketProjection
 from astramind_mini.data.contracts.realtime_projection import (
     RealtimeInstrumentProjection,
     RealtimeInstrumentQuote,
 )
-from astramind_mini.data.realtime_api import _instrument_events
+from astramind_mini.data.realtime_api import _freshness, _instrument_events
 
 
 def test_realtime_current_is_read_only_projection(tmp_path: Path) -> None:
@@ -54,7 +58,8 @@ def test_realtime_current_is_read_only_projection(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert response.json()["provider"] == "miniqmt"
-    assert response.json()["state"] == "current"
+    assert response.json()["state"] == "stale"
+    assert response.json()["operational_state"] == "unknown"
 
 
 def test_disconnected_projection_is_not_relabelled_current_or_stale(
@@ -88,6 +93,43 @@ def test_disconnected_projection_is_not_relabelled_current_or_stale(
 
     assert response.status_code == 200
     assert response.json()["state"] == "disconnected"
+    assert response.json()["transport_health"] == "disconnected"
+
+
+def test_api_freshness_distinguishes_lunch_close_and_daily_lag() -> None:
+    context = MarketSessionContext(
+        open_dates=(
+            date(2026, 7, 28),
+            date(2026, 7, 29),
+            date(2026, 7, 30),
+        ),
+        latest_completed_trade_date=date(2026, 7, 29),
+    )
+    lunch = datetime(2026, 7, 30, 12, tzinfo=SHANGHAI).astimezone(UTC)
+    projection = RealtimeMarketProjection(
+        projection_id=content_hash({"projection": "session-status"}),
+        provider="miniqmt",
+        session_id=content_hash({"session": "session-status"}),
+        state="current",
+        as_of=lunch,
+        latest_received_at=lunch - timedelta(minutes=30),
+        granularity_ms=1000,
+        quote_count=1,
+        advancing=1,
+        declining=0,
+        unchanged=0,
+        total_amount=1000,
+    )
+
+    lunch_result = _freshness(projection, lunch, context=context)
+    after_close = lunch.replace(hour=7, minute=30)
+    close_result = _freshness(projection, after_close, context=context)
+
+    assert lunch_result.operational_state == "lunch_break"
+    assert lunch_result.state == "current"
+    assert close_result.operational_state == "daily_lagging"
+    assert close_result.daily_data_state == "lagging"
+    assert close_result.latest_trading_date == date(2026, 7, 30)
 
 
 def test_instrument_detail_and_local_watchlist_are_read_only_market_state(

@@ -3,6 +3,7 @@ import type { RealtimeMarketView } from "./useRealtimeMarket";
 export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
   const projection = view.projection;
   const label = stateLabel(view);
+  const operationalState = semanticState(view);
   const latency = renderLatencyMs(projection?.latest_received_at);
   return <section
     aria-label="盘中会话脉冲"
@@ -10,7 +11,7 @@ export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
     className="realtime-pulse"
     data-e2e-latency-ms={latency ?? undefined}
     data-received-at={projection?.latest_received_at ?? undefined}
-    data-state={view.effectiveState}
+    data-state={operationalState}
   >
     <div className="realtime-pulse__headline">
       <strong>盘中会话脉冲</strong>
@@ -21,6 +22,14 @@ export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
       <PulseValue label="市场时间" value={formatMarketTime(projection?.latest_market_time_ms)} />
       <i aria-hidden="true" />
       <PulseValue label="接收时间" value={formatTime(projection?.latest_received_at)} />
+      <PulseValue
+        label="完成日"
+        value={projection?.latest_completed_trade_date ?? "待确认"}
+      />
+      <PulseValue
+        label="传输"
+        value={projection?.transport_health === "connected" ? "连接正常" : "连接中断"}
+      />
       <PulseValue label="页面延迟" value={latency === null ? "—" : `${latency} ms`} />
       <PulseValue
         label="粒度"
@@ -52,9 +61,21 @@ function stateLabel(view: RealtimeMarketView) {
   if (view.phase === "loading") return "正在连接";
   if (view.phase === "empty") return "等待 MiniQMT 会话";
   if (view.phase === "error") return "实时区域不可用";
-  if (view.effectiveState === "current") return "CURRENT · 正在更新";
-  if (view.effectiveState === "stale") return "STALE · 超过 10 秒未更新";
-  return "DISCONNECTED · 连接已断开";
+  const state = semanticState(view);
+  if (state === "updating") return "正在更新";
+  if (state === "update_delayed") return "行情更新延迟";
+  if (state === "pre_open") return "开盘前 · 最近交易日数据最新";
+  if (state === "lunch_break") return "午间休市 · 上午行情已保存";
+  if (state === "closed") return "今日已收盘 · 日线数据最新";
+  if (state === "non_trading_day") return "市场休市 · 最近交易日数据最新";
+  if (state === "disconnected") return "实时连接中断";
+  if (state === "daily_lagging") return "日线数据待更新";
+  return "行情状态待确认";
+}
+
+function semanticState(view: RealtimeMarketView) {
+  if (view.effectiveState === "disconnected") return "disconnected";
+  return view.projection?.operational_state ?? "unknown";
 }
 
 function coverage(projection: RealtimeMarketView["projection"]) {
