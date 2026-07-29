@@ -51,4 +51,3 @@ describe("market business language facade", () => {
       .toEqual(["当前数据版本缺少必要数据集"]);
   });
 });
-
