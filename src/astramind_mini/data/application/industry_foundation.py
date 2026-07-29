@@ -1,9 +1,10 @@
-"""Resumable SW2021 L1 industry foundation publication for REQ-2026-0008."""
+"""Resumable SW2021 L1/L2 industry foundation publication for REQ-2026-0008."""
 
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Literal
 
 from astramind_mini.contracts import DataSnapshot
 
@@ -29,6 +30,7 @@ from .industry_foundation_support import (
     MEMBERSHIP_FIELDS,
     TAXONOMY_FIELDS,
     IndustryArtifacts,
+    canonicalize_l2_parents,
     five_year_windows,
     membership_overlap_stats,
 )
@@ -73,6 +75,7 @@ class IndustryFoundationService:
         start_date: date,
         end_date: date,
         republish: bool = False,
+        include_l2: bool = False,
     ) -> IndustryFoundationPublication:
         if start_date > end_date:
             raise ValueError("行业数据开始日期不能晚于结束日期")
@@ -82,8 +85,10 @@ class IndustryFoundationService:
                 "base_snapshot_id": base_snapshot_id,
                 "start_date": start_date,
                 "end_date": end_date,
-                "taxonomy": "SW2021:L1",
-                "policy": "req-0008-industry-foundation-v1",
+                "taxonomy": "SW2021:L1+L2" if include_l2 else "SW2021:L1",
+                "policy": "wp-0026-industry-hierarchy-v1"
+                if include_l2
+                else "req-0008-industry-foundation-v1",
             }
         )
         staging = self._root / "imports" / import_id.rsplit(":", 1)[-1]
@@ -96,7 +101,7 @@ class IndustryFoundationService:
         if (snapshot_id := state.get("snapshot_id")) and not republish:
             return self._completed(str(snapshot_id), state)
         artifacts = await self._collect_and_compact(
-            start_date, end_date, staging, state, state_path
+            start_date, end_date, staging, state, state_path, include_l2
         )
         return publish_industry_foundation(
             data_root=self._root,
@@ -114,6 +119,7 @@ class IndustryFoundationService:
             dataset_store=self._dataset_store,
             snapshot_store=self._snapshot_store,
             ledger=self._ledger,
+            include_l2=include_l2,
         )
 
     async def _collect_and_compact(
@@ -123,6 +129,7 @@ class IndustryFoundationService:
         staging: Path,
         state: dict[str, object],
         state_path: Path,
+        include_l2: bool,
     ) -> IndustryArtifacts:
         taxonomy_table = await self._provider.query(
             "index_classify",
@@ -130,12 +137,25 @@ class IndustryFoundationService:
             fields=TAXONOMY_FIELDS,
         )
         self._preserve_raw(taxonomy_table)
-        taxonomy = normalize_taxonomy(taxonomy_table)
+        taxonomy_tables = [taxonomy_table]
+        taxonomy = list(normalize_taxonomy(taxonomy_table))
         if len(taxonomy) != 31:
             raise ValueError(f"SW2021 一级行业数量异常：{len(taxonomy)}，期望 31")
+        if include_l2:
+            l2_table = await self._provider.query(
+                "index_classify",
+                params={"level": "L2", "src": "SW2021"},
+                fields=TAXONOMY_FIELDS,
+            )
+            self._preserve_raw(l2_table)
+            taxonomy_tables.append(l2_table)
+            l2 = canonicalize_l2_parents(taxonomy, normalize_taxonomy(l2_table, level="L2"))
+            taxonomy.extend(l2)
         taxonomy_path = staging / "taxonomy.parquet"
         write_bytes_atomic(taxonomy_path, self._encoder.encode(taxonomy, INDUSTRY_TAXONOMY_COLUMNS))
-        self._record_request(state, state_path, taxonomy_table, taxonomy_path, "taxonomy")
+        for table in taxonomy_tables:
+            level = str(table.rows[0].get("level", "")) if table.rows else "unknown"
+            self._record_request(state, state_path, table, taxonomy_path, f"taxonomy-{level}")
 
         for industry in taxonomy:
             for is_current in (True, False):
@@ -146,6 +166,7 @@ class IndustryFoundationService:
                     staging,
                     state,
                     state_path,
+                    industry.level,
                 )
             for window_start, window_end in five_year_windows(start_date, end_date):
                 await self._collect_daily(
@@ -156,6 +177,7 @@ class IndustryFoundationService:
                     staging,
                     state,
                     state_path,
+                    industry.level,
                 )
 
         membership_path = staging / "industry_membership.parquet"
@@ -165,6 +187,7 @@ class IndustryFoundationService:
             membership_path,
             ("industry_code", "instrument_id", "effective_from", "source_record_hash"),
             "effective_from",
+            ("level", "industry_code", "instrument_id", "effective_from", "effective_to"),
         )
         membership_stats.update(membership_overlap_stats(membership_path))
         daily_path = staging / "industry_index_daily.parquet"
@@ -174,6 +197,7 @@ class IndustryFoundationService:
             daily_path,
             ("trade_date", "industry_code", "source_record_hash"),
             "trade_date",
+            ("level", "industry_code", "trade_date"),
         )
         return IndustryArtifacts(
             taxonomy_path=taxonomy_path,
@@ -192,21 +216,29 @@ class IndustryFoundationService:
         staging: Path,
         state: dict[str, object],
         state_path: Path,
+        level: Literal["L1", "L2"],
     ) -> None:
         status = "Y" if is_current else "N"
-        key = f"{code}-{status}"
+        key = f"{level}-{code}-{status}"
         if self._request_intact(state, "index_member_all", key):
             return
         table = await self._provider.query(
             "index_member_all",
-            params={"l1_code": code, "is_new": status},
+            params={
+                "l1_code" if level == "L1" else "l2_code": code,
+                "is_new": status,
+            },
             fields=MEMBERSHIP_FIELDS,
         )
         if len(table.rows) >= 2_000:
             raise ValueError(f"index_member_all:{key} 达到提供方上限")
         self._preserve_raw(table)
         rows = normalize_memberships(
-            table, industry_code=code, industry_name=name, is_current=is_current
+            table,
+            industry_code=code,
+            industry_name=name,
+            is_current=is_current,
+            level=level,
         )
         path = staging / "requests" / "index_member_all" / f"{key}.parquet"
         write_bytes_atomic(path, self._encoder.encode(rows, INDUSTRY_MEMBERSHIP_COLUMNS))
@@ -221,8 +253,9 @@ class IndustryFoundationService:
         staging: Path,
         state: dict[str, object],
         state_path: Path,
+        level: Literal["L1", "L2"],
     ) -> None:
-        key = f"{code}-{start:%Y%m%d}-{end:%Y%m%d}"
+        key = f"{level}-{code}-{start:%Y%m%d}-{end:%Y%m%d}"
         if self._request_intact(state, "sw_daily", key):
             return
         table = await self._provider.query(
@@ -233,7 +266,7 @@ class IndustryFoundationService:
         if len(table.rows) >= 5_000:
             raise ValueError(f"sw_daily:{key} 达到提供方上限")
         self._preserve_raw(table)
-        rows = normalize_index_daily(table, industry_name=name)
+        rows = normalize_index_daily(table, industry_name=name, level=level)
         path = staging / "requests" / "sw_daily" / f"{key}.parquet"
         write_bytes_atomic(path, self._encoder.encode(rows, INDUSTRY_INDEX_DAILY_COLUMNS))
         self._record_request(state, state_path, table, path, key)
@@ -286,6 +319,7 @@ class IndustryFoundationService:
         output: Path,
         order_by: tuple[str, ...],
         date_column: str,
+        identity_columns: tuple[str, ...],
     ) -> dict[str, object]:
         requests = state["requests"]
         assert isinstance(requests, dict)
@@ -299,7 +333,11 @@ class IndustryFoundationService:
             )
         )
         return self._compactor.compact(
-            source_files=sources, output=output, order_by=order_by, date_column=date_column
+            source_files=sources,
+            output=output,
+            order_by=order_by,
+            date_column=date_column,
+            identity_columns=identity_columns,
         )
 
     def _requests(self, state: dict[str, object]) -> dict[object, object]:

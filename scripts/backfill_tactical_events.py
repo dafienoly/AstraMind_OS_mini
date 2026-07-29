@@ -10,6 +10,8 @@ from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
+import httpx
+
 from astramind_mini.config import Settings
 from astramind_mini.data.adapters import (
     DataControlLedger,
@@ -29,22 +31,23 @@ async def run(args: argparse.Namespace) -> int:
     config = load_tushare_probe_config(settings, args.provider_env_file)
     ledger = DataControlLedger(settings.control_db_path)
     ledger.migrate()
-    service = TacticalEventBackfillService(
-        data_root=settings.data_dir,
-        provider=TushareHttpClient(config),
-        raw_store=FilesystemRawRecordStore(settings.data_dir),
-        encoder=DuckDBParquetEncoder(),
-        compactor=DuckDBEventDatasetCompactor(),
-        dataset_store=FilesystemDatasetStore(settings.data_dir),
-        snapshot_store=FilesystemSnapshotStore(settings.data_dir),
-        ledger=ledger,
-    )
-    publication = await service.run(
-        base_snapshot_id=args.base_snapshot_id,
-        start_date=args.start_date,
-        end_date=args.end_date,
-        republish=args.republish,
-    )
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        service = TacticalEventBackfillService(
+            data_root=settings.data_dir,
+            provider=TushareHttpClient(config, client),
+            raw_store=FilesystemRawRecordStore(settings.data_dir),
+            encoder=DuckDBParquetEncoder(),
+            compactor=DuckDBEventDatasetCompactor(),
+            dataset_store=FilesystemDatasetStore(settings.data_dir),
+            snapshot_store=FilesystemSnapshotStore(settings.data_dir),
+            ledger=ledger,
+        )
+        publication = await service.run(
+            base_snapshot_id=args.base_snapshot_id,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            republish=args.republish,
+        )
     print(f"snapshot_id={publication.snapshot.snapshot_id}")
     print(f"request_count={publication.request_count}")
     for manifest in publication.manifests:

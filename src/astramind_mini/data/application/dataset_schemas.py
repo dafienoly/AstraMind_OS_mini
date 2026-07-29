@@ -21,6 +21,49 @@ SECURITY_MASTER_COLUMNS = (
     ("connect_flag", "VARCHAR"),
 )
 
+SECURITY_NAME_HISTORY_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("name", "VARCHAR"),
+    ("effective_start_date", "DATE"),
+    ("effective_end_date", "DATE"),
+    ("provider_end_date", "DATE"),
+    ("announced_on", "DATE"),
+    ("change_reason", "VARCHAR"),
+    ("risk_status", "VARCHAR"),
+    ("is_special_treatment", "BOOLEAN"),
+)
+
+CORPORATE_ACTION_COLUMNS = (
+    ("provider", "VARCHAR"),
+    ("source_endpoint", "VARCHAR"),
+    ("retrieved_at", "TIMESTAMPTZ"),
+    ("available_at", "TIMESTAMPTZ"),
+    ("schema_version", "VARCHAR"),
+    ("source_record_hash", "VARCHAR"),
+    ("instrument_id", "VARCHAR"),
+    ("reporting_period", "DATE"),
+    ("announced_on", "DATE"),
+    ("availability_known", "BOOLEAN"),
+    ("process_status", "VARCHAR"),
+    ("action_kind", "VARCHAR"),
+    ("stock_dividend_per_share", "DOUBLE"),
+    ("cash_dividend_pre_tax_per_share", "DOUBLE"),
+    ("cash_dividend_after_tax_per_share", "DOUBLE"),
+    ("record_date", "DATE"),
+    ("ex_date", "DATE"),
+    ("payment_date", "DATE"),
+    ("base_date", "DATE"),
+    ("base_shares_ten_thousand", "DOUBLE"),
+    ("provider_record_hash", "VARCHAR"),
+    ("is_implemented", "BOOLEAN"),
+)
+
 TRADE_CALENDAR_COLUMNS = (
     ("provider", "VARCHAR"),
     ("source_endpoint", "VARCHAR"),
@@ -242,6 +285,7 @@ INDUSTRY_INDEX_DAILY_COLUMNS = (
 
 __all__ = [
     "ADJUSTMENT_FACTOR_COLUMNS",
+    "CORPORATE_ACTION_COLUMNS",
     "DAILY_BAR_COLUMNS",
     "DAILY_BASIC_COLUMNS",
     "INDUSTRY_INDEX_DAILY_COLUMNS",
@@ -251,6 +295,7 @@ __all__ = [
     "LHB_SEAT_COLUMNS",
     "PRICE_LIMIT_COLUMNS",
     "SECURITY_MASTER_COLUMNS",
+    "SECURITY_NAME_HISTORY_COLUMNS",
     "SHAREHOLDER_COUNT_COLUMNS",
     "SUSPENSION_EVENT_COLUMNS",
     "TRADE_CALENDAR_COLUMNS",

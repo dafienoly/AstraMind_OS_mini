@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+import asyncio
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -38,7 +39,13 @@ from .event_backfill_support import (
     request_count,
     request_is_intact,
     request_paths,
-    seven_day_windows,
+    year_bounded_seven_day_windows,
+)
+from .event_merge import (
+    EVENT_DATASETS,
+    combined_date_range,
+    load_current_event_manifests,
+    merge_event_annual,
 )
 from .event_normalization import (
     normalize_lhb_events,
@@ -83,12 +90,25 @@ class TacticalEventBackfillService:
         if start_date > end_date:
             raise ValueError("事件回填开始日期不能晚于结束日期")
         base = self._manifests(self._snapshot_store.get(base_snapshot_id))
+        current_events = load_current_event_manifests(self._root)
+        if current_events and all(
+            manifest.date_range == (start_date, end_date) for manifest in current_events.values()
+        ):
+            current_events = {}
+        event_base: dict[str, DatasetManifest] = {}
+        for name in EVENT_DATASETS:
+            manifest = base.get(name) or current_events.get(name)
+            if manifest is not None:
+                event_base[name] = manifest
         import_id = content_hash(
             {
                 "base_snapshot_id": base_snapshot_id,
+                "event_base_versions": {
+                    name: manifest.dataset_version for name, manifest in event_base.items()
+                },
                 "start_date": start_date,
                 "end_date": end_date,
-                "policy": "req-0005-events-v1",
+                "policy": "req-0005-events-v1.1",
             }
         )
         staging = self._root / "imports" / import_id.rsplit(":", 1)[-1]
@@ -103,9 +123,23 @@ class TacticalEventBackfillService:
         trade_dates = self._trade_dates(base["trade_calendar"], start_date, end_date)
         await self._collect_daily(trade_dates, staging, state, state_path)
         await self._collect_holders(start_date, end_date, staging, state, state_path)
-        annual = self._compact(start_date, end_date, staging, state)
+        incremental = self._compact(start_date, end_date, staging, state)
+        annual = merge_event_annual(
+            root=self._root,
+            base=event_base,
+            incremental=incremental,
+            staging=staging,
+        )
         return self._publish(
-            base, import_id, start_date, end_date, staging, state, state_path, annual
+            base,
+            event_base,
+            import_id,
+            start_date,
+            end_date,
+            staging,
+            state,
+            state_path,
+            annual,
         )
 
     async def _collect_daily(
@@ -115,32 +149,33 @@ class TacticalEventBackfillService:
         state: dict[str, object],
         state_path: Path,
     ) -> None:
+        batch: list[Awaitable[None]] = []
         for trade_date in trade_dates:
             key = trade_date.strftime("%Y%m%d")
-            await self._cached_query(
-                api_name="top_list",
-                key=key,
-                params={"trade_date": key},
-                fields=LHB_FIELDS,
-                columns=LHB_EVENT_COLUMNS,
-                normalizer=normalize_lhb_events,
-                provider_limit=10_000,
-                staging=staging,
-                state=state,
-                state_path=state_path,
-            )
-            await self._cached_query(
-                api_name="top_inst",
-                key=key,
-                params={"trade_date": key},
-                fields=SEAT_FIELDS,
-                columns=LHB_SEAT_COLUMNS,
-                normalizer=normalize_lhb_seats,
-                provider_limit=10_000,
-                staging=staging,
-                state=state,
-                state_path=state_path,
-            )
+            for api_name, fields, columns, normalizer in (
+                ("top_list", LHB_FIELDS, LHB_EVENT_COLUMNS, normalize_lhb_events),
+                ("top_inst", SEAT_FIELDS, LHB_SEAT_COLUMNS, normalize_lhb_seats),
+            ):
+                batch.append(
+                    self._cached_query(
+                        api_name=api_name,
+                        key=key,
+                        params={"trade_date": key},
+                        fields=fields,
+                        columns=columns,
+                        normalizer=normalizer,
+                        provider_limit=10_000,
+                        staging=staging,
+                        state=state,
+                    )
+                )
+                if len(batch) == 2:
+                    await asyncio.gather(*batch)
+                    save_state(state_path, state)
+                    batch.clear()
+        if batch:
+            await asyncio.gather(*batch)
+            save_state(state_path, state)
 
     async def _collect_holders(
         self,
@@ -150,8 +185,12 @@ class TacticalEventBackfillService:
         state: dict[str, object],
         state_path: Path,
     ) -> None:
-        for window_start, window_end in seven_day_windows(start_date, end_date):
+        windows = year_bounded_seven_day_windows(start_date, end_date)
+        for index, (window_start, window_end) in enumerate(windows, start=1):
             await self._collect_holder_window(window_start, window_end, staging, state, state_path)
+            if index % 16 == 0:
+                save_state(state_path, state)
+        save_state(state_path, state)
 
     async def _collect_holder_window(
         self,
@@ -176,7 +215,6 @@ class TacticalEventBackfillService:
                 provider_limit=3_000,
                 staging=staging,
                 state=state,
-                state_path=state_path,
             )
         except ProviderRowLimitError:
             if window_start == window_end:
@@ -203,7 +241,6 @@ class TacticalEventBackfillService:
         provider_limit: int,
         staging: Path,
         state: dict[str, object],
-        state_path: Path,
     ) -> None:
         requests = state["requests"]
         assert isinstance(requests, dict)
@@ -236,7 +273,6 @@ class TacticalEventBackfillService:
             "received_at": table.received_at.isoformat(),
             "request_identity": table.request_identity,
         }
-        save_state(state_path, state)
 
     def _compact(
         self,
@@ -286,6 +322,7 @@ class TacticalEventBackfillService:
     def _publish(
         self,
         base: dict[str, DatasetManifest],
+        event_base: dict[str, DatasetManifest],
         import_id: str,
         start_date: date,
         end_date: date,
@@ -295,10 +332,11 @@ class TacticalEventBackfillService:
         annual: dict[str, dict[int, dict[str, object]]],
     ) -> EventBackfillPublication:
         retrieved_at = latest_received_at(state)
+        date_range = combined_date_range(event_base, start_date, end_date)
         manifests, artifacts = build_event_manifests(
             import_id=import_id,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=date_range[0],
+            end_date=date_range[1],
             annual=annual,
             staging=staging,
             retrieved_at=retrieved_at,
@@ -306,11 +344,12 @@ class TacticalEventBackfillService:
         for manifest in manifests:
             path = self._dataset_store.publish_files(manifest, artifacts[manifest.dataset_name])
             self._ledger.record_dataset(manifest, path)
+        updated = {**base, **{item.dataset_name: item for item in manifests}}
         snapshot = DataSnapshotBuilder().build(
-            manifests=(*base.values(), *manifests),
+            manifests=tuple(updated.values()),
             as_of=retrieved_at,
             created_at=retrieved_at,
-            code_identity="req-0005-events-v1",
+            code_identity="req-0005-events-v1.1",
         )
         snapshot_path = self._snapshot_store.publish(snapshot)
         self._ledger.record_snapshot(snapshot, snapshot_path)

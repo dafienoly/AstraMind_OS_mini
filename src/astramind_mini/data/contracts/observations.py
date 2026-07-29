@@ -111,7 +111,7 @@ class SecurityNameHistoryObservation(ObservationSource):
     effective_start_date: date
     effective_end_date: date | None = None
     provider_end_date: date | None = None
-    announced_on: date
+    announced_on: date | None = None
     change_reason: str
     risk_status: HistoricalRiskStatus
     is_special_treatment: bool
@@ -228,7 +228,7 @@ class ShareholderCountObservation(ObservationSource):
 class IndustryTaxonomyObservation(ObservationSource):
     taxonomy: Literal["SW"]
     taxonomy_version: Literal["SW2021"]
-    level: Literal["L1"]
+    level: Literal["L1", "L2"]
     industry_code: Identifier
     industry_name: str
     provider_industry_code: str | None = None
@@ -239,7 +239,7 @@ class IndustryTaxonomyObservation(ObservationSource):
 class IndustryMembershipObservation(ObservationSource):
     taxonomy: Literal["SW"]
     taxonomy_version: Literal["SW2021"]
-    level: Literal["L1"]
+    level: Literal["L1", "L2"]
     industry_code: Identifier
     industry_name: str
     instrument_id: Identifier
@@ -252,7 +252,7 @@ class IndustryMembershipObservation(ObservationSource):
 class IndustryIndexDailyObservation(ObservationSource):
     taxonomy: Literal["SW"]
     taxonomy_version: Literal["SW2021"]
-    level: Literal["L1"]
+    level: Literal["L1", "L2"]
     industry_code: Identifier
     industry_name: str
     trade_date: date

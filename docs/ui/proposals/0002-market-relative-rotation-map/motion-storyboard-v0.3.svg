@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620">
+  <defs>
+    <style>
+      text { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; fill: #172129; }
+      .mono { font-family: "IBM Plex Mono", monospace; }
+      .muted { fill: #68747c; }
+      .small { font-size: 14px; }
+      .body { font-size: 17px; }
+      .title { font-size: 24px; font-weight: 700; }
+      .frame { fill: #fff; stroke: #cbd4d0; }
+      .axis { stroke: #cbd4d0; stroke-width: 1; }
+      .trail { fill: none; stroke: #456f9b; stroke-width: 4; }
+    </style>
+  </defs>
+  <rect width="1600" height="620" fill="#f2f4f3"/>
+  <text x="50" y="48" class="title">一个全局 playhead，不在每日边界重新起步</text>
+  <text x="50" y="78" class="small muted">整段 20 秒示意：逻辑日期只在抵达整数帧后切换，轨迹末端始终与节点共用同一坐标。</text>
+
+  <g transform="translate(50 118)">
+    <rect width="450" height="340" class="frame"/>
+    <line x1="225" y1="30" x2="225" y2="300" class="axis"/>
+    <line x1="35" y1="165" x2="415" y2="165" class="axis"/>
+    <text x="20" y="25" class="small mono muted">t = 4.00 · 2026-06-18</text>
+    <path d="M90 250 C140 230 175 205 220 190 S270 150 310 140" class="trail"/>
+    <circle cx="310" cy="140" r="10" fill="#fff" stroke="#456f9b" stroke-width="4"/>
+    <text x="326" y="145" class="small">电子</text>
+    <text x="22" y="325" class="small muted">起始完整交易日</text>
+  </g>
+
+  <g transform="translate(575 118)">
+    <rect width="450" height="340" class="frame"/>
+    <line x1="225" y1="30" x2="225" y2="300" class="axis"/>
+    <line x1="35" y1="165" x2="415" y2="165" class="axis"/>
+    <text x="20" y="25" class="small mono muted">t = 4.63 · 06-18 → 06-19</text>
+    <path d="M90 250 C140 230 175 205 220 190 S285 142 345 112" class="trail"/>
+    <circle cx="345" cy="112" r="13" fill="#fff" stroke="#456f9b" stroke-width="3"/>
+    <circle cx="345" cy="112" r="7" fill="#456f9b"/>
+    <path d="M339 94 L345 84 L351 94" fill="none" stroke="#456f9b" stroke-width="3"/>
+    <text x="363" y="117" class="small">电子 · 加速</text>
+    <text x="22" y="325" class="small muted">视觉连续；检查器仍属于 06-18</text>
+  </g>
+
+  <g transform="translate(1100 118)">
+    <rect width="450" height="340" class="frame"/>
+    <line x1="225" y1="30" x2="225" y2="300" class="axis"/>
+    <line x1="35" y1="165" x2="415" y2="165" class="axis"/>
+    <text x="20" y="25" class="small mono muted">t = 5.00 · 2026-06-19</text>
+    <path d="M90 250 C150 225 195 190 245 166 S315 118 365 92" class="trail"/>
+    <circle cx="365" cy="92" r="13" fill="#fff" stroke="#456f9b" stroke-width="3"/>
+    <circle cx="365" cy="92" r="7" fill="#456f9b"/>
+    <text x="295" y="125" class="small">电子 · 加速 ◎</text>
+    <text x="22" y="325" class="small muted">一次切换逻辑日期，不清零 playhead</text>
+  </g>
+
+  <line x1="120" y1="520" x2="1480" y2="520" stroke="#b8c3be" stroke-width="7"/>
+  <line x1="120" y1="520" x2="965" y2="520" stroke="#2e5e84" stroke-width="7"/>
+  <circle cx="965" cy="520" r="12" fill="#2e5e84"/>
+  <text x="120" y="558" class="small mono muted">窗口开始</text>
+  <text x="892" y="558" class="small mono">63%</text>
+  <text x="1388" y="558" class="small mono muted">窗口结束</text>
+  <rect x="52" y="580" width="1496" height="1" fill="#cbd4d0"/>
+  <text x="50" y="608" class="small muted">验收：任意帧、任意画布尺寸，轨迹末端与节点圆心屏幕距离 ≤ 2px；播放期间业务请求数保持 1。</text>
+</svg>

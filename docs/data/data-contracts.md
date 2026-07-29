@@ -203,6 +203,29 @@ WP-0008 将 Tushare `top_list`、`top_inst` 和 `stk_holdernumber` 分别发布�
 - 回放只能读取包含这三个准确版本的 `DataSnapshot`，缺少事件版本时事件策略失败
   关闭，不回退到行情代理。
 
+### REQ-0005 v1.1 连续事件版本
+
+WP-0035 将一次性 2023–2025 事件版本扩展为连续数据产品：
+
+- 日度管线在目标日 20:05 后分别查询 `top_list`、`top_inst` 和
+  `stk_holdernumber`，原始响应只追加；
+- 三类事件固定同一基础版本，按年度合并并以 `source_record_hash` 去重；同一快照不
+  允许出现两个同名事件数据集；
+- 目标日事件、行情、交易状态、行业和派生快照全部完成后才切换唯一管线提交；
+- 2005–2022 使用显式可恢复长回填，不进入日度关键路径；早期股东户数空窗口是覆盖
+  事实，不等于零户数；
+- 2026 增量和历史扩展都只产生新版本，不改写 2023–2025 封存证据身份。
+
+`price_limit` 在 2007 年前仍保持未知。WP-0035 的只读探测逐 SSE 开市日查询
+`stk_limit`，保存原始响应和标准化分区；任一空响应、重复主键或范围外记录都使结果为
+`historical_unavailable`。探测报告不得切换 `price_limit` 或快照指针；只有全部交易日
+完整时才标记 `backfill_ready`，实际补齐仍需独立发布步骤。
+
+2026-07-28 真实验收结果：合并快照包含龙虎榜 238,386 行、机构席位 2,534,436 行和
+股东户数 435,017 行。龙虎榜首条真实观察在 2008 年，机构席位首条真实观察在 2012 年；
+相应早期空年份已写入清单缺口。`stk_limit` 对 2000–2006 全部 1,683 个 SSE 开市日
+均返回空，故早期状态继续未知，涨跌停价格仍从 2007-01-04 才可用。
+
 ### 财务数据
 
 首期只建设被明确因子使用的小型财务集合：
@@ -248,25 +271,94 @@ SW2021 对 2021 年以前的归属是提供方按新版分类的历史回溯，�
 `provider_native_unverified`，不以猜测单位污染研究。提供方极少量高低价与开收价
 存在小于 1bp 的舍入差异，原值保留并披露容差；超过 1bp 的异常仍阻断发布。
 
-WP-0026 规划独立的 `SW2021:L2` 分类、成员和指数数据产品，首个可见下钻是
-“电子→半导体”。该规划不得改变现有 L1 数据集身份：
+WP-0026 已实现 `SW2021:L2` 分类、成员和指数数据产品，并要求 31 个 L1 均可
+下钻；“电子→半导体”是验收样例而非唯一入口。该规划不得改变现有 L1 数据集身份：
 
 - L2 分类记录父级 L1 身份；
 - L2 覆盖、行情和轮动横截面与 L1 分开；
 - “半导体”不得加入 31 个 L1 节点或与 L1 混合标准化；
-- 比较基准、开放范围和 UI 尚未批准，当前不得发布生产 L2 轮动快照。
+- L2 默认在父 L1 内比较，可显式切换全部 L2；两个集合使用不同基准身份；
+- L2 可进入当日有效成分股的轮动、排序和价格检查器，三者绑定同一快照和成员版本；
+- 个股层保留全部当日有效成员及其可用 K 线；轮动只消费同一快照内 141 日面板完整
+  的成员，显式记录新股、停牌等面板缺口的排除数量和代码，合格成员少于 3 个时阻断，
+  不做价格填充；
+- UI-PROP-0002 v0.3 已批准并实现；2026-07-28 生产快照发布 31 个 L1 与 134 个
+  L2 分类，其中提供方标记的 124 个已发布 L2 均有指数日线。未发布分类保留在分类
+  证据中但不进入轮动节点；如果后续快照缺少 L2，页面仍显示
+  `sw2021_l2_not_published`。
+- 父级内已发布 L2 少于 3 个时，层级视图保持可导航并返回
+  `sibling_cross_section_below_three`，但不生成轮动坐标；该缺口不能用父级坐标、
+  中心点或“全部 L2”结果静默替代。
 
-WP-0025 规划日度增量发布链：
+WP-0033 在 `IndustryHierarchyView` 的个股层追加同快照证据：
 
 ```text
-trade_calendar + industry_index_daily
+PriceCandle
+  trade_date
+  open / high / low / close
+  volume_lots
+  amount_cny
+
+StockFundamentalEvidence
+  market_date
+  available_at
+  latest_close / percent_change / turnover_rate
+  price_earnings_ttm / price_book
+  total_market_value_cny / circulating_market_value_cny
+  amount_cny
+
+StockEvidence
+  fundamental                         # 截止日兼容字段
+  fundamental_history[]               # 日线近 300 日 + 历史周/月末点
+  shareholder_concentration           # 截止日兼容字段
+  shareholder_concentration_history[] # 按实际 available_at 的公告序列
+
+ShareholderConcentrationEvidence
+  status
+  announced_on / reporting_period / available_at
+  holder_count / previous_holder_count / change_rate
+  direction / consecutive_periods / observation_age_days
+  known_gaps
+```
+
+响应分别提供日、周、月 `PriceCandle`。周/月先按 `as_of` 裁剪日线，再只聚合已完成
+周期；技术指标在浏览器按当前周期重算。悬浮收益的终点始终是同响应日线的最后已完成
+交易日，不是未完成周/月，也不读取未来 Bar。基本面与股东户数遵守各自
+`available_at`；缺少 `shareholder_count` 时返回 `shareholder_count_not_in_snapshot`，
+不得从另一快照补齐。蜡烛图悬浮日期只在浏览器内选择 `market_date <= hover_date`
+且 `available_at <= hover_date` 的最近观察；公告前显示不可用，hover 不产生请求。
+
+WP-0025 v1.1 已实现日度增量发布链：
+
+```text
+trade_calendar
++ industry_index_daily (31 L1 + 全部已发布 L2)
++ daily_market / adjustment_factor / daily_basic / price_limit / suspension_event
++ adjusted_market / daily_tradability
 → DataSnapshot
 → MarketRotationSnapshot
-→ 原子 current 指针
+→ 唯一 daily-pipeline commit 指针
 ```
 
 页面和功能模块只读消费该链；提供方未完成或发布中断时保留上一完整指针并显式标记
 陈旧或阻断，不允许由页面请求隐式拉取和混合版本。
+
+`DailyPipelineStatus` 记录目标交易日、基础快照、运行状态、L1/L2 预期及实际覆盖、当前
+步骤、阻断和恢复动作。`DailyPipelineCommit` 同时绑定准确 `DataSnapshot` 与
+`MarketRotationSnapshot`；只有该提交存在，消费者才把整组产物视为共同完成。
+
+WP-0029 只接受上述提交，并按身份生成：
+
+```text
+FeatureSnapshot → PredictionBatch
+→ OptimizationProblem / OptimizationResult
+→ PortfolioTarget → OrderPlan (Shadow)
+→ 本地 Shadow / Paper 预检
+```
+
+决策链制品和状态固定记录 `paper_dispatch_state=disabled`、
+`broker_connection_attempts=0`、`broker_write_attempts=0` 和
+`broker_actions_allowed=false`，不包含持续 Shadow `cycle` 或执行事件。
 
 ```text
 IndustryLifecycleSnapshot
@@ -356,6 +448,9 @@ IndustryRotationPoint
   trade_date
   relative_trend
   relative_momentum
+  raw_z_trend
+  raw_z_momentum
+  display_transform_version
   quadrant
   coverage
   constituent_count
@@ -382,6 +477,17 @@ WP-0010 已冻结正式公式 `rotation-index-ew-v1.0.0`：
 - 坐标为 `100 + 5 × clip(z, -3, 3)`，中性带 `±0.25`，连续 2 日确认跃迁；
 - 读取 141 个交易日，预热 140 日，只发布最近 60 日；
 - 31 个指数要求 100% 面板覆盖，每个输出日每行业至少 3 个有效成分。
+
+REQ-2026-0002 v1.3.0 保持上述逻辑公式、象限和事件不变，规划追加硬截断前
+`raw_z_trend/raw_z_momentum`，并冻结显示层
+`rotation-display-tanh-v1.0.0`：
+
+```text
+display = 100 + 14 × tanh(raw_z / 2.5)
+```
+
+显示值只用于画布，不反写逻辑坐标、象限、事件或旧快照。声明 tanh 版本却缺少 raw_z
+时必须阻断；没有新字段的旧快照继续使用其原始映射并明确显示旧版本。
 
 `MarketRotationSnapshot` 采用规范 JSON 和 `sha256:` 内容身份；当前指针原子替换，
 读取时复验哈希。结构事件嵌套于所属快照，快照身份由外层
@@ -517,8 +623,9 @@ WP-0002B-H2 新增三类标准化数据：
 
 WP-0002B-H3 新增：
 
-- `security_name_history`：名称有效区间、提供方结束日、公告日、变更原因、历史
-  `risk_status` 与特别处理标记；
+- `security_name_history`：名称有效区间、提供方结束日、可空公告日、变更原因、历史
+  `risk_status` 与特别处理标记；有公告日时按公告日 18:00 可用，提供方未给公告日时
+  不伪造历史可用时间，而以本次实际获取时间作为 `available_at`；
 - `daily_tradability`：上市证券逐开市日的名称/ST 证据、研究资格、Bar/停复牌/
   涨跌停状态，以及买卖两侧可交易状态。
 
@@ -530,7 +637,8 @@ BSE 独立日历仍是缺口。
 WP-0002B-H4 新增：
 
 - `corporate_action`：分红送转的版本化提供方记录，公告日缺失时
-  `availability_known=false`，不能进入点时研究；
+  `availability_known=false`，不能进入点时研究；实施公告更新按公告日与实施公告日
+  两者较晚者进入可用集，不能把后来获知的实施状态倒灌到初始预案日；
 - `adjusted_market`：原始 OHLC、复权因子、快照终端因子、标准前/后复权兼容价、
   连续研究价格指数，以及因子收益与公司行为解释证据。
 
@@ -538,6 +646,13 @@ WP-0002B-H4 新增：
 不可变快照，仅用于兼容与审计；默认研究路径使用 `research_*_index`。该指数以首个
 可见 Bar 为 1，按提供方日收益累计，长期停牌跨年度时沿用最近锚点。配股和其他非
 `dividend` 公司行为仍是显式缺口。
+
+WP-0025 v1.3 将 `security_master`、`security_name_history`、`corporate_action`、
+`industry_taxonomy` 和 `industry_membership` 纳入同一个日度原子提交。证券主表与
+SW2021 L1/L2 分类/成员每日按提供方完整视图对账；名称历史由当日证券主表与上一
+快照最新名称逐证券比较，对新增或名称/ST 变化的证券按代码拉取完整名称链并合并；
+公司行动滚动回看最近 8 个自然日的公告日和实施公告日并与已有历史去重合并。五类
+数据任一请求达到提供方上限、身份重叠或失败时，不切换 DataSnapshot 当前指针。
 
 ## MiniQMT L1 实时微批
 

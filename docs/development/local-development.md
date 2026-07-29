@@ -64,6 +64,97 @@ make dev
 
 ## 本地运行、备份与恢复
 
+### 日度数据与研究决策链
+
+WP-0030 的首选入口把唯一数据管线、纯本地决策链和当日外部备份收敛为同一运行身份：
+
+```bash
+make daily-run \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  TARGET_DATE=YYYY-MM-DD
+make daily-run-status
+```
+
+提供方尚未完整时保持 `waiting_provider`，不推进研究链，也不切换上一份完整
+`DailyRunSummary`。中断或阻断恢复必须复用状态输出中的准确 `run_id`：
+
+```bash
+make daily-run-recover \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  RUN_ID=daily-run:<identity>
+```
+
+首次成功会在已配置的仓库外目录创建或复用目标日完整备份，再以内容身份发布不可变摘要。
+重复运行直接返回同一摘要；并发实例只显示租约占用。三个命令均永久排除 MiniQMT、
+Paper/Live 和持续 Shadow 周期推进。
+
+### Windows 日度计划任务
+
+WP-0031 用 Windows Task Scheduler 唤起 WSL 内的 WP-0030 统一入口。先生成可审查
+定义，不会安装任务：
+
+```bash
+make daily-schedule-preview \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env
+make daily-schedule-status
+```
+
+固定触发点为每日 08:30、16:35、16:50、17:10，以及 Windows 登录后的错过窗口恢复。
+决策器读取版本化交易日历；登录恢复只处理最近一个未完成交易日。任务定义只保存环境文件
+路径，不复制 Token，并固定输出 `broker_actions_allowed=false`。
+
+实际安装前必须逐字确认预览中的任务名称和仓库目录：
+
+```bash
+make daily-schedule-install \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  CONFIRM_TASK_NAME="AstraMind OS Mini - Daily Ops" \
+  CONFIRM_WORKDIR="/home/ly/work/AstraMind_OS_mini"
+```
+
+任务使用内置 Users 组而不把个人账户标识写入定义；因此首次安装可能出现 Windows UAC
+提示。批准 UAC 只用于登记任务，任务本身仍以 `LeastPrivilege` 运行。
+
+暂停和卸载只改变 Windows 任务状态，不删除快照、控制台账或运行摘要：
+
+```bash
+make daily-schedule-pause
+make daily-schedule-uninstall
+```
+
+系统页和“今日”页读取同一个 `GET /api/system/daily-operations` 持久投影。恢复按钮只向
+`POST /api/system/daily-run-requests` 幂等登记本地请求，HTTP 请求本身不访问提供方、
+不重算研究链，也不连接 MiniQMT。
+
+以下两个分段入口继续作为诊断和精确恢复工具。目标日期必须是准备核验的交易日：
+
+```bash
+make daily-data-update \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  TARGET_DATE=YYYY-MM-DD
+make daily-data-status
+```
+
+数据提交完成后运行纯本地决策链：
+
+```bash
+make daily-decision-run
+make daily-decision-status
+```
+
+该命令生成 `FeatureSnapshot → PredictionBatch → PortfolioTarget → Shadow OrderPlan`
+和本地 Shadow/Paper 预检。它不连接 MiniQMT，不启动持续 Shadow 周期，不提交或撤销
+模拟盘订单。正常输出必须包含：
+
+```text
+paper_dispatch_state=disabled
+broker_connection_attempts=0
+broker_write_attempts=0
+broker_actions_allowed=false
+```
+
+系统页只读显示上述两条状态；刷新页面不会触发 Tushare、研究计算或券商调用。
+
 WP-0015 使用显式命令，不启动常驻调度器。盘后窗口决策示例：
 
 ```bash
@@ -384,6 +475,29 @@ make tactical-sealed-replay SNAPSHOT_ID=<事件回填输出的 snapshot_id>
 该命令固定开发截止 2022-12-31 和封存窗口 2023–2025，只读取快照清单中的精确
 Parquet，结果写入 `var/research/sealed/`。两条命令都是长任务，不属于 `make check`；
 生成证据不会自动晋级策略，也不会改变 `broker_enabled: false`。
+
+扩展事件历史时显式指定区间；命令会把新分区与当前准确事件版本合并，不删除既有
+2023–2026 观察：
+
+```bash
+make tactical-event-backfill \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  BASE_SNAPSHOT_ID=<当前准确快照> \
+  START_DATE=2005-01-01 \
+  END_DATE=2022-12-31
+```
+
+2000–2006 涨跌停只读覆盖核验使用：
+
+```bash
+make historical-price-limit-probe \
+  PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env \
+  BASE_SNAPSHOT_ID=<当前准确快照>
+```
+
+探测逐 SSE 开市日保存检查点和原始响应。输出 `backfill_ready` 只表示具备后续补齐
+条件；命令本身固定 `publish_price_limit=false`，不会切换数据集或快照指针。任一空
+响应输出 `historical_unavailable` 并继续保留 2007 年前未知缺口。
 
 ## REQ-0008 行业数据基础
 

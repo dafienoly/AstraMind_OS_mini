@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <style>
+    .cn { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; fill: #172129; }
+    .mono { font-family: "IBM Plex Mono", monospace; fill: #52616a; }
+    .inverse { fill: #fff; }
+    .inverse-muted { fill: #d8e0dd; }
+    .title { font-size: 25px; font-weight: 700; }
+    .h2 { font-size: 17px; font-weight: 700; }
+    .body { font-size: 13px; }
+    .small { font-size: 11px; }
+    .tiny { font-size: 9px; }
+    .muted { fill: #68747c; }
+    .blue { fill: #2e5e84; }
+    .rule { stroke: #d7ddda; stroke-width: 1; }
+    .axis { stroke: #9caaa4; stroke-width: 1.2; }
+    .dash { stroke: #c8d1cd; stroke-width: 1; stroke-dasharray: 4 4; }
+    .button { fill: #fff; stroke: #bdc9c3; }
+  </style>
+
+  <rect width="1600" height="1000" fill="#f2f4f3"/>
+  <rect x="0" y="0" width="1600" height="92" fill="#fff"/>
+  <line x1="0" y1="92" x2="1600" y2="92" class="rule"/>
+  <text x="40" y="38" class="cn title">个股相对轮动 · 聚焦镜片</text>
+  <text x="40" y="66" class="cn body muted">默认安静浏览，需要辨认空间关系时原位展开；不弹模态框，不离开股票证据工作台</text>
+  <text x="1430" y="35" class="mono small blue">UI-PROP-0002</text>
+  <text x="1476" y="55" class="mono small muted">v0.6 · DRAFT</text>
+
+  <!-- compact state -->
+  <rect x="34" y="126" width="350" height="800" fill="#fff" stroke="#ccd5d1"/>
+  <text x="54" y="158" class="cn small muted">默认紧凑态 · 350 px 导航栏</text>
+  <text x="54" y="184" class="cn h2">个股相对轮动</text>
+  <text x="54" y="206" class="cn small muted">当前：合成股票11 · 强势领先 · 加速上升</text>
+  <rect x="290" y="160" width="72" height="30" class="button"/>
+  <text x="309" y="180" class="cn small blue">展开聚焦</text>
+
+  <rect x="54" y="228" width="310" height="310" fill="#fff" stroke="#cfd8d4"/>
+  <rect x="55" y="229" width="154" height="154" fill="#f2f7fa"/>
+  <rect x="209" y="229" width="154" height="154" fill="#f6f8f2"/>
+  <rect x="55" y="383" width="154" height="154" fill="#f5f7f6"/>
+  <rect x="209" y="383" width="154" height="154" fill="#faf6ef"/>
+  <line x1="209" y1="229" x2="209" y2="538" class="axis"/>
+  <line x1="54" y1="383" x2="364" y2="383" class="axis"/>
+  <text x="64" y="248" class="cn tiny muted">弱势改善</text>
+  <text x="292" y="248" class="cn tiny muted">强势领先</text>
+  <text x="64" y="525" class="cn tiny muted">弱势落后</text>
+  <text x="292" y="525" class="cn tiny muted">强势降温</text>
+  <circle cx="157" cy="319" r="4" fill="#909da2"/>
+  <circle cx="242" cy="286" r="4" fill="#909da2"/>
+  <circle cx="278" cy="348" r="4" fill="#909da2"/>
+  <circle cx="130" cy="438" r="4" fill="#909da2"/>
+  <circle cx="287" cy="320" r="4" fill="#909da2"/>
+  <polyline points="255,355 269,342 280,330 293,314" fill="none" stroke="#2e5e84" stroke-width="2.4"/>
+  <circle cx="293" cy="314" r="8" fill="#fff" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="207" y="289" width="132" height="24" fill="#172129"/>
+  <text x="216" y="305" class="cn tiny inverse">合成股票11 · ↑◎</text>
+  <text x="54" y="561" class="cn small muted">仅选中项常驻标签；其余点悬浮或键盘聚焦时出现名称。</text>
+
+  <rect x="54" y="584" width="310" height="38" fill="#f8faf9" stroke="#d7ddda"/>
+  <text x="66" y="608" class="cn small">适配全部</text>
+  <text x="132" y="608" class="cn small">中心 100</text>
+  <text x="206" y="608" class="cn small">尾迹 5</text>
+  <text x="284" y="608" class="cn small blue">标签：聚焦</text>
+  <line x1="54" y1="646" x2="364" y2="646" class="rule"/>
+  <text x="54" y="674" class="cn small muted">当日有效成分股 · 3</text>
+  <rect x="54" y="690" width="310" height="58" fill="#edf4f8" stroke="#2e5e84"/>
+  <text x="68" y="713" class="cn body">01  合成股票11</text>
+  <text x="68" y="734" class="mono tiny">X 100.00 · Y 100.00 · ↑◎</text>
+  <rect x="54" y="754" width="310" height="48" fill="#f8faf9"/>
+  <text x="68" y="783" class="cn body">02  合成股票10</text>
+  <rect x="54" y="808" width="310" height="48" fill="#f8faf9"/>
+  <text x="68" y="837" class="cn body">03  合成股票12</text>
+  <text x="54" y="892" class="cn small muted">紧凑态负责“选谁看”，不承担全部标签阅读。</text>
+
+  <!-- focus state -->
+  <rect x="410" y="126" width="1156" height="800" fill="#fff" stroke="#bcc9c3" stroke-width="1.5"/>
+  <rect x="410" y="126" width="1156" height="72" fill="#fafbfaf5"/>
+  <line x1="410" y1="198" x2="1566" y2="198" class="rule"/>
+  <text x="438" y="157" class="cn small muted">展开聚焦态 · 工作台内原位占满一行</text>
+  <text x="438" y="181" class="cn h2">同层空间关系</text>
+  <rect x="1055" y="145" width="90" height="34" class="button"/>
+  <text x="1078" y="167" class="cn small">− 缩小</text>
+  <rect x="1152" y="145" width="90" height="34" class="button"/>
+  <text x="1175" y="167" class="cn small">+ 放大</text>
+  <rect x="1249" y="145" width="96" height="34" class="button"/>
+  <text x="1270" y="167" class="cn small">适配全部</text>
+  <rect x="1352" y="145" width="96" height="34" class="button"/>
+  <text x="1368" y="167" class="cn small">中心 100</text>
+  <rect x="1455" y="145" width="82" height="34" fill="#edf4f8" stroke="#2e5e84"/>
+  <text x="1475" y="167" class="cn small blue">收起</text>
+
+  <!-- large chart -->
+  <rect x="438" y="224" width="760" height="650" fill="#fff" stroke="#cbd5d0"/>
+  <rect x="439" y="225" width="379" height="324" fill="#f2f7fa"/>
+  <rect x="818" y="225" width="379" height="324" fill="#f6f8f2"/>
+  <rect x="439" y="549" width="379" height="324" fill="#f5f7f6"/>
+  <rect x="818" y="549" width="379" height="324" fill="#faf6ef"/>
+  <line x1="818" y1="225" x2="818" y2="874" class="axis"/>
+  <line x1="438" y1="549" x2="1198" y2="549" class="axis"/>
+  <line x1="494" y1="257" x2="1142" y2="257" class="dash"/>
+  <line x1="494" y1="842" x2="1142" y2="842" class="dash"/>
+  <line x1="494" y1="257" x2="494" y2="842" class="dash"/>
+  <line x1="1142" y1="257" x2="1142" y2="842" class="dash"/>
+  <text x="460" y="253" class="cn body" font-weight="700">弱势改善</text>
+  <text x="1090" y="253" class="cn body" font-weight="700">强势领先</text>
+  <text x="460" y="850" class="cn body" font-weight="700">弱势落后</text>
+  <text x="1090" y="850" class="cn body" font-weight="700">强势降温</text>
+  <text x="780" y="570" class="mono tiny muted">100</text>
+  <text x="826" y="567" class="mono tiny muted">100</text>
+  <text x="1090" y="895" class="cn small muted">相对趋势 →</text>
+  <text transform="translate(424 340) rotate(-90)" class="cn small muted">相对动量 →</text>
+
+  <!-- dim universe -->
+  <g fill="#7f8c91" opacity=".48">
+    <circle cx="563" cy="400" r="6"/><circle cx="686" cy="330" r="6"/>
+    <circle cx="930" cy="312" r="6"/><circle cx="1052" cy="426" r="6"/>
+    <circle cx="1120" cy="605" r="6"/><circle cx="987" cy="731" r="6"/>
+    <circle cx="709" cy="698" r="6"/><circle cx="568" cy="636" r="6"/>
+    <circle cx="760" cy="470" r="6"/><circle cx="890" cy="665" r="6"/>
+  </g>
+
+  <!-- selected tail -->
+  <polyline points="835,506 866,478 899,451 937,408 982,361" fill="none"
+    stroke="#2e5e84" stroke-width="4"/>
+  <g fill="#2e5e84">
+    <circle cx="835" cy="506" r="3" opacity=".22"/>
+    <circle cx="866" cy="478" r="4" opacity=".38"/>
+    <circle cx="899" cy="451" r="5" opacity=".55"/>
+    <circle cx="937" cy="408" r="6" opacity=".74"/>
+  </g>
+  <circle cx="982" cy="361" r="13" fill="#fff" stroke="#2e5e84" stroke-width="4"/>
+  <path d="M970 366 L982 361 L975 351" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <rect x="998" y="334" width="170" height="58" fill="#172129"/>
+  <text x="1010" y="354" class="cn small inverse" font-weight="700">合成股票11 · ↑◎</text>
+  <text x="1010" y="373" class="mono tiny inverse-muted">X 105.42 · Y 107.18</text>
+  <text x="1010" y="386" class="mono tiny inverse-muted">速度 1.28 · 距中心 9.00</text>
+
+  <!-- hovered point -->
+  <circle cx="686" cy="330" r="9" fill="#fff" stroke="#68747c" stroke-width="2"/>
+  <rect x="548" y="274" width="168" height="44" fill="#fff" stroke="#9daaa4"/>
+  <text x="560" y="294" class="cn small" font-weight="700">合成股票08 · 悬浮</text>
+  <text x="560" y="310" class="mono tiny">X 96.20 · Y 108.14 · ↑⋯</text>
+
+  <!-- ranked index -->
+  <rect x="1222" y="224" width="316" height="650" fill="#fff" stroke="#cbd5d0"/>
+  <text x="1244" y="254" class="cn h2">可读索引</text>
+  <text x="1244" y="276" class="cn small muted">列表承担名称阅读，图上只保留空间关系</text>
+  <rect x="1244" y="294" width="272" height="32" fill="#fff" stroke="#cbd5d0"/>
+  <text x="1256" y="315" class="cn small muted">搜索名称 / 代码</text>
+  <text x="1244" y="353" class="cn small muted">标签</text>
+  <rect x="1282" y="334" width="70" height="30" fill="#edf4f8" stroke="#2e5e84"/>
+  <text x="1294" y="353" class="cn small blue">仅聚焦</text>
+  <rect x="1358" y="334" width="62" height="30" class="button"/>
+  <text x="1372" y="353" class="cn small">极值</text>
+  <rect x="1426" y="334" width="90" height="30" class="button"/>
+  <text x="1438" y="353" class="cn small">全部名称</text>
+
+  <rect x="1238" y="386" width="286" height="78" fill="#edf4f8" stroke="#2e5e84"/>
+  <text x="1252" y="409" class="cn body" font-weight="700">01  合成股票11</text>
+  <text x="1484" y="409" class="cn small blue">↑◎</text>
+  <text x="1252" y="431" class="mono tiny">105.42 / 107.18</text>
+  <text x="1252" y="450" class="cn tiny muted">点击行聚焦 · 图表、K 线与证据同步</text>
+  <g>
+    <line x1="1238" y1="480" x2="1524" y2="480" class="rule"/>
+    <text x="1252" y="509" class="cn body">02  合成股票08</text>
+    <text x="1484" y="509" class="cn small muted">↑⋯</text>
+    <text x="1252" y="530" class="mono tiny">96.20 / 108.14</text>
+    <line x1="1238" y1="548" x2="1524" y2="548" class="rule"/>
+    <text x="1252" y="577" class="cn body">03  合成股票03</text>
+    <text x="1484" y="577" class="cn small muted">↓◎</text>
+    <text x="1252" y="598" class="mono tiny">109.31 / 94.62</text>
+    <line x1="1238" y1="616" x2="1524" y2="616" class="rule"/>
+    <text x="1252" y="645" class="cn body">04  合成股票06</text>
+    <text x="1484" y="645" class="cn small muted">·</text>
+    <text x="1252" y="666" class="mono tiny">92.18 / 93.11</text>
+  </g>
+  <text x="1244" y="716" class="cn small muted">键盘</text>
+  <text x="1244" y="739" class="cn body">↑↓ 切换对象　Enter 选中　Esc 收起</text>
+  <text x="1244" y="779" class="cn small muted">尾迹策略</text>
+  <text x="1244" y="802" class="cn body">对象 ≤ 8：10 日　对象 &gt; 8：5 日</text>
+  <text x="1244" y="825" class="cn body">非选中对象默认只显示端点</text>
+  <text x="1244" y="854" class="cn tiny muted">研究观察，不是绝对价格涨跌或买卖信号。</text>
+
+  <text x="438" y="907" class="cn small muted">收起后回到原三列工作台；K 线与股票证据保持挂载，选择、周期、均线和悬浮日期不丢失。</text>
+  <text x="40" y="966" class="cn small muted">核心改变：尺寸可切换 · 标签分层 · 单对象尾迹 · 缩放/适配 · 列表承担名称阅读 · 无模态框</text>
+</svg>

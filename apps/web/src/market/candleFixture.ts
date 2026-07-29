@@ -5,6 +5,7 @@ export type Candle = {
   low: number;
   close: number;
   volume: number;
+  amount?: number | null;
 };
 
 export type Timeframe = "日线" | "周线" | "月线";

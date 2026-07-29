@@ -16,14 +16,26 @@ class FilesystemRotationStore:
         self._root = root
 
     def publish(self, snapshot: MarketRotationSnapshot) -> Path:
+        path = self.stage(snapshot)
+        self.activate(snapshot, path)
+        return path
+
+    def stage(self, snapshot: MarketRotationSnapshot) -> Path:
         self._verify(snapshot)
         digest = snapshot.content_hash.removeprefix("sha256:")
         path = self._root / "snapshots" / digest / "snapshot.json"
-        payload = _json_bytes(snapshot.model_dump(mode="json"))
+        payload = _json_bytes(snapshot.model_dump(mode="json", exclude_unset=True))
         if path.exists() and path.read_bytes() != payload:
             raise ValueError("同一轮动身份内容冲突")
         if not path.exists():
             _atomic_write(path, payload)
+        return path
+
+    def activate(self, snapshot: MarketRotationSnapshot, path: Path) -> None:
+        self._verify(snapshot)
+        expected = self._root / "snapshots" / snapshot.content_hash.removeprefix("sha256:")
+        if path.parent != expected or not path.is_file():
+            raise ValueError("轮动快照激活路径与内容身份不一致")
         _atomic_write(
             self._root / "current.json",
             _json_bytes(
@@ -34,7 +46,6 @@ class FilesystemRotationStore:
                 }
             ),
         )
-        return path
 
     def get_current(self) -> MarketRotationSnapshot:
         pointer = json.loads((self._root / "current.json").read_text(encoding="utf-8"))
@@ -57,7 +68,9 @@ class FilesystemRotationStore:
             "as_of": snapshot.as_of,
             "formula": snapshot.formula.model_dump(mode="json"),
             "dates": snapshot.dates,
-            "points": [point.model_dump(mode="json") for point in snapshot.points],
+            "points": [
+                point.model_dump(mode="json", exclude_unset=True) for point in snapshot.points
+            ],
             "events": [event.model_dump(mode="json") for event in snapshot.events],
             "known_gaps": sorted(snapshot.known_gaps),
         }

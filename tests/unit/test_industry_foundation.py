@@ -6,7 +6,9 @@ import duckdb
 import pytest
 from pydantic import ValidationError
 
+from astramind_mini.data.adapters.event_parquet import DuckDBEventDatasetCompactor
 from astramind_mini.data.application.industry_foundation_support import (
+    canonicalize_l2_parents,
     five_year_windows,
     membership_overlap_stats,
 )
@@ -59,6 +61,68 @@ def test_taxonomy_is_strict_frozen_and_only_accepts_sw2021_l1() -> None:
     assert [row.industry_code for row in rows] == ["801010.SI"]
     with pytest.raises(ValidationError):
         rows[0].industry_name = "修改"
+
+
+def test_l2_taxonomy_preserves_parent_and_never_enters_l1_slice() -> None:
+    table = _table(
+        "index_classify",
+        (
+            {
+                "index_code": "801081.SI",
+                "industry_name": "半导体",
+                "level": "L2",
+                "industry_code": "270100",
+                "is_pub": "1",
+                "parent_code": "270000",
+                "src": "SW2021",
+            },
+        ),
+    )
+    row = normalize_taxonomy(table, level="L2")[0]
+    assert row.level == "L2"
+    assert row.parent_code == "270000"
+    assert row.industry_name == "半导体"
+    with pytest.raises(ValueError, match="分类为空"):
+        normalize_taxonomy(table)
+
+
+def test_l2_parent_is_canonical_l1_identity_and_coverage_fails_closed() -> None:
+    l1 = normalize_taxonomy(
+        _table(
+            "index_classify",
+            (
+                {
+                    "index_code": "801080.SI",
+                    "industry_name": "电子",
+                    "level": "L1",
+                    "industry_code": "270000",
+                    "is_pub": "1",
+                    "parent_code": None,
+                    "src": "SW2021",
+                },
+            ),
+        )
+    )
+    l2 = normalize_taxonomy(
+        _table(
+            "index_classify",
+            (
+                {
+                    "index_code": "801081.SI",
+                    "industry_name": "半导体",
+                    "level": "L2",
+                    "industry_code": "270100",
+                    "is_pub": "1",
+                    "parent_code": "270000",
+                    "src": "SW2021",
+                },
+            ),
+        ),
+        level="L2",
+    )
+    assert canonicalize_l2_parents(l1, l2)[0].parent_code == "801080.SI"
+    with pytest.raises(ValueError, match="无法映射"):
+        canonicalize_l2_parents(l1, (l2[0].model_copy(update={"parent_code": "999999"}),))
 
 
 def test_membership_preserves_effective_interval_and_rejects_bad_interval() -> None:
@@ -141,9 +205,9 @@ def test_membership_overlap_allows_same_industry_but_blocks_cross_industry(
             """
             COPY (
               SELECT * FROM VALUES
-                ('A', '000001.SZ', DATE '2020-01-01', DATE '2024-01-01'),
-                ('A', '000001.SZ', DATE '2023-01-01', NULL)
-              t(industry_code, instrument_id, effective_from, effective_to)
+                ('L1', 'A', '000001.SZ', DATE '2020-01-01', DATE '2024-01-01'),
+                ('L1', 'A', '000001.SZ', DATE '2023-01-01', NULL)
+              t(level, industry_code, instrument_id, effective_from, effective_to)
             ) TO ? (FORMAT PARQUET)
             """,
             [str(path)],
@@ -156,12 +220,79 @@ def test_membership_overlap_allows_same_industry_but_blocks_cross_industry(
             """
             COPY (
               SELECT * FROM VALUES
-                ('A', '000001.SZ', DATE '2020-01-01', DATE '2024-01-01'),
-                ('B', '000001.SZ', DATE '2023-01-01', NULL)
-              t(industry_code, instrument_id, effective_from, effective_to)
+                ('L1', 'A', '000001.SZ', DATE '2020-01-01', DATE '2024-01-01'),
+                ('L1', 'B', '000001.SZ', DATE '2023-01-01', NULL)
+              t(level, industry_code, instrument_id, effective_from, effective_to)
             ) TO ? (FORMAT PARQUET)
             """,
             [str(path)],
         )
     with pytest.raises(ValueError, match="跨行业重叠"):
         membership_overlap_stats(path)
+
+
+def test_compactor_allows_l1_l2_projections_of_same_source_record(tmp_path: Path) -> None:
+    source = tmp_path / "source.parquet"
+    output = tmp_path / "output.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            """
+            COPY (
+              SELECT * FROM VALUES
+                ('L1', '801080.SI', '000001.SZ', DATE '2021-01-01', NULL, 'sha256:same'),
+                ('L2', '801081.SI', '000001.SZ', DATE '2021-01-01', NULL, 'sha256:same')
+              t(level, industry_code, instrument_id, effective_from, effective_to,
+                source_record_hash)
+            ) TO ? (FORMAT PARQUET)
+            """,
+            [str(source)],
+        )
+    stats = DuckDBEventDatasetCompactor().compact(
+        source_files=(source,),
+        output=output,
+        order_by=("level", "industry_code"),
+        date_column="effective_from",
+        identity_columns=(
+            "level",
+            "industry_code",
+            "instrument_id",
+            "effective_from",
+            "effective_to",
+        ),
+    )
+    assert stats["rows"] == 2
+
+
+def test_compactor_blocks_conflicting_rows_for_same_observation_identity(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            """
+            COPY (
+              SELECT * FROM VALUES
+                ('L2', '801081.SI', '000001.SZ', DATE '2021-01-01', NULL,
+                 'sha256:first'),
+                ('L2', '801081.SI', '000001.SZ', DATE '2021-01-01', NULL,
+                 'sha256:second')
+              t(level, industry_code, instrument_id, effective_from, effective_to,
+                source_record_hash)
+            ) TO ? (FORMAT PARQUET)
+            """,
+            [str(source)],
+        )
+    with pytest.raises(ValueError, match="内容身份重复"):
+        DuckDBEventDatasetCompactor().compact(
+            source_files=(source,),
+            output=tmp_path / "output.parquet",
+            order_by=("level", "industry_code"),
+            date_column="effective_from",
+            identity_columns=(
+                "level",
+                "industry_code",
+                "instrument_id",
+                "effective_from",
+                "effective_to",
+            ),
+        )

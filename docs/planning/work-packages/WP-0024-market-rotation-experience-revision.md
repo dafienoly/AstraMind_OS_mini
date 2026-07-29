@@ -1,7 +1,7 @@
 # WP-0024：行业相对轮动体验修订
 
 - 版本：1.0.0
-- 状态：视觉前置已批准；等待单独实施指令
+- 状态：已实施
 - 需求：REQ-2026-0002 v1.2.0
 - 阶段：6C
 - UI 提案：`UI-PROP-0002 v0.2`，已于 2026-07-28 批准
@@ -116,5 +116,24 @@ git diff --check
 ## 交接
 
 - 前置：`UI-PROP-0002 v0.2` 已批准；
-- 实施证据：React 单元测试、浏览器桌面/窄屏截图、动画请求计数和公式一致性测试；
-- 下一安全动作：用户单独指令实施 WP-0024。
+- 完成日期：2026-07-28；
+- 实施结果：
+  - 相邻交易日共用一个 `requestAnimationFrame` 进度，以 ease-in-out 只插值展示
+    坐标；逻辑日期、象限和检查器在帧结束后切换，reduced motion 使用离散回放；
+  - 节点、标签和多行业轨迹使用同一安全坐标，边缘标签向内翻转并保留越界说明；
+  - 已实现选中、筛选结果、全部行业三种轨迹，可搜索组合框和完整公式抽屉；
+  - 新鲜度只消费上游显式 `expected_completed_trade_date` 或阻断标记，不在浏览器
+    猜测交易日；实际日度生产和恢复状态仍由 WP-0025 提供。
+- 自动证据：
+  - `make check`：144 项 Python、8 项 Web 测试及格式、lint、类型、构建、架构、
+    文档、密钥、规模和 10 个公共 Schema 全部通过，耗时 26.92 秒；
+  - `pnpm --filter @astramind/web test`：5 个测试文件、8 项测试通过；
+  - Web TypeScript 与 ESLint 通过；
+  - `uv run pytest tests/integration/test_rotation_api.py -q`：2 项通过；
+  - 浏览器全流程 4 项通过，耗时 8.34 秒；轮动流程证明插值中间帧、逻辑日期不提前、
+    31 条轨迹、公式抽屉和全过程只有一次业务请求。
+- 视觉证据：
+  - `var/evidence/wp-0024-market-rotation.png`；
+  - `var/evidence/wp-0024-market-rotation-mobile.png`。
+- 下一安全动作：实施 WP-0025，让交易日历、行业日线、DataSnapshot 和轮动快照在
+  收盘后增量更新，并产生页面已能消费的显式新鲜度与恢复状态。

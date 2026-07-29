@@ -44,11 +44,15 @@ class MarketRotationService:
         self._store = store
 
     def publish(self, data_snapshot_id: str) -> RotationPublication:
+        snapshot = self.build(data_snapshot_id)
+        return RotationPublication(snapshot=snapshot, path=self._store.publish(snapshot))
+
+    def build(self, data_snapshot_id: str) -> MarketRotationSnapshot:
         formula = production_formula()
         data_snapshot, calendar, industries, gaps = self._source.load(
             data_snapshot_id, required_sessions=formula.warmup_sessions + 1
         )
-        snapshot = build_rotation_snapshot(
+        return build_rotation_snapshot(
             data_snapshot_id=data_snapshot.snapshot_id,
             as_of=data_snapshot.as_of,
             created_at=data_snapshot.created_at,
@@ -57,7 +61,6 @@ class MarketRotationService:
             formula=formula,
             known_gaps=(*gaps, "price_relative_strength_proxy_not_direct_capital_flow"),
         )
-        return RotationPublication(snapshot=snapshot, path=self._store.publish(snapshot))
 
 
 __all__ = ["MarketRotationService", "RotationPublication", "production_formula"]

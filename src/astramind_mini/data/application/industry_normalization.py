@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
-from typing import TypedDict
+from typing import Literal, TypedDict
 from zoneinfo import ZoneInfo
 
 from ..contracts import (
@@ -15,6 +15,7 @@ from ..ports import ProviderTable
 from .identity import content_hash
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
+IndustryLevel = Literal["L1", "L2"]
 
 
 class _Source(TypedDict):
@@ -26,13 +27,17 @@ class _Source(TypedDict):
     source_record_hash: str
 
 
-def normalize_taxonomy(table: ProviderTable) -> tuple[IndustryTaxonomyObservation, ...]:
+def normalize_taxonomy(
+    table: ProviderTable, *, level: IndustryLevel = "L1"
+) -> tuple[IndustryTaxonomyObservation, ...]:
+    if level not in ("L1", "L2"):
+        raise ValueError(f"不支持的申万层级：{level}")
     rows = tuple(
         IndustryTaxonomyObservation(
             **_source(table, row, table.received_at),
             taxonomy="SW",
             taxonomy_version="SW2021",
-            level="L1",
+            level=level,
             industry_code=_text(row, "index_code"),
             industry_name=_text(row, "industry_name"),
             provider_industry_code=_optional_text(row, "industry_code"),
@@ -40,17 +45,24 @@ def normalize_taxonomy(table: ProviderTable) -> tuple[IndustryTaxonomyObservatio
             parent_code=_optional_text(row, "parent_code"),
         )
         for row in table.rows
-        if _text(row, "level") == "L1" and _text(row, "src") == "SW2021"
+        if _text(row, "level") == level and _text(row, "src") == "SW2021"
     )
     indexed = {row.industry_code: row for row in rows}
     if not rows or len(indexed) != len(rows):
-        raise ValueError("SW2021 一级行业分类为空或代码重复")
+        raise ValueError(f"SW2021 {level} 行业分类为空或代码重复")
     return tuple(indexed[key] for key in sorted(indexed))
 
 
 def normalize_memberships(
-    table: ProviderTable, *, industry_code: str, industry_name: str, is_current: bool
+    table: ProviderTable,
+    *,
+    industry_code: str,
+    industry_name: str,
+    is_current: bool,
+    level: IndustryLevel = "L1",
 ) -> tuple[IndustryMembershipObservation, ...]:
+    if level not in ("L1", "L2"):
+        raise ValueError(f"不支持的申万层级：{level}")
     rows = []
     for raw in table.rows:
         start, end = _date(raw, "in_date"), _optional_date(raw, "out_date")
@@ -61,7 +73,7 @@ def normalize_memberships(
                 **_source(table, raw, datetime.combine(start, time(18), tzinfo=SHANGHAI)),
                 taxonomy="SW",
                 taxonomy_version="SW2021",
-                level="L1",
+                level=level,
                 industry_code=industry_code,
                 industry_name=industry_name,
                 instrument_id=_text(raw, "ts_code"),
@@ -79,8 +91,10 @@ def normalize_memberships(
 
 
 def normalize_index_daily(
-    table: ProviderTable, *, industry_name: str
+    table: ProviderTable, *, industry_name: str, level: IndustryLevel = "L1"
 ) -> tuple[IndustryIndexDailyObservation, ...]:
+    if level not in ("L1", "L2"):
+        raise ValueError(f"不支持的申万层级：{level}")
     rows = tuple(
         IndustryIndexDailyObservation(
             **_source(
@@ -88,7 +102,7 @@ def normalize_index_daily(
             ),
             taxonomy="SW",
             taxonomy_version="SW2021",
-            level="L1",
+            level=level,
             industry_code=_text(raw, "ts_code"),
             industry_name=industry_name,
             trade_date=_date(raw, "trade_date"),

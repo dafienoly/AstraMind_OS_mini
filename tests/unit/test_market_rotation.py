@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -6,7 +7,9 @@ import pytest
 from astramind_mini.market_regime.adapters import FilesystemRotationStore
 from astramind_mini.market_regime.application import production_formula
 from astramind_mini.market_regime.contracts import MarketRotationSnapshot
+from astramind_mini.market_regime.domain.identity import content_hash
 from astramind_mini.market_regime.domain.rotation import (
+    DISPLAY_TRANSFORM_VERSION,
     IndustryCloseSeries,
     build_rotation_snapshot,
 )
@@ -64,6 +67,10 @@ def test_rotation_is_deterministic_bounded_and_not_a_trade_instruction() -> None
     }
     assert all(85 <= point.relative_trend <= 115 for point in first.points)
     assert all(85 <= point.relative_momentum <= 115 for point in first.points)
+    assert all(point.raw_z_trend is not None for point in first.points)
+    assert all(
+        point.display_transform_version == DISPLAY_TRANSFORM_VERSION for point in first.points
+    )
     assert "order" not in first.model_dump_json().lower()
 
 
@@ -122,3 +129,36 @@ def test_rotation_store_is_immutable_and_detects_corruption(tmp_path: Path) -> N
     path.write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError):
         store.get_current()
+
+
+def test_rotation_store_keeps_legacy_snapshot_identity_without_null_rewrite(
+    tmp_path: Path,
+) -> None:
+    payload = _build().model_dump(mode="json")
+    for point in payload["points"]:
+        point.pop("raw_z_trend")
+        point.pop("raw_z_momentum")
+        point.pop("display_transform_version")
+    parsed = MarketRotationSnapshot.model_validate_json(json.dumps(payload))
+    identity = {
+        "data_snapshot_id": parsed.data_snapshot_id,
+        "as_of": parsed.as_of,
+        "formula": parsed.formula.model_dump(mode="json"),
+        "dates": parsed.dates,
+        "points": [point.model_dump(mode="json", exclude_unset=True) for point in parsed.points],
+        "events": [event.model_dump(mode="json") for event in parsed.events],
+        "known_gaps": sorted(parsed.known_gaps),
+    }
+    digest = content_hash(identity)
+    legacy = parsed.model_copy(
+        update={
+            "content_hash": digest,
+            "rotation_snapshot_id": "rotation:" + digest,
+        }
+    )
+    store = FilesystemRotationStore(tmp_path)
+    path = store.publish(legacy)
+    assert '"raw_z_trend"' not in path.read_text(encoding="utf-8")
+    restored = store.get_current()
+    assert restored.points[0].raw_z_trend is None
+    assert restored.rotation_snapshot_id == legacy.rotation_snapshot_id

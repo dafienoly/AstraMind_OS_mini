@@ -1,46 +1,108 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
-import type { Quadrant, RotationPoint } from "./rotationTypes";
-import { quadrantLabels } from "./rotationTypes";
+import type {
+  RotationPoint,
+  RotationTrail,
+  VisualRotationPoint,
+} from "./rotationTypes";
+import { RotationNode } from "./RotationNode";
+import { RotationLabelLeaders } from "./RotationLabelLeaders";
+import { layoutRotationLabels } from "./rotationLabelLayout";
+import { projectVisualPoint } from "./rotationProjection";
+import { motionState } from "./rotationIdentity";
+import {
+  applyRotationViewport,
+  DEFAULT_ROTATION_VIEWPORT,
+} from "./rotationViewport";
+import type { RotationViewport } from "./rotationViewport";
+import { useElementSize } from "./useElementSize";
+import { useRotationPan } from "./useRotationPan";
 
 interface RotationChartProps {
-  current: RotationPoint[];
-  trails: RotationPoint[];
+  ariaLabel?: string;
+  current: VisualRotationPoint[];
+  trails: RotationTrail[];
   selectedCode: string;
   dimmedCodes: Set<string>;
+  progress: number;
   onSelect: (code: string) => void;
+  onClear: () => void;
+  history: RotationPoint[];
+  focusedCode?: string;
+  showPointDetails?: boolean;
+  viewport?: RotationViewport;
+  onViewportChange?: (viewport: RotationViewport) => void;
 }
 
-const MIN = 85;
-const SPAN = 30;
-
-function position(value: number) {
-  return `${Math.max(0, Math.min(100, ((value - MIN) / SPAN) * 100))}%`;
-}
-
-function trailPath(points: RotationPoint[]) {
+function trailPath(points: VisualRotationPoint[], viewport: RotationViewport) {
   return points
     .map((point, index) => {
-      const x = ((point.relative_trend - MIN) / SPAN) * 1000;
-      const y = 620 - ((point.relative_momentum - MIN) / SPAN) * 620;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      const coordinate = applyRotationViewport(projectVisualPoint(point), viewport);
+      return `${index === 0 ? "M" : "L"}${coordinate.x.toFixed(4)},${(100 - coordinate.y).toFixed(4)}`;
     })
     .join(" ");
 }
 
-function quadrantClass(quadrant: Quadrant) {
-  return `rotation-node rotation-node--${quadrant}`;
-}
-
 export const RotationChart = memo(function RotationChart({
+  ariaLabel = "行业相对轮动四象限",
   current,
   trails,
   selectedCode,
   dimmedCodes,
+  progress,
   onSelect,
+  onClear,
+  history,
+  focusedCode = "",
+  showPointDetails = false,
+  viewport = DEFAULT_ROTATION_VIEWPORT,
+  onViewportChange,
 }: RotationChartProps) {
+  const panHandlers = useRotationPan(viewport, onViewportChange, onClear);
+  const plotSize = useElementSize();
+  const labelPlacements = useMemo(() => layoutRotationLabels(current.map((point) => {
+    const coordinate = applyRotationViewport(projectVisualPoint(point), viewport);
+    const selected = point.industry_code === selectedCode;
+    const emphasized = selected || point.industry_code === focusedCode;
+    return {
+      code: point.industry_code,
+      name: point.industry_name,
+      nodeX: coordinate.x / 100 * plotSize.width,
+      nodeY: (100 - coordinate.y) / 100 * plotSize.height,
+      selected,
+      emphasized,
+      detailed: showPointDetails && emphasized,
+    };
+  }), plotSize.width, plotSize.height), [
+    current,
+    focusedCode,
+    plotSize.height,
+    plotSize.width,
+    selectedCode,
+    showPointDetails,
+    viewport,
+  ]);
+  const labelsByCode = useMemo(
+    () => new Map(labelPlacements.map((placement) => [placement.code, placement])),
+    [labelPlacements],
+  );
+
   return (
-    <section className="rotation-plot" aria-label="行业相对轮动四象限">
+    <section
+      aria-label={ariaLabel}
+      className={[
+        "rotation-plot",
+        current.length > 30 ? "rotation-plot--dense-labels" : "",
+        onViewportChange ? "rotation-plot--pannable" : "",
+      ].join(" ")}
+      data-animation-progress={progress.toFixed(3)}
+      data-label-count={labelPlacements.length}
+      data-label-rail-count={labelPlacements.filter((placement) => placement.rail).length}
+      data-trail-count={trails.length}
+      data-zoom={viewport.zoom.toFixed(2)}
+      ref={plotSize.ref}
+      {...panHandlers}
+    >
       <div className="quadrant quadrant--improving">
         <strong>弱势改善</strong><span>趋势偏弱 · 动量回升</span>
       </div>
@@ -53,31 +115,51 @@ export const RotationChart = memo(function RotationChart({
       <div className="quadrant quadrant--weakening">
         <strong>强势降温</strong><span>趋势偏强 · 动量回落</span>
       </div>
+      <div className="plot-safe-frame" aria-hidden="true">
+        <small>安全绘图区</small>
+      </div>
       <span className="axis-label axis-label--x">相对趋势 →</span>
       <span className="axis-label axis-label--y">相对动量 →</span>
-      <svg className="rotation-trail" viewBox="0 0 1000 620" aria-hidden="true">
-        {trails.length > 1 ? <path d={trailPath(trails)} /> : null}
+      <svg
+        className="rotation-trail"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+      >
+        {trails.map((trail) => (
+          <path
+            className={trail.selected ? "is-selected" : ""}
+            d={trailPath(trail.points, viewport)}
+            key={trail.industryCode}
+            data-motion={trail.motionState}
+            style={{ stroke: trail.color }}
+          />
+        ))}
       </svg>
-      {current.map((point) => (
-        <button
-          type="button"
+      <RotationLabelLeaders
+        height={plotSize.height}
+        placements={labelPlacements}
+        width={plotSize.width}
+      />
+      {current.map((point) => {
+        const pointHistory = history.filter((item) =>
+          item.industry_code === point.industry_code
+          && item.trade_date <= point.trade_date);
+        const state = motionState(pointHistory);
+        return <RotationNode
+          dimmed={dimmedCodes.has(point.industry_code)}
+          focusedCode={focusedCode}
+          history={pointHistory}
           key={point.industry_code}
-          className={[
-            quadrantClass(point.quadrant),
-            point.industry_code === selectedCode ? "is-selected" : "",
-            dimmedCodes.has(point.industry_code) ? "is-dimmed" : "",
-          ].join(" ")}
-          style={{
-            left: position(point.relative_trend),
-            bottom: position(point.relative_momentum),
-          }}
-          aria-label={`${point.industry_name}，${point.trade_date}，相对趋势 ${point.relative_trend.toFixed(2)}，相对动量 ${point.relative_momentum.toFixed(2)}，${quadrantLabels[point.quadrant]}`}
-          onClick={() => onSelect(point.industry_code)}
-        >
-          <i aria-hidden="true" />
-          <span>{point.industry_name}</span>
-        </button>
-      ))}
+          labelPlacement={labelsByCode.get(point.industry_code)}
+          onSelect={onSelect}
+          point={point}
+          selectedCode={selectedCode}
+          showPointDetails={showPointDetails}
+          state={state}
+          viewport={viewport}
+        />;
+      })}
     </section>
   );
 });

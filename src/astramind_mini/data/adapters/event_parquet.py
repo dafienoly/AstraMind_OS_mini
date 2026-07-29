@@ -15,13 +15,17 @@ class DuckDBEventDatasetCompactor:
         output: Path,
         order_by: tuple[str, ...],
         date_column: str,
+        identity_columns: tuple[str, ...] = ("source_record_hash",),
     ) -> dict[str, object]:
         if not source_files:
             raise ValueError("事件年度分区没有请求制品")
+        if not identity_columns:
+            raise ValueError("事件数据观察身份列不能为空")
         output.parent.mkdir(parents=True, exist_ok=True)
         temporary = output.with_suffix(".parquet.tmp")
         temporary.unlink(missing_ok=True)
         ordering = ", ".join(f'"{column}"' for column in order_by)
+        identity = ", ".join(f'"{column}"' for column in identity_columns)
         target = str(temporary).replace("'", "''")
         with duckdb.connect(":memory:") as connection:
             connection.execute(
@@ -35,7 +39,7 @@ class DuckDBEventDatasetCompactor:
             )
             row = connection.execute(
                 f"""
-                SELECT count(*), count(DISTINCT source_record_hash),
+                SELECT count(*), count(DISTINCT ({identity})),
                        min("{date_column}"), max("{date_column}")
                 FROM read_parquet(?)
                 """,

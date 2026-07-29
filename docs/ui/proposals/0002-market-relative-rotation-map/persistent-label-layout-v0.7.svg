@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+  <style>
+    .cn{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#172129}
+    .mono{font-family:"IBM Plex Mono",monospace;fill:#52616a}
+    .title{font-size:28px;font-weight:750}.h2{font-size:18px;font-weight:700}
+    .body{font-size:13px}.small{font-size:11px}.tiny{font-size:9px}
+    .muted{fill:#68747c}.blue{fill:#2e5e84}.white{fill:#fff}
+    .rule{stroke:#cbd5d0}.leader{fill:none;stroke:#879690;stroke-width:1}
+    .node{fill:#fff;stroke-width:2}.label{fill:#fff;stroke:#c5cfca}
+  </style>
+  <rect width="1600" height="960" fill="#f2f4f3"/>
+  <rect width="1600" height="94" fill="#fff"/>
+  <text x="38" y="43" class="cn title">相对轮动 · 常驻名称布局</text>
+  <text x="38" y="69" class="cn body muted">名称永不隐藏；位置密集时移动标签，不移动数据节点</text>
+  <text x="1450" y="35" class="mono small blue">UI-PROP-0002</text>
+  <text x="1472" y="57" class="mono small">v0.7 · DRAFT</text>
+
+  <!-- compact -->
+  <rect x="34" y="122" width="430" height="800" fill="#fff" stroke="#bdc9c3"/>
+  <text x="56" y="154" class="cn small muted">紧凑态 · 350px 导航列</text>
+  <text x="56" y="182" class="cn h2">名称常驻，尾迹聚焦</text>
+  <text x="56" y="205" class="cn small muted">智能布局 · 12 / 12 个名称可见</text>
+  <rect x="56" y="230" width="386" height="386" fill="#fff" stroke="#cbd5d0"/>
+  <rect x="56" y="230" width="193" height="193" fill="#edf4f8"/>
+  <rect x="249" y="230" width="193" height="193" fill="#faf7f0"/>
+  <rect x="56" y="423" width="193" height="193" fill="#f4f7f6"/>
+  <rect x="249" y="423" width="193" height="193" fill="#fbf6f2"/>
+  <line x1="249" y1="230" x2="249" y2="616" class="rule"/>
+  <line x1="56" y1="423" x2="442" y2="423" class="rule"/>
+  <text x="68" y="250" class="cn tiny">弱势改善</text>
+  <text x="360" y="250" class="cn tiny">强势领先</text>
+  <text x="68" y="602" class="cn tiny">弱势落后</text>
+  <text x="360" y="602" class="cn tiny">强势降温</text>
+
+  <!-- compact leaders and labels -->
+  <path d="M163 330 L128 306 L82 306" class="leader"/>
+  <circle cx="163" cy="330" r="5" class="node" stroke="#2e5e84"/>
+  <rect x="72" y="294" width="58" height="22" class="label"/>
+  <text x="78" y="309" class="cn tiny">北方华创</text>
+  <path d="M185 351 L131 349" class="leader"/>
+  <circle cx="185" cy="351" r="5" class="node" stroke="#725aa5"/>
+  <rect x="76" y="338" width="58" height="22" class="label"/>
+  <text x="82" y="353" class="cn tiny">兆易创新</text>
+  <path d="M212 365 L170 389 L123 389" class="leader"/>
+  <circle cx="212" cy="365" r="5" class="node" stroke="#238267"/>
+  <rect x="68" y="378" width="58" height="22" class="label"/>
+  <text x="74" y="393" class="cn tiny">韦尔股份</text>
+  <path d="M305 312 L332 290" class="leader"/>
+  <circle cx="305" cy="312" r="5" class="node" stroke="#c34b43"/>
+  <rect x="329" y="278" width="64" height="22" class="label"/>
+  <text x="335" y="293" class="cn tiny">中微公司</text>
+  <path d="M323 335 L354 326" class="leader"/>
+  <circle cx="323" cy="335" r="5" class="node" stroke="#b47a22"/>
+  <rect x="351" y="315" width="64" height="22" class="label"/>
+  <text x="357" y="330" class="cn tiny">海光信息</text>
+  <path d="M285 365 L349 365" class="leader"/>
+  <circle cx="285" cy="365" r="5" class="node" stroke="#2e5e84"/>
+  <rect x="346" y="354" width="64" height="22" class="label"/>
+  <text x="352" y="369" class="cn tiny">寒武纪-U</text>
+  <path d="M289 451 L344 444" class="leader"/>
+  <circle cx="289" cy="451" r="5" class="node" stroke="#a46b18"/>
+  <rect x="341" y="433" width="64" height="22" class="label"/>
+  <text x="347" y="448" class="cn tiny">沪硅产业</text>
+  <path d="M322 478 L353 485" class="leader"/>
+  <circle cx="322" cy="478" r="5" class="node" stroke="#c34b43"/>
+  <rect x="350" y="474" width="64" height="22" class="label"/>
+  <text x="356" y="489" class="cn tiny">澜起科技</text>
+  <path d="M170 473 L130 455" class="leader"/>
+  <circle cx="170" cy="473" r="5" class="node" stroke="#238267"/>
+  <rect x="75" y="443" width="58" height="22" class="label"/>
+  <text x="81" y="458" class="cn tiny">晶晨股份</text>
+  <path d="M194 500 L133 500" class="leader"/>
+  <circle cx="194" cy="500" r="5" class="node" stroke="#725aa5"/>
+  <rect x="78" y="489" width="58" height="22" class="label"/>
+  <text x="84" y="504" class="cn tiny">卓胜微</text>
+  <path d="M219 532 L164 550 L119 550" class="leader"/>
+  <circle cx="219" cy="532" r="5" class="node" stroke="#2e5e84"/>
+  <rect x="64" y="539" width="58" height="22" class="label"/>
+  <text x="70" y="554" class="cn tiny">圣邦股份</text>
+  <path d="M268 398 L292 380 L318 380" fill="none" stroke="#2e5e84" stroke-width="3" stroke-dasharray="5 4"/>
+  <circle cx="268" cy="398" r="8" fill="#fff" stroke="#2e5e84" stroke-width="3"/>
+  <rect x="315" y="367" width="91" height="28" fill="#172129"/>
+  <text x="323" y="385" class="cn small white">中芯国际 · ↑◎</text>
+
+  <text x="56" y="648" class="cn body" font-weight="700">布局优先级</text>
+  <text x="56" y="674" class="cn small muted">① 节点旁八方向试放　② 同象限内错层</text>
+  <text x="56" y="697" class="cn small muted">③ 进入左右标签轨，用细线连接真实位置</text>
+  <line x1="56" y1="722" x2="442" y2="722" class="rule"/>
+  <text x="56" y="752" class="cn body" font-weight="700">不被布局改变的事实</text>
+  <text x="56" y="779" class="cn small muted">节点坐标、象限、尾迹末端、筛选与排序均不变。</text>
+  <text x="56" y="805" class="cn small muted">选中对象使用深色标签；其他名称保持白底细边。</text>
+  <rect x="56" y="840" width="386" height="50" fill="#fff9ef" stroke="#dec9a1"/>
+  <text x="70" y="860" class="cn small" fill="#8b5e1b">对象较多时自动提示“已沿边排布”</text>
+  <text x="70" y="879" class="cn tiny" fill="#8b5e1b">名称不会隐藏；展开聚焦可获得更准确的空间阅读。</text>
+
+  <!-- focus -->
+  <rect x="490" y="122" width="1076" height="800" fill="#fff" stroke="#bdc9c3"/>
+  <text x="518" y="154" class="cn small muted">聚焦态 · 标签轨与真实节点分离</text>
+  <text x="518" y="182" class="cn h2">空间关系保持准确，名称沿边有序落位</text>
+  <rect x="518" y="212" width="728" height="650" fill="#fff" stroke="#cbd5d0"/>
+  <rect x="518" y="212" width="364" height="325" fill="#edf4f8"/>
+  <rect x="882" y="212" width="364" height="325" fill="#faf7f0"/>
+  <rect x="518" y="537" width="364" height="325" fill="#f4f7f6"/>
+  <rect x="882" y="537" width="364" height="325" fill="#fbf6f2"/>
+  <line x1="882" y1="212" x2="882" y2="862" class="rule"/>
+  <line x1="518" y1="537" x2="1246" y2="537" class="rule"/>
+  <rect x="552" y="246" width="660" height="582" fill="none" stroke="#aab7b1" stroke-dasharray="4 5"/>
+  <text x="538" y="238" class="cn small">弱势改善</text>
+  <text x="1150" y="238" class="cn small">强势领先</text>
+  <text x="538" y="846" class="cn small">弱势落后</text>
+  <text x="1150" y="846" class="cn small">强势降温</text>
+
+  <!-- focus cluster -->
+  <circle cx="820" cy="442" r="6" class="node" stroke="#2e5e84"/>
+  <circle cx="847" cy="459" r="6" class="node" stroke="#725aa5"/>
+  <circle cx="866" cy="431" r="6" class="node" stroke="#238267"/>
+  <circle cx="902" cy="417" r="6" class="node" stroke="#c34b43"/>
+  <circle cx="929" cy="452" r="6" class="node" stroke="#b47a22"/>
+  <circle cx="954" cy="434" r="6" class="node" stroke="#2e5e84"/>
+  <path d="M820 442 L758 392 L690 392" class="leader"/>
+  <rect x="604" y="378" width="90" height="28" class="label"/>
+  <text x="615" y="397" class="cn small">北方华创</text>
+  <path d="M847 459 L760 432 L690 432" class="leader"/>
+  <rect x="604" y="418" width="90" height="28" class="label"/>
+  <text x="615" y="437" class="cn small">兆易创新</text>
+  <path d="M866 431 L780 472 L690 472" class="leader"/>
+  <rect x="604" y="458" width="90" height="28" class="label"/>
+  <text x="615" y="477" class="cn small">韦尔股份</text>
+  <path d="M902 417 L1014 374 L1078 374" class="leader"/>
+  <rect x="1074" y="360" width="96" height="28" class="label"/>
+  <text x="1085" y="379" class="cn small">中微公司</text>
+  <path d="M929 452 L1024 414 L1078 414" class="leader"/>
+  <rect x="1074" y="400" width="96" height="28" class="label"/>
+  <text x="1085" y="419" class="cn small">海光信息</text>
+  <path d="M954 434 L1034 454 L1078 454" class="leader"/>
+  <rect x="1074" y="440" width="96" height="28" class="label"/>
+  <text x="1085" y="459" class="cn small">寒武纪-U</text>
+  <path d="M870 602 L918 560 L976 520" fill="none" stroke="#2e5e84" stroke-width="4" stroke-dasharray="7 5"/>
+  <circle cx="870" cy="602" r="10" fill="#fff" stroke="#2e5e84" stroke-width="4"/>
+  <rect x="900" y="584" width="140" height="38" fill="#172129"/>
+  <text x="911" y="600" class="cn small white" font-weight="700">中芯国际 · 加速上升</text>
+  <text x="911" y="615" class="mono tiny white">X 105.42 · Y 107.18</text>
+  <text x="606" y="817" class="cn tiny muted">左标签轨</text>
+  <text x="1100" y="817" class="cn tiny muted">右标签轨</text>
+
+  <!-- rules -->
+  <rect x="1268" y="212" width="270" height="650" fill="#fff" stroke="#cbd5d0"/>
+  <text x="1292" y="246" class="cn h2">常驻名称规则</text>
+  <line x1="1292" y1="264" x2="1514" y2="264" class="rule"/>
+  <text x="1292" y="294" class="mono small blue">01 · 永不隐藏</text>
+  <text x="1292" y="318" class="cn small muted">筛选淡化名称，但不移除名称。</text>
+  <text x="1292" y="359" class="mono small blue">02 · 只移动标签</text>
+  <text x="1292" y="383" class="cn small muted">引导线起点始终是真实节点。</text>
+  <text x="1292" y="424" class="mono small blue">03 · 稳定布局</text>
+  <text x="1292" y="448" class="cn small muted">同一视口与日期得到同一位置，</text>
+  <text x="1292" y="466" class="cn small muted">避免播放时标签随机跳动。</text>
+  <text x="1292" y="507" class="mono small blue">04 · 选择优先</text>
+  <text x="1292" y="531" class="cn small muted">选中名称深色、置顶并带指标；</text>
+  <text x="1292" y="549" class="cn small muted">其他名称仍保持可读。</text>
+  <text x="1292" y="590" class="mono small blue">05 · 高密度提示</text>
+  <text x="1292" y="614" class="cn small muted">超过 16 个对象优先使用标签轨；</text>
+  <text x="1292" y="632" class="cn small muted">超过 30 个建议展开，但不隐藏。</text>
+  <line x1="1292" y1="668" x2="1514" y2="668" class="rule"/>
+  <text x="1292" y="700" class="cn body" font-weight="700">移动端</text>
+  <text x="1292" y="727" class="cn small muted">全宽画布；上下标签轨按象限分组。</text>
+  <text x="1292" y="749" class="cn small muted">名称使用证券简称/行业标准简称，</text>
+  <text x="1292" y="771" class="cn small muted">不截断为无法识别的代码。</text>
+  <rect x="1292" y="798" width="222" height="38" fill="#edf4f8" stroke="#2e5e84"/>
+  <text x="1304" y="822" class="cn small blue">节点准确 · 名称清楚 · 尾迹克制</text>
+</svg>

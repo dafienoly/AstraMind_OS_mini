@@ -63,6 +63,7 @@ class ConstraintSupplementService:
                 table_state[key] = {
                     "path": str(path),
                     "request_identity": provider_table.request_identity,
+                    "received_at": provider_table.received_at.isoformat(),
                     "rows": len(rows),
                 }
                 save_state(state_path, state)

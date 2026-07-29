@@ -1,26 +1,43 @@
 import type { ReactNode } from "react";
 
-import type { PaperOperations } from "./types";
+import {
+  DailyAttentionInbox,
+  DailyRunHistory,
+  DailyRunRail,
+} from "./DailyOperationsPanel";
+import type {
+  DailyRunRequestAction,
+  OperationsPayload,
+  PaperOperations,
+} from "./types";
 
-export function TodayView({ value }: { value: PaperOperations }) {
+export function TodayView({
+  value,
+  onDailyAction,
+}: {
+  value: OperationsPayload;
+  onDailyAction: (action: DailyRunRequestAction) => void;
+}) {
+  const paper = value.paper;
   return (
     <main className="ops-main">
-      <PageHeading eyebrow="TODAY / 2026-07-28" title="下一动作很明确" copy={value.next_action} />
+      <PageHeading eyebrow="TODAY / LOCAL" title="下一动作很明确" copy={paper.next_action} />
+      <DailyAttentionInbox items={value.daily?.attention ?? []} onAction={onDailyAction} />
       <section className="timeline" aria-label="今日决策时间线">
-        <TimelineStep label="目标" title={`${value.instrument_id ?? "尚无证券"} · 买入`}>
-          来自不可变目标组合；计划数量 {value.quantity ?? 0} 股。
+        <TimelineStep label="目标" title={`${paper.instrument_id ?? "尚无证券"} · 买入`}>
+          来自不可变目标组合；计划数量 {paper.quantity ?? 0} 股。
         </TimelineStep>
         <TimelineStep label="授权" title="StandingMandate 已建立">
-          最大单笔 {money(value.max_notional_cny)}，只允许一笔金丝雀。
+          最大单笔 {money(paper.max_notional_cny)}，只允许一笔金丝雀。
         </TimelineStep>
-        <TimelineStep label="窗口" title={windowLabel(value)}>
+        <TimelineStep label="窗口" title={windowLabel(paper)}>
           窗口外不提交；窗口内仍需新鲜卖一和确切限价批准。
         </TimelineStep>
         <TimelineStep label="券商" title="没有发生写入" blocked>
-          当前委托意图 {value.intent_count}，券商观察 {value.observation_count}。
+          当前委托意图 {paper.intent_count}，券商观察 {paper.observation_count}。
         </TimelineStep>
       </section>
-      <AttentionBand value={value} />
+      <AttentionBand value={paper} />
     </main>
   );
 }
@@ -91,9 +108,13 @@ export function ExecutionView({ value }: { value: PaperOperations }) {
 export function SystemView({
   value,
   onRefresh,
+  onDailyAction,
+  isRefreshing,
 }: {
-  value: PaperOperations;
+  value: OperationsPayload;
   onRefresh: () => void;
+  onDailyAction: (action: DailyRunRequestAction) => void;
+  isRefreshing: boolean;
 }) {
   return (
     <main className="ops-main">
@@ -102,24 +123,46 @@ export function SystemView({
         title="只显示今天是否可运行"
         copy="账户标识、Token、Windows 路径和原始券商载荷不会出现在这里。"
       />
+      <DailyRunRail value={value.daily} />
       <div className="system-columns">
         <section>
           <p className="section-kicker">运行证据</p>
-          <StatusLine label="Paper 账户基线" value={value.account_baseline_state} />
-          <StatusLine label="MiniQMT 会话" value={value.broker_connection} />
-          <StatusLine label="StandingMandate" value={stateLabel(value.canary_state)} />
-          <StatusLine label="未完成委托" value={`${value.open_order_count} 笔`} />
+          <StatusLine label="日度数据管线" value={pipelineStatus(value)} />
+          <StatusLine label="研究决策链" value={decisionStatus(value)} />
+          <StatusLine label="Paper 账户基线" value={value.paper.account_baseline_state} />
+          <StatusLine label="MiniQMT 会话" value={value.paper.broker_connection} />
+          <StatusLine label="StandingMandate" value={stateLabel(value.paper.canary_state)} />
+          <StatusLine label="未完成委托" value={`${value.paper.open_order_count} 笔`} />
         </section>
         <section>
           <p className="section-kicker">恢复</p>
           <h2>先读事实，再决定动作</h2>
           <p>重启后先查询账户、委托和成交；任何未知提交都不能直接重提。</p>
-          <button className="quiet-button" onClick={onRefresh} type="button">刷新本地投影</button>
+          <button className="quiet-button" disabled={isRefreshing} onClick={onRefresh} type="button">
+            {isRefreshing ? "正在刷新…" : "刷新本地投影"}
+          </button>
         </section>
       </div>
-      <AttentionBand value={value} />
+      <DailyAttentionInbox items={value.daily?.attention ?? []} onAction={onDailyAction} />
+      <DailyRunHistory runs={value.daily?.recent_runs ?? []} />
+      <AttentionBand value={value.paper} />
     </main>
   );
+}
+
+function pipelineStatus(value: OperationsPayload) {
+  const pipeline = value.daily?.pipeline;
+  if (!pipeline) return "尚未运行";
+  if (pipeline.state === "current") {
+    return `${pipeline.target_date} · L1 ${pipeline.observed_l1_count} / L2 ${pipeline.observed_l2_count}`;
+  }
+  return `${pipeline.target_date} · ${pipeline.state}`;
+}
+
+function decisionStatus(value: OperationsPayload) {
+  const decision = value.daily?.decision;
+  if (!decision) return "尚未生成";
+  return `${decision.signal_date} · Shadow ${decision.shadow_preflight_state} / Paper ${decision.paper_preflight_state}`;
 }
 
 function PageHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {

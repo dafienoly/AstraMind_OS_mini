@@ -50,6 +50,7 @@ def publish_industry_foundation(
     dataset_store: FileDatasetStore,
     snapshot_store: ReleasableSnapshotStore,
     ledger: DataArtifactLedger,
+    include_l2: bool = False,
 ) -> IndustryFoundationPublication:
     requests = _requests(state)
     retrieved_at = max(
@@ -67,6 +68,7 @@ def publish_industry_foundation(
         taxonomy_rows=taxonomy_rows,
         membership_stats=membership_stats,
         daily_stats=daily_stats,
+        include_l2=include_l2,
     )
     for manifest in manifests:
         manifest_path = dataset_store.publish_files(manifest, artifacts[manifest.dataset_name])
@@ -75,7 +77,9 @@ def publish_industry_foundation(
         manifests=(*base.values(), *manifests),
         as_of=retrieved_at,
         created_at=retrieved_at,
-        code_identity="req-0008-industry-foundation-v1",
+        code_identity=(
+            "wp-0026-industry-hierarchy-v1" if include_l2 else "req-0008-industry-foundation-v1"
+        ),
     )
     snapshot_path = snapshot_store.publish(snapshot)
     ledger.record_snapshot(snapshot, snapshot_path)
@@ -103,6 +107,7 @@ def _manifests_and_artifacts(
     taxonomy_rows: int,
     membership_stats: dict[str, object],
     daily_stats: dict[str, object],
+    include_l2: bool,
 ) -> tuple[tuple[DatasetManifest, ...], dict[str, dict[str, tuple[Path, str]]]]:
     definitions = _dataset_definitions(
         end_date=end_date,
@@ -113,6 +118,7 @@ def _manifests_and_artifacts(
         taxonomy_rows=taxonomy_rows,
         membership_stats=membership_stats,
         daily_stats=daily_stats,
+        include_l2=include_l2,
     )
     manifests, artifacts = [], {}
     endpoints = {
@@ -154,6 +160,7 @@ def _dataset_definitions(
     taxonomy_rows: int,
     membership_stats: dict[str, object],
     daily_stats: dict[str, object],
+    include_l2: bool,
 ) -> tuple[DatasetDefinition, ...]:
     overlap_count = _integer(membership_stats["same_industry_overlap_rows"])
     overlap_gaps = (
@@ -167,7 +174,10 @@ def _dataset_definitions(
             ("industry_code",),
             (retrieved_at.date(), retrieved_at.date()),
             "retrieved_at",
-            ("taxonomy:SW2021", "level:L1"),
+            (
+                "taxonomy:SW2021",
+                "levels:L1,L2" if include_l2 else "level:L1",
+            ),
             (),
         ),
         (
@@ -177,7 +187,10 @@ def _dataset_definitions(
             ("industry_code", "instrument_id", "effective_from", "effective_to"),
             (date.fromisoformat(str(membership_stats["start_date"])), end_date),
             "effective_from 18:00 Asia/Shanghai; effective_to is exclusive",
-            ("taxonomy:SW2021", "level:L1"),
+            (
+                "taxonomy:SW2021",
+                "levels:L1,L2" if include_l2 else "level:L1",
+            ),
             (
                 "historical_membership_publication_time_unavailable",
                 "pre_2021_membership_is_provider_backcast_under_SW2021",
@@ -196,6 +209,7 @@ def _dataset_definitions(
             "trade_date 18:00 Asia/Shanghai",
             (
                 "price:index_points",
+                "levels:L1,L2" if include_l2 else "level:L1",
                 "volume:provider_native_unverified",
                 "amount:provider_native_unverified",
                 "valuation:provider_native",

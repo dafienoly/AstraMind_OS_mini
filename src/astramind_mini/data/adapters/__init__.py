@@ -1,6 +1,7 @@
 """Data adapters."""
 
 from .control_ledger import DataControlLedger
+from .daily_pipeline_store import DailyPipelineStore
 from .duckdb_query import DuckDBSnapshotQuery
 from .event_parquet import DuckDBEventDatasetCompactor
 from .filesystem import (
@@ -20,6 +21,7 @@ from .tushare_client import TushareHttpClient, TushareRequestError
 from .tushare_probe import TushareCapabilityProbe
 
 __all__ = [
+    "DailyPipelineStore",
     "DataControlLedger",
     "DuckDBCorporateActionProjector",
     "DuckDBEventDatasetCompactor",

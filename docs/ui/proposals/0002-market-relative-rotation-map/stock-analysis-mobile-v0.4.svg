@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="430" height="980" viewBox="0 0 430 980">
+  <defs>
+    <style>
+      text { font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; fill: #172129; }
+      .mono { font-family: "IBM Plex Mono", monospace; }
+      .muted { fill: #68747c; }
+      .tiny { font-size: 10px; }
+      .small { font-size: 12px; }
+      .body { font-size: 14px; }
+      .head { font-size: 18px; font-weight: 700; }
+      .hair { stroke: #d4dcda; }
+      text[fill="#fff"] { fill: #fff; }
+      text[fill="#c34b43"] { fill: #c34b43; }
+      text[fill="#9a641d"] { fill: #9a641d; }
+    </style>
+  </defs>
+  <rect width="430" height="980" fill="#f2f4f3"/>
+  <rect width="430" height="48" fill="#fff"/>
+  <text x="16" y="30" class="mono small" font-weight="700">ASTRAMIND / MINI</text>
+  <text x="356" y="30" class="tiny muted">只读研究</text>
+  <rect y="48" width="430" height="32" fill="#fff" stroke="#d4dcda"/>
+  <text x="16" y="68" class="tiny">数据 2026-07-27 完整</text>
+  <text x="324" y="68" class="tiny" fill="#9a641d">不是买卖信号</text>
+
+  <text x="16" y="104" class="tiny muted">电子 / 半导体 / 个股证据</text>
+  <text x="16" y="132" class="head">中芯国际</text>
+  <text x="105" y="132" class="small mono muted">688981.SH</text>
+  <text x="16" y="151" class="tiny muted">截止 2026-07-27 · 同一不可变快照</text>
+
+  <rect x="16" y="168" width="398" height="42" fill="#fff" stroke="#c5cfca"/>
+  <rect x="24" y="175" width="42" height="28" fill="#2e5e84"/>
+  <text x="35" y="193" class="tiny" fill="#fff">日K</text>
+  <text x="79" y="193" class="tiny">周K　月K</text>
+  <text x="163" y="193" class="tiny muted">均线 5·10·30·60·120</text>
+  <text x="324" y="193" class="tiny">MACD⌄</text>
+
+  <rect x="16" y="222" width="398" height="120" fill="#fff" stroke="#c5cfca"/>
+  <text x="28" y="245" class="tiny muted">半导体个股四象限 · 横向查看</text>
+  <line x1="215" y1="254" x2="215" y2="330" class="hair"/>
+  <line x1="28" y1="292" x2="402" y2="292" class="hair"/>
+  <circle cx="318" cy="270" r="9" fill="#2e5e84" stroke="#172129" stroke-width="2"/>
+  <rect x="264" y="303" width="106" height="22" fill="#172129"/>
+  <text x="274" y="318" class="tiny" fill="#fff">中芯国际 · 加速</text>
+  <circle cx="130" cy="275" r="5" fill="#7e6950"/>
+  <circle cx="170" cy="310" r="5" fill="#906a88"/>
+  <circle cx="290" cy="312" r="5" fill="#4f8175"/>
+
+  <rect x="16" y="354" width="398" height="292" fill="#fff" stroke="#c5cfca"/>
+  <text x="28" y="378" class="tiny muted">日K · 前复权研究视图</text>
+  <line x1="28" y1="426" x2="402" y2="426" stroke="#e8ecea"/>
+  <line x1="28" y1="484" x2="402" y2="484" stroke="#e8ecea"/>
+  <line x1="28" y1="542" x2="402" y2="542" stroke="#e8ecea"/>
+  <path d="M34 548 C80 530 105 538 145 505 S215 480 255 446 S320 430 398 388" fill="none" stroke="#315f99" stroke-width="2"/>
+  <path d="M34 564 C105 547 165 530 220 504 S325 466 398 440" fill="none" stroke="#b47a22" stroke-width="2"/>
+  <g stroke-width="2">
+    <line x1="60" y1="528" x2="60" y2="566" stroke="#c34b43"/><rect x="55" y="538" width="10" height="20" fill="#c34b43"/>
+    <line x1="95" y1="510" x2="95" y2="548" stroke="#c34b43"/><rect x="90" y="520" width="10" height="20" fill="#c34b43"/>
+    <line x1="130" y1="495" x2="130" y2="535" stroke="#238267"/><rect x="125" y="507" width="10" height="18" fill="#238267"/>
+    <line x1="165" y1="472" x2="165" y2="518" stroke="#c34b43"/><rect x="160" y="484" width="10" height="24" fill="#c34b43"/>
+    <line x1="200" y1="455" x2="200" y2="497" stroke="#c34b43"/><rect x="195" y="466" width="10" height="22" fill="#c34b43"/>
+    <line x1="235" y1="442" x2="235" y2="484" stroke="#238267"/><rect x="230" y="452" width="10" height="21" fill="#238267"/>
+    <line x1="270" y1="418" x2="270" y2="464" stroke="#c34b43"/><rect x="265" y="430" width="10" height="24" fill="#c34b43"/>
+    <line x1="305" y1="400" x2="305" y2="446" stroke="#c34b43"/><rect x="300" y="411" width="10" height="24" fill="#c34b43"/>
+    <line x1="340" y1="414" x2="340" y2="454" stroke="#238267"/><rect x="335" y="423" width="10" height="21" fill="#238267"/>
+    <line x1="375" y1="382" x2="375" y2="430" stroke="#c34b43"/><rect x="370" y="393" width="10" height="26" fill="#c34b43"/>
+  </g>
+  <rect x="156" y="388" width="226" height="48" fill="#fff" stroke="#8da3b1"/>
+  <text x="168" y="407" class="tiny" font-weight="700">2026-04-18 · 收 78.92</text>
+  <text x="168" y="425" class="tiny" fill="#c34b43">至 2026-07-27  +18.63% ↑</text>
+  <text x="28" y="584" class="tiny muted">成交量</text>
+  <rect x="34" y="599" width="14" height="35" fill="#c34b4370"/>
+  <rect x="58" y="610" width="14" height="24" fill="#23826770"/>
+  <rect x="82" y="592" width="14" height="42" fill="#c34b4370"/>
+  <rect x="106" y="604" width="14" height="30" fill="#23826770"/>
+  <rect x="130" y="587" width="14" height="47" fill="#c34b4370"/>
+  <rect x="154" y="598" width="14" height="36" fill="#c34b4370"/>
+  <rect x="178" y="608" width="14" height="26" fill="#23826770"/>
+  <rect x="202" y="582" width="14" height="52" fill="#c34b4370"/>
+  <rect x="226" y="593" width="14" height="41" fill="#c34b4370"/>
+  <rect x="250" y="605" width="14" height="29" fill="#23826770"/>
+  <rect x="274" y="578" width="14" height="56" fill="#c34b4370"/>
+  <rect x="298" y="587" width="14" height="47" fill="#c34b4370"/>
+  <rect x="322" y="601" width="14" height="33" fill="#23826770"/>
+  <rect x="346" y="574" width="14" height="60" fill="#c34b4370"/>
+
+  <rect x="16" y="658" width="398" height="116" fill="#fff" stroke="#c5cfca"/>
+  <text x="28" y="681" class="tiny muted">MACD (12,26,9)</text>
+  <line x1="28" y1="724" x2="402" y2="724" class="hair"/>
+  <path d="M28 744 C95 760 140 728 195 720 S280 738 330 706 S375 698 402 691" fill="none" stroke="#2e5e84" stroke-width="2"/>
+  <path d="M28 750 C105 752 165 738 220 728 S310 724 402 704" fill="none" stroke="#b47a22" stroke-width="2"/>
+
+  <rect x="16" y="786" width="398" height="148" fill="#fff" stroke="#c5cfca"/>
+  <text x="28" y="811" class="small" font-weight="700">基本面与股东集中趋势</text>
+  <text x="28" y="839" class="tiny muted">PE(TTM)</text><text x="118" y="839" class="body mono">86.4×</text>
+  <text x="220" y="839" class="tiny muted">PB</text><text x="306" y="839" class="body mono">4.28×</text>
+  <text x="28" y="868" class="tiny muted">总市值</text><text x="118" y="868" class="body mono">5,382亿</text>
+  <text x="220" y="868" class="tiny muted">换手率</text><text x="306" y="868" class="body mono">1.84%</text>
+  <text x="28" y="897" class="tiny muted">股东户数</text><text x="118" y="897" class="body mono">312,840</text>
+  <text x="220" y="897" class="tiny muted">较上期</text><text x="306" y="897" class="body mono" fill="#c34b43">−6.8% ↑</text>
+  <text x="28" y="920" class="tiny" fill="#9a641d">股东户数趋势，不代表真实筹码峰或持仓成本。</text>
+
+  <rect x="16" y="946" width="398" height="26" fill="#fff" stroke="#c5cfca"/>
+  <text x="154" y="964" class="tiny">展开数据与口径</text>
+</svg>

@@ -1,4 +1,4 @@
-.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe miniqmt-l1-capture miniqmt-account-reconcile miniqmt-paper-readonly-handshake paper-canary-authorize paper-canary-run paper-canary-settle paper-canary-stage-limit paper-canary-approve paper-canary-submit paper-canary-status paper-canary-recover paper-canary-cancel paper-canary-converge paper-offline-guard paper-offline-fault-drill continuous-shadow-initialize continuous-shadow-start continuous-shadow-advance ops-plan ops-backup ops-recovery-drill tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation contracts-generate contracts-check
+.PHONY: bootstrap doctor dev check docs-check e2e-smoke provider-probe historical-price-limit-probe miniqmt-l1-capture miniqmt-account-reconcile miniqmt-paper-readonly-handshake paper-canary-authorize paper-canary-run paper-canary-settle paper-canary-stage-limit paper-canary-approve paper-canary-submit paper-canary-status paper-canary-recover paper-canary-cancel paper-canary-converge paper-offline-guard paper-offline-fault-drill continuous-shadow-initialize continuous-shadow-start continuous-shadow-advance ops-plan ops-backup ops-recovery-drill tactical-research-smoke tactical-event-backfill tactical-sealed-replay shadow-smoke data-snapshot data-backfill data-backfill-h2 data-backfill-h3 data-backfill-h4 industry-data-foundation market-rotation daily-data-update daily-data-status daily-decision-run daily-decision-status daily-run daily-run-status daily-run-recover daily-schedule-trigger daily-schedule-preview daily-schedule-status daily-schedule-install daily-schedule-pause daily-schedule-uninstall contracts-generate contracts-check
 
 bootstrap:
 	uv sync --locked
@@ -176,7 +176,18 @@ tactical-event-backfill:
 	@test -n "$(BASE_SNAPSHOT_ID)" || (echo "请设置 BASE_SNAPSHOT_ID" && exit 2)
 	uv run python scripts/backfill_tactical_events.py \
 		--provider-env-file "$(PROVIDER_ENV_FILE)" \
-		--base-snapshot-id "$(BASE_SNAPSHOT_ID)"
+		--base-snapshot-id "$(BASE_SNAPSHOT_ID)" \
+		$(if $(START_DATE),--start-date "$(START_DATE)",) \
+		$(if $(END_DATE),--end-date "$(END_DATE)",) \
+		$(if $(filter true,$(REPUBLISH)),--republish,)
+
+historical-price-limit-probe:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env" && exit 2)
+	uv run python scripts/probe_historical_price_limits.py \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		$(if $(BASE_SNAPSHOT_ID),--base-snapshot-id "$(BASE_SNAPSHOT_ID)",) \
+		$(if $(START_DATE),--start-date "$(START_DATE)",) \
+		$(if $(END_DATE),--end-date "$(END_DATE)",)
 
 industry-data-foundation:
 	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env" && exit 2)
@@ -185,11 +196,79 @@ industry-data-foundation:
 	uv run python scripts/publish_industry_foundation.py \
 		--provider-env-file "$(PROVIDER_ENV_FILE)" \
 		--base-snapshot-id "$(BASE_SNAPSHOT_ID)" \
-		--end-date "$(END_DATE)"
+		--end-date "$(END_DATE)" \
+		$(if $(filter true,$(INCLUDE_L2)),--include-l2,)
 
 market-rotation:
 	@test -n "$(SNAPSHOT_ID)" || (echo "请设置 SNAPSHOT_ID=包含行业基础的准确快照" && exit 2)
 	uv run python scripts/publish_market_rotation.py --data-snapshot-id "$(SNAPSHOT_ID)"
+
+daily-data-update:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env" && exit 2)
+	@test -n "$(TARGET_DATE)" || (echo "请设置 TARGET_DATE=最近完成交易日 YYYY-MM-DD" && exit 2)
+	uv run python scripts/run_daily_data_pipeline.py \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		--target-date "$(TARGET_DATE)" \
+		$(if $(BASE_SNAPSHOT_ID),--base-snapshot-id "$(BASE_SNAPSHOT_ID)",)
+
+daily-data-status:
+	uv run python scripts/run_daily_data_pipeline.py --status
+
+daily-decision-run:
+	uv run python scripts/run_daily_decision_chain.py
+
+daily-decision-status:
+	uv run python scripts/run_daily_decision_chain.py --status
+
+daily-run:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/path/to/provider.env" && exit 2)
+	@test -n "$(TARGET_DATE)" || (echo "请设置 TARGET_DATE=最近完成交易日 YYYY-MM-DD" && exit 2)
+	uv run python scripts/run_daily.py \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		--target-date "$(TARGET_DATE)" \
+		$(if $(BASE_SNAPSHOT_ID),--base-snapshot-id "$(BASE_SNAPSHOT_ID)",)
+
+daily-run-status:
+	uv run python scripts/run_daily.py --status $(if $(RUN_ID),--run-id "$(RUN_ID)",)
+
+daily-run-recover:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/path/to/provider.env" && exit 2)
+	@test -n "$(RUN_ID)" || (echo "请设置 RUN_ID=daily-run:..." && exit 2)
+	uv run python scripts/run_daily.py \
+		--recover --run-id "$(RUN_ID)" \
+		--provider-env-file "$(PROVIDER_ENV_FILE)"
+
+daily-schedule-trigger:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/path/to/provider.env" && exit 2)
+	uv run python scripts/run_daily_scheduler.py \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		$(if $(SCHEDULE_AT),--at "$(SCHEDULE_AT)",) \
+		$(if $(filter true,$(DRY_RUN)),--dry-run,)
+
+daily-schedule-preview:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/path/to/provider.env" && exit 2)
+	uv run python scripts/manage_daily_schedule.py preview \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		$(if $(DISTRO),--distro "$(DISTRO)",)
+
+daily-schedule-status:
+	uv run python scripts/manage_daily_schedule.py status
+
+daily-schedule-install:
+	@test -n "$(PROVIDER_ENV_FILE)" || (echo "请设置 PROVIDER_ENV_FILE=/path/to/provider.env" && exit 2)
+	@test -n "$(CONFIRM_TASK_NAME)" || (echo "请精确确认 CONFIRM_TASK_NAME" && exit 2)
+	@test -n "$(CONFIRM_WORKDIR)" || (echo "请精确确认 CONFIRM_WORKDIR" && exit 2)
+	uv run python scripts/manage_daily_schedule.py install \
+		--provider-env-file "$(PROVIDER_ENV_FILE)" \
+		--confirm-task-name "$(CONFIRM_TASK_NAME)" \
+		--confirm-workdir "$(CONFIRM_WORKDIR)" \
+		$(if $(DISTRO),--distro "$(DISTRO)",)
+
+daily-schedule-pause:
+	uv run python scripts/manage_daily_schedule.py pause
+
+daily-schedule-uninstall:
+	uv run python scripts/manage_daily_schedule.py uninstall
 
 tactical-sealed-replay:
 	@test -n "$(SNAPSHOT_ID)" || (echo "请设置包含事件数据的 SNAPSHOT_ID" && exit 2)

@@ -69,6 +69,17 @@ def seven_day_windows(start: date, end: date) -> tuple[tuple[date, date], ...]:
     return tuple(result)
 
 
+def year_bounded_seven_day_windows(start: date, end: date) -> tuple[tuple[date, date], ...]:
+    return tuple(
+        window
+        for year in range(start.year, end.year + 1)
+        for window in seven_day_windows(
+            max(start, date(year, 1, 1)),
+            min(end, date(year, 12, 31)),
+        )
+    )
+
+
 def request_is_intact(value: dict[str, object]) -> bool:
     path = Path(str(value.get("path", "")))
     return path.is_file() and file_hash(path) == value.get("hash")
@@ -85,6 +96,8 @@ def request_paths(
             continue
         key = str(value.get("key", ""))
         if api_name == "stk_holdernumber" and "-" not in key:
+            continue
+        if api_name == "stk_holdernumber" and key[9:13] != str(year):
             continue
         if key[:4] == str(year) and request_is_intact(value):
             result.append(Path(str(value["path"])))
@@ -124,4 +137,5 @@ __all__ = [
     "request_is_intact",
     "request_paths",
     "seven_day_windows",
+    "year_bounded_seven_day_windows",
 ]

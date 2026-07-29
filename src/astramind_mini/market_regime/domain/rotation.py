@@ -17,6 +17,8 @@ from ..contracts import (
 )
 from .identity import content_hash
 
+DISPLAY_TRANSFORM_VERSION = "rotation-display-tanh-v1.0.0"
+
 
 @dataclass(frozen=True, slots=True)
 class IndustryCloseSeries:
@@ -136,8 +138,8 @@ def _score_coordinates(
     trends: Mapping[date, Mapping[str, float]],
     momentums: Mapping[date, Mapping[str, float]],
     formula: RotationFormula,
-) -> dict[date, dict[str, tuple[float, float, bool]]]:
-    result: dict[date, dict[str, tuple[float, float, bool]]] = {}
+) -> dict[date, dict[str, tuple[float, float, bool, float, float]]]:
+    result: dict[date, dict[str, tuple[float, float, bool, float, float]]] = {}
     for day in sorted(set(trends) & set(momentums)):
         if len(momentums[day]) != len(trends[day]):
             continue
@@ -153,6 +155,8 @@ def _score_coordinates(
                 round(x, formula.rounding_decimals),
                 round(y, formula.rounding_decimals),
                 overflow,
+                round(tx, formula.rounding_decimals),
+                round(my, formula.rounding_decimals),
             )
     return result
 
@@ -172,7 +176,7 @@ def _robust_z(values: Mapping[str, float]) -> dict[str, float]:
 def _points(
     industries: Sequence[IndustryCloseSeries],
     dates: Sequence[date],
-    scored: Mapping[date, Mapping[str, tuple[float, float, bool]]],
+    scored: Mapping[date, Mapping[str, tuple[float, float, bool, float, float]]],
     formula: RotationFormula,
 ) -> tuple[RotationPoint, ...]:
     names = {item.industry_code: item.industry_name for item in industries}
@@ -183,7 +187,7 @@ def _points(
         if day not in scored or len(scored[day]) != len(industries):
             raise ValueError(f"轮动输出日期缺少完整坐标：{day}")
         for code in sorted(scored[day]):
-            x, y, overflow = scored[day][code]
+            x, y, overflow, raw_z_trend, raw_z_momentum = scored[day][code]
             old_x, old_y = previous.get(code, (x, y))
             result.append(
                 RotationPoint(
@@ -198,6 +202,9 @@ def _points(
                     direction_x=round(x - old_x, formula.rounding_decimals),
                     direction_y=round(y - old_y, formula.rounding_decimals),
                     overflow=overflow,
+                    raw_z_trend=raw_z_trend,
+                    raw_z_momentum=raw_z_momentum,
+                    display_transform_version=DISPLAY_TRANSFORM_VERSION,
                 )
             )
             previous[code] = (x, y)
@@ -254,4 +261,8 @@ def _stable_quadrant(point: RotationPoint, band: float) -> Quadrant | None:
     return point.quadrant
 
 
-__all__ = ["IndustryCloseSeries", "build_rotation_snapshot"]
+__all__ = [
+    "DISPLAY_TRANSFORM_VERSION",
+    "IndustryCloseSeries",
+    "build_rotation_snapshot",
+]

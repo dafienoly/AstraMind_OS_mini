@@ -133,9 +133,119 @@ class OfflineFaultDrillReport(ContractModel):
     content_hash: ContentHash
 
 
+class DailyDecisionStatus(ContractModel):
+    run_id: Identifier
+    pipeline_commit_id: Identifier
+    signal_date: date
+    state: Literal["waiting_data", "running", "current", "blocked", "recovery_required"]
+    current_step: str | None = None
+    feature_snapshot_id: Identifier | None = None
+    prediction_batch_id: Identifier | None = None
+    portfolio_target_id: Identifier | None = None
+    order_plan_id: Identifier | None = None
+    shadow_preflight_state: Literal["not_run", "ready", "blocked", "no_action"] = "not_run"
+    paper_preflight_state: Literal["not_run", "ready", "blocked"] = "not_run"
+    blocker_codes: tuple[Identifier, ...] = ()
+    recovery_action: str | None = None
+    started_at: AwareDatetime
+    updated_at: AwareDatetime
+    completed_at: AwareDatetime | None = None
+    paper_dispatch_state: Literal["disabled"] = "disabled"
+    broker_connection_attempts: Literal[0] = 0
+    broker_write_attempts: Literal[0] = 0
+    broker_actions_allowed: Literal[False] = False
+    policy_version: Literal["wp-0029-daily-decision-v1.0.0"] = "wp-0029-daily-decision-v1.0.0"
+    content_hash: ContentHash
+
+
+DailyRunState = Literal[
+    "waiting_window",
+    "waiting_provider",
+    "running",
+    "current",
+    "stale",
+    "blocked",
+    "recovery_required",
+    "lease_held",
+]
+DailyRunStepId = Literal["data_pipeline", "decision_chain", "backup_readiness"]
+
+
+class DailyRunStep(ContractModel):
+    run_id: Identifier
+    step_id: DailyRunStepId
+    state: Literal["pending", "running", "completed", "waiting", "blocked"]
+    output_identity: Identifier | None = None
+    blocker_codes: tuple[Identifier, ...] = ()
+    recovery_action: str | None = None
+    started_at: AwareDatetime
+    updated_at: AwareDatetime
+    completed_at: AwareDatetime | None = None
+    broker_actions_allowed: Literal[False] = False
+    content_hash: ContentHash
+
+
+class DailyRunStatus(ContractModel):
+    run_id: Identifier
+    target_date: date
+    base_snapshot_id: Identifier
+    state: DailyRunState
+    current_step: DailyRunStepId | None = None
+    data_commit_id: Identifier | None = None
+    data_snapshot_id: Identifier | None = None
+    rotation_snapshot_id: Identifier | None = None
+    feature_snapshot_id: Identifier | None = None
+    prediction_batch_id: Identifier | None = None
+    portfolio_target_id: Identifier | None = None
+    order_plan_id: Identifier | None = None
+    backup_id: Identifier | None = None
+    blocker_codes: tuple[Identifier, ...] = ()
+    recovery_action: str | None = None
+    started_at: AwareDatetime
+    updated_at: AwareDatetime
+    completed_at: AwareDatetime | None = None
+    daily_budget_minutes: Literal[30] = 30
+    paper_dispatch_state: Literal["disabled"] = "disabled"
+    broker_connection_attempts: Literal[0] = 0
+    broker_write_attempts: Literal[0] = 0
+    broker_actions_allowed: Literal[False] = False
+    policy_version: Literal["wp-0030-daily-run-v1.1.0"] = "wp-0030-daily-run-v1.1.0"
+    content_hash: ContentHash
+
+
+class DailyRunSummary(ContractModel):
+    summary_id: Identifier
+    run_id: Identifier
+    target_date: date
+    base_snapshot_id: Identifier
+    data_commit_id: Identifier
+    data_snapshot_id: Identifier
+    rotation_snapshot_id: Identifier
+    feature_snapshot_id: Identifier
+    prediction_batch_id: Identifier
+    portfolio_target_id: Identifier
+    order_plan_id: Identifier
+    backup_id: Identifier
+    steps: tuple[DailyRunStep, ...]
+    started_at: AwareDatetime
+    completed_at: AwareDatetime
+    paper_dispatch_state: Literal["disabled"] = "disabled"
+    broker_connection_attempts: Literal[0] = 0
+    broker_write_attempts: Literal[0] = 0
+    broker_actions_allowed: Literal[False] = False
+    policy_version: Literal["wp-0030-daily-run-v1.1.0"] = "wp-0030-daily-run-v1.1.0"
+    content_hash: ContentHash
+
+
 __all__ = [
     "BackupFile",
     "BackupManifest",
+    "DailyDecisionStatus",
+    "DailyRunState",
+    "DailyRunStatus",
+    "DailyRunStep",
+    "DailyRunStepId",
+    "DailyRunSummary",
     "OfflineFaultCaseResult",
     "OfflineFaultDrillReport",
     "OfflineGuardRun",

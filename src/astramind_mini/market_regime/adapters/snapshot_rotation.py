@@ -37,8 +37,12 @@ class SnapshotRotationInput:
         }
         paths = {name: self._parquet_paths(manifest) for name, manifest in manifests.items()}
         with duckdb.connect(":memory:") as connection:
+            industry_cutoff = self._latest_industry_date(connection, paths["industry_index_daily"])
             calendar = self._calendar(
-                connection, paths["trade_calendar"], snapshot.as_of.date(), required_sessions
+                connection,
+                paths["trade_calendar"],
+                min(snapshot.as_of.date(), industry_cutoff),
+                required_sessions,
             )
             names = self._taxonomy(connection, paths["industry_taxonomy"])
             closes = self._closes(connection, paths["industry_index_daily"], calendar)
@@ -123,6 +127,25 @@ class SnapshotRotationInput:
         if len(dates) != required:
             raise ValueError(f"轮动交易日不足：{len(dates)}/{required}")
         return dates
+
+    def _latest_industry_date(
+        self,
+        connection: duckdb.DuckDBPyConnection,
+        paths: tuple[Path, ...],
+    ) -> date:
+        row = connection.execute(
+            """
+            SELECT max(trade_date) FROM read_parquet(?)
+            WHERE taxonomy = 'SW' AND taxonomy_version = 'SW2021' AND level = 'L1'
+            """,
+            [[str(path) for path in paths]],
+        ).fetchone()
+        if row is None or row[0] is None:
+            raise ValueError("正式轮动行业日线为空")
+        value = row[0]
+        if not isinstance(value, date):
+            raise ValueError("正式轮动行业日期类型无效")
+        return value
 
     def _taxonomy(
         self, connection: duckdb.DuckDBPyConnection, paths: tuple[Path, ...]

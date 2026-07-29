@@ -3,6 +3,10 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
+from astramind_mini.data.application.daily_reference_normalization import (
+    normalize_corporate_actions,
+    normalize_name_history,
+)
 from astramind_mini.data.application.normalization import (
     normalize_adjustment_factors,
     normalize_daily_bars,
@@ -172,3 +176,57 @@ def test_daily_metrics_limits_and_suspension_events_preserve_provider_semantics(
     assert metrics[0].total_market_value_ten_thousand_cny == 1000.0
     assert limits[0].limit_prices_usable is False
     assert [item.suspension_type for item in events] == ["R", "S"]
+
+
+def test_reference_normalization_preserves_point_in_time_availability() -> None:
+    names = normalize_name_history(
+        (
+            table(
+                "namechange",
+                (
+                    {
+                        "ts_code": "000001.SZ",
+                        "name": "*ST合成",
+                        "start_date": "20260102",
+                        "end_date": None,
+                        "ann_date": None,
+                        "change_reason": "实施退市风险警示",
+                    },
+                ),
+            ),
+        )
+    )
+    actions = normalize_corporate_actions(
+        (
+            table(
+                "dividend",
+                (
+                    {
+                        "ts_code": "000001.SZ",
+                        "end_date": "20251231",
+                        "ann_date": "20260110",
+                        "div_proc": "实施",
+                        "stk_div": 0.1,
+                        "stk_bo_rate": 0,
+                        "stk_co_rate": 0,
+                        "cash_div": 0.2,
+                        "cash_div_tax": 0.18,
+                        "record_date": "20260114",
+                        "ex_date": "20260115",
+                        "pay_date": "20260115",
+                        "imp_ann_date": "20260112",
+                        "base_date": "20251231",
+                        "base_share": 100,
+                    },
+                ),
+            ),
+        )
+    )
+
+    assert names[0].announced_on is None
+    assert names[0].available_at == RECEIVED_AT
+    assert names[0].risk_status == "star_st"
+    assert actions[0].available_at.isoformat() == "2026-01-12T18:00:00+08:00"
+    assert actions[0].action_kind == "cash_and_stock"
+    assert actions[0].stock_dividend_per_share == 0.1
+    assert actions[0].is_implemented is True

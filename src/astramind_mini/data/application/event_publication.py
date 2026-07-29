@@ -96,6 +96,18 @@ def _manifest(
         gaps.append("rows_with_unknown_holder_count")
     if early_announcement_rows:
         gaps.append("announcement_precedes_reporting_period")
+    observed_starts = [
+        date.fromisoformat(str(item["start_date"]))
+        for item in annual.values()
+        if item.get("start_date") is not None
+    ]
+    if not observed_starts:
+        gaps.append("no_observations_in_requested_range")
+    elif (observed_start := min(observed_starts)).year > start_date.year:
+        gaps.append(
+            "provider_empty_years_before_first_observation:"
+            f"{start_date.year}-{observed_start.year - 1}"
+        )
     return build_dataset_manifest_from_hashes(
         dataset_name=name,
         schema_version="1.0.0",

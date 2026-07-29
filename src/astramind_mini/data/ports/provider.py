@@ -155,6 +155,7 @@ class EventDatasetCompactor(Protocol):
         output: Path,
         order_by: tuple[str, ...],
         date_column: str,
+        identity_columns: tuple[str, ...] = ("source_record_hash",),
     ) -> dict[str, object]: ...
 
 

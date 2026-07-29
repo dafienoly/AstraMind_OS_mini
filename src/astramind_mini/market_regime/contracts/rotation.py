@@ -48,6 +48,9 @@ class RotationPoint(ContractModel):
     direction_x: float
     direction_y: float
     overflow: bool
+    raw_z_trend: float | None = None
+    raw_z_momentum: float | None = None
+    display_transform_version: Version | None = None
 
 
 class RotationEvent(ContractModel):

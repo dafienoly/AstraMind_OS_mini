@@ -39,7 +39,7 @@ class TushareHttpClient:
         params: Mapping[str, object],
         fields: Sequence[str],
     ) -> ProviderTable:
-        await self._pace()
+        await self._pace(api_name)
         received_at = datetime.now(UTC)
         request_identity = content_hash(
             {
@@ -61,9 +61,12 @@ class TushareHttpClient:
             source_endpoint=_endpoint_identity(self._config.api_url),
         )
 
-    async def _pace(self) -> None:
+    async def _pace(self, api_name: str) -> None:
         async with self._pace_lock:
-            interval = 60.0 / self._config.rate_limit_per_minute
+            interface_limit = (
+                90 if api_name == "index_member_all" else self._config.rate_limit_per_minute
+            )
+            interval = 60.0 / min(self._config.rate_limit_per_minute, interface_limit)
             delay = self._last_request_at + interval - monotonic()
             if delay > 0:
                 await asyncio.sleep(delay)
@@ -131,7 +134,7 @@ def _validate(body: object) -> None:
     message = str(body.get("msg", "")).lower()
     if any(marker in message for marker in ("权限", "permission", "积分")):
         raise TushareRequestError("permission_denied")
-    raise TushareRequestError("provider_error")
+    raise TushareRequestError("provider_error", recoverable=True)
 
 
 def _decode(body: object) -> tuple[tuple[str, ...], tuple[dict[str, object], ...]]:

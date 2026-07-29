@@ -62,6 +62,7 @@ class HistoricalSupplementService:
                 )
                 entry["daily"] = str(path)
                 entry["daily_request_identity"] = table.request_identity
+                entry["daily_received_at"] = table.received_at.isoformat()
                 save_state(state_path, state)
             if trade_date in missing_factors and "adj_factor" not in entry:
                 table = await self._fetch("adj_factor", trade_date, ADJUSTMENT_FIELDS)
@@ -81,6 +82,7 @@ class HistoricalSupplementService:
                 )
                 entry["adj_factor"] = str(path)
                 entry["factor_request_identity"] = table.request_identity
+                entry["factor_received_at"] = table.received_at.isoformat()
                 save_state(state_path, state)
 
     async def _fetch(

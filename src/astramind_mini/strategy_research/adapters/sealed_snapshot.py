@@ -61,6 +61,19 @@ class DuckDBSealedReplaySource:
             raise ValueError("快照日线数据为空")
         return cast(date, row[0])
 
+    def next_open_date(self, *, after_date: date) -> date:
+        with duckdb.connect(":memory:") as connection:
+            row = connection.execute(
+                """
+                SELECT min(calendar_date) FROM read_parquet(?)
+                WHERE exchange = 'SSE' AND is_open AND calendar_date > ?
+                """,
+                [self._paths("trade_calendar"), after_date],
+            ).fetchone()
+        if row is None or row[0] is None:
+            raise ValueError("准确快照中没有下一交易日")
+        return cast(date, row[0])
+
     def candidates(
         self,
         *,

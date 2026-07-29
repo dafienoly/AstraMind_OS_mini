@@ -1,18 +1,45 @@
 import type { RotationSnapshot } from "./rotationTypes";
 import { quadrantLabels } from "./rotationTypes";
+import { assessRotationFreshness } from "./rotationFreshness";
+import { industryColor } from "./rotationIdentity";
 
 export const rotationSpeeds = [0.5, 1, 2] as const;
-export type RotationSpeed = (typeof rotationSpeeds)[number];
 
 const trailOptions = [10, 20, 40, 60] as const;
 
-export function RotationHeader({ snapshot }: { snapshot: RotationSnapshot }) {
+export function RotationHeader({
+  snapshot,
+  onRefresh,
+  refreshing,
+}: {
+  snapshot: RotationSnapshot;
+  onRefresh: () => void;
+  refreshing: boolean;
+}) {
+  const freshness = assessRotationFreshness(snapshot);
+  const freshnessText = freshness.kind === "current"
+    ? `${freshness.latestDate} 快照内完整`
+    : freshness.kind === "stale"
+      ? `${freshness.latestDate} 已过期 · 预期 ${freshness.expectedDate}`
+      : `${freshness.latestDate} 已阻断 · ${freshness.reason}`;
   return <><header className="rotation-topbar">
     <a href="/">ASTRAMIND <span>/ MINI</span></a>
-    <nav><span>今日</span><strong>市场</strong><span>策略竞技场</span><span>组合</span><span>系统</span></nav>
+    <nav aria-label="一级导航">
+      <a href="/today">今日</a>
+      <strong aria-current="page">市场</strong>
+      <span aria-label="策略竞技场（尚未开放）" title="策略竞技场尚未开放">
+        策略竞技场
+      </span>
+      <a href="/portfolio">组合</a>
+      <a href="/system">系统</a>
+    </nav>
     <span className="readonly">只读研究</span>
-  </header><div className="rotation-status">
-    <strong>数据</strong> {snapshot.date_range[1]} 快照内完整
+  </header><div className="rotation-status" data-state={freshness.kind}>
+    <strong>数据</strong> {freshnessText}
+    <button disabled={refreshing} onClick={onRefresh} type="button">
+      {refreshing ? "刷新中…" : "刷新快照"}
+    </button>
+    {freshness.kind !== "current" ? <a href="/system">查看恢复状态</a> : null}
     <i /><strong>行业</strong> {snapshot.covered_industry_count}/{snapshot.industry_count}
     <i /><strong>公式</strong> {snapshot.formula.formula_version}
     <em>研究观察，不是买卖信号</em>
@@ -20,36 +47,67 @@ export function RotationHeader({ snapshot }: { snapshot: RotationSnapshot }) {
 }
 
 export function Playback(props: {
-  dates: string[]; dateIndex: number; setDateIndex: (index: number) => void;
-  playing: boolean; setPlaying: (value: boolean) => void;
-  speed: RotationSpeed; setSpeed: (value: RotationSpeed) => void;
+  dates: string[]; dateIndex: number; goToDate: (index: number) => void;
+  playing: boolean;
+  speed: import("./rotationTypes").RotationSpeed;
+  setSpeed: (value: import("./rotationTypes").RotationSpeed) => void;
   trail: number; setTrail: (value: number) => void;
+  reducedMotion: boolean;
+  onPlayToggle: () => void;
+  mode: import("./rotationTypes").PlaybackMode;
+  onMode: (value: import("./rotationTypes").PlaybackMode) => void;
+  continuousDuration: import("./rotationTypes").ContinuousDuration;
+  onContinuousDuration: (value: import("./rotationTypes").ContinuousDuration) => void;
 }) {
-  const { dates, dateIndex, setDateIndex, playing, setPlaying, speed, setSpeed, trail, setTrail } = props;
+  const { dates, dateIndex, goToDate, playing, speed, setSpeed,
+    trail, setTrail, reducedMotion } = props;
   return <section className="playback" aria-label="时间回放">
-    <button type="button" onClick={() => setPlaying(!playing)}>{playing ? "暂停" : "播放"}</button>
-    <button type="button" onClick={() => { setPlaying(false); setDateIndex(Math.max(0, dateIndex - 1)); }}>上一日</button>
-    <button type="button" onClick={() => { setPlaying(false); setDateIndex(Math.min(dates.length - 1, dateIndex + 1)); }}>下一日</button>
-    <select aria-label="播放速度" value={speed} onChange={(event) => setSpeed(Number(event.target.value) as RotationSpeed)}>
-      {rotationSpeeds.map((value) => <option key={value} value={value}>{value}x</option>)}
-    </select>
+    <button type="button" onClick={props.onPlayToggle}>{playing ? "暂停" : "播放"}</button>
+    <fieldset className="playback-mode">
+      <legend>播放模式</legend>
+      <button aria-pressed={props.mode === "daily"} onClick={() => props.onMode("daily")} type="button">逐日</button>
+      <button aria-pressed={props.mode === "continuous"} disabled={reducedMotion}
+        onClick={() => props.onMode("continuous")} type="button">整段</button>
+    </fieldset>
+    <button type="button" onClick={() => goToDate(Math.max(0, dateIndex - 1))}>上一日</button>
+    <button type="button" onClick={() => goToDate(Math.min(dates.length - 1, dateIndex + 1))}>下一日</button>
+    {props.mode === "daily" ? (
+      <select aria-label="播放速度" value={speed} onChange={(event) => setSpeed(Number(event.target.value) as import("./rotationTypes").RotationSpeed)}>
+        {rotationSpeeds.map((value) => <option key={value} value={value}>{value}x</option>)}
+      </select>
+    ) : (
+      <select aria-label="整段播放时长" value={props.continuousDuration}
+        onChange={(event) => props.onContinuousDuration(Number(event.target.value) as import("./rotationTypes").ContinuousDuration)}>
+        {[10, 20, 40].map((value) => <option key={value} value={value}>{value} 秒</option>)}
+      </select>
+    )}
     <input aria-label="轮动日期" type="range" min="0" max={dates.length - 1} value={dateIndex}
-      onChange={(event) => { setPlaying(false); setDateIndex(Number(event.target.value)); }} />
+      onChange={(event) => goToDate(Number(event.target.value))} />
     <time>{dates[dateIndex]}</time>
     <select aria-label="尾迹长度" value={trail} onChange={(event) => setTrail(Number(event.target.value))}>
       {trailOptions.map((value) => <option key={value} value={value}>尾迹 {value} 日</option>)}
     </select>
-    <button type="button" onClick={() => { setPlaying(false); setDateIndex(dates.length - 1); }}>回到最新</button>
+    <button type="button" onClick={() => goToDate(dates.length - 1)}>回到最新</button>
+    {reducedMotion ? <small>已按系统偏好关闭插值动画</small> : null}
   </section>;
 }
 
-export function Inspector({ point, event, snapshot }: {
+export function Inspector({ point, event, snapshot, onDrill }: {
   point: RotationSnapshot["points"][number] | undefined;
   event: RotationSnapshot["events"][number] | undefined;
   snapshot: RotationSnapshot;
+  onDrill?: () => void;
 }) {
-  if (!point) return <aside className="rotation-inspector">当前日期没有可用行业点。</aside>;
-  return <aside className="rotation-inspector">
+  if (!point) return <aside className="rotation-inspector">
+    <p className="eyebrow">行业总览</p>
+    <h2>{snapshot.covered_industry_count} 个行业</h2>
+    <p>选择任一行业查看轨迹、运动状态和层级入口。</p>
+    <p>颜色只表达行业身份；箭头、双环和虚线表达运动状态。</p>
+    <strong>研究观察，不是买卖信号</strong>
+  </aside>;
+  return <aside className="rotation-inspector" style={{
+    borderTop: `3px solid ${industryColor(point.industry_code)}`,
+  }}>
     <p className="eyebrow">选中行业检查器</p><h2>{point.industry_name}</h2><code>{point.industry_code}</code>
     <strong className={`quadrant-name quadrant-name--${point.quadrant}`}>{quadrantLabels[point.quadrant]}</strong>
     <dl>
@@ -59,6 +117,9 @@ export function Inspector({ point, event, snapshot }: {
       <div><dt>覆盖</dt><dd>{(point.coverage * 100).toFixed(0)}% · {point.constituent_count} 个成分</dd></div>
     </dl>
     <section><small>最近确认跃迁</small><p>{event ? `${quadrantLabels[event.from_quadrant]} → ${quadrantLabels[event.to_quadrant]} · ${event.confirmed_date}` : "当前窗口无确认跃迁"}</p></section>
+    {onDrill ? <button className="hierarchy-entry" onClick={onDrill} type="button">
+      进入二级行业
+    </button> : null}
     <details><summary>数据与方法</summary>
       <p>基准：31 个一级行业指数日收益等权</p>
       <p>EMA {snapshot.formula.fast_window}/{snapshot.formula.slow_window} · 动量 {snapshot.formula.momentum_window} 日</p>

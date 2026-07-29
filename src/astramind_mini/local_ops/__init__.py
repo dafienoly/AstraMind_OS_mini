@@ -3,6 +3,10 @@
 from .backup import LocalBackupService
 from .contracts import (
     BackupManifest,
+    DailyDecisionStatus,
+    DailyRunStatus,
+    DailyRunStep,
+    DailyRunSummary,
     OfflineFaultDrillReport,
     OfflineGuardRun,
     OperationsWindowDecision,
@@ -16,6 +20,10 @@ from .scheduling import evaluate_daily_window
 
 __all__ = [
     "BackupManifest",
+    "DailyDecisionStatus",
+    "DailyRunStatus",
+    "DailyRunStep",
+    "DailyRunSummary",
     "GuardLeaseUnavailable",
     "LocalBackupService",
     "LocalRecoveryDrill",

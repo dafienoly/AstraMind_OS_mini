@@ -44,6 +44,7 @@ async def run(args: argparse.Namespace) -> int:
         start_date=args.start_date,
         end_date=args.end_date,
         republish=args.republish,
+        include_l2=args.include_l2,
     )
     print(f"snapshot_id={publication.snapshot.snapshot_id}")
     print(f"request_count={publication.request_count}")
@@ -70,6 +71,11 @@ def main() -> int:
     parser.add_argument("--start-date", type=date.fromisoformat, default=date(2000, 1, 1))
     parser.add_argument("--end-date", type=date.fromisoformat, required=True)
     parser.add_argument("--republish", action="store_true")
+    parser.add_argument(
+        "--include-l2",
+        action="store_true",
+        help="发布覆盖全部 L1 父级的 SW2021 L2 分类、成员与指数日线",
+    )
     args = parser.parse_args()
     with import_lock(Path("var/control/industry-foundation.lock")):
         return asyncio.run(run(args))

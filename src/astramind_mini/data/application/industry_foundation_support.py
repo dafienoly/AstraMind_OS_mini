@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
 import duckdb
+
+from ..contracts import IndustryTaxonomyObservation
 
 TAXONOMY_FIELDS = (
     "index_code",
@@ -59,6 +62,35 @@ class IndustryArtifacts:
     daily_stats: dict[str, object]
 
 
+def canonicalize_l2_parents(
+    l1: Sequence[IndustryTaxonomyObservation],
+    l2: Sequence[IndustryTaxonomyObservation],
+) -> tuple[IndustryTaxonomyObservation, ...]:
+    identity = {
+        item.provider_industry_code: item.industry_code
+        for item in l1
+        if item.provider_industry_code is not None
+    }
+    result = tuple(
+        item.model_copy(
+            update={
+                "parent_code": (
+                    identity.get(item.parent_code) if item.parent_code is not None else None
+                )
+            }
+        )
+        for item in l2
+    )
+    if any(item.parent_code is None for item in result):
+        raise ValueError("SW2021 L2 包含无法映射到规范 L1 身份的父级")
+    missing = {item.industry_code for item in l1} - {
+        item.parent_code for item in result if item.parent_code
+    }
+    if missing:
+        raise ValueError(f"SW2021 L2 未覆盖全部 L1：{len(missing)} 个父级缺失")
+    return result
+
+
 def five_year_windows(start: date, end: date) -> tuple[tuple[date, date], ...]:
     result = []
     current = start
@@ -74,13 +106,13 @@ def membership_overlap_stats(path: Path) -> dict[str, int]:
         row = connection.execute(
             """
             WITH intervals AS (
-              SELECT industry_code, instrument_id, effective_from, effective_to,
+              SELECT level, industry_code, instrument_id, effective_from, effective_to,
                      lead(industry_code) OVER (
-                       PARTITION BY instrument_id
+                       PARTITION BY level, instrument_id
                        ORDER BY effective_from, coalesce(effective_to, DATE '9999-12-31')
                      ) AS next_code,
                      lead(effective_from) OVER (
-                       PARTITION BY instrument_id
+                       PARTITION BY level, instrument_id
                        ORDER BY effective_from, coalesce(effective_to, DATE '9999-12-31')
                      ) AS next_start
               FROM read_parquet(?)
@@ -106,6 +138,7 @@ __all__ = [
     "MEMBERSHIP_FIELDS",
     "TAXONOMY_FIELDS",
     "IndustryArtifacts",
+    "canonicalize_l2_parents",
     "five_year_windows",
     "membership_overlap_stats",
 ]
