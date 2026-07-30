@@ -29,7 +29,7 @@
 | 数据与实时行情 | 日频快照、可信制品恢复、L1/SSE、分钟暖启动/留存、多周期 API 与实时界面代码 | 同名任务仍是旧动作且运行失败，待可见 UAC 更新与盘中验收；候选级分钟/Tick 和 ETF 补采未闭环 |
 | 短线 | 三类九版本历史研究、成本与封存证据 | Top20 两阶段验证、三态结论、H2/H5/H10 新 Research Shadow、在位政策选择 |
 | Research Shadow | OrderPlan、Local Replay 和旧 Shadow 兼容资产 | 独立候选身份、账本、恢复、比较与选择全部未实施 |
-| 周度核心 | 完整需求、U0/公共特征合同与 F0/Alpha158/Alpha101 三包均已集成；WP-0072/0073 已固化 | WP-0072 Stage P/S、H20/H60、O0、CorePolicy、Shadow 接桥 |
+| 周度核心 | 完整需求、U0/公共特征合同与 F0/Alpha158/Alpha101 三包均已集成；WP-0072 Stage P/S 与 exact-parent period projection 已具备 | WP-0073A H20/H60 Ridge、WP-0074A O0/证据槽、WP-0073B LightGBM、WP-0074B final policy，以及受保护的 Shadow 接桥 |
 | MiniQMT Paper | 状态机、只读对账、幂等恢复、离线守护 | 双分仓、managed 批次、冲突仲裁、策略接入；券商写入仍受保护 |
 | 市场 V2 与说明页 | V1、训练内核、证据/激活底座、状态 API、热力/轮动第一阶段生产代码及方法页 | 真实生产快照训练未运行；其余模型受点时成员或 ETF 数据门阻断 |
 | 运行加固 | Daily Ops、调度、备份恢复和实时任务 | 真实盘中长稳证据、跨会话封存恢复、候选长任务恢复 |
