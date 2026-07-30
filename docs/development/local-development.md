@@ -375,8 +375,11 @@ Windows 包装器固定调用 `%SystemRoot%\System32\wsl.exe`，使用
 PowerShell 原生 stderr 管道。每次尝试把 `running / completed /
 wrapper_launch_exception / wsl_native_exit` 原子写入
 `%LOCALAPPDATA%\AstraMindOSMini\realtime-task-status.json`，并分别有界记录 stdout、
-stderr、原生退出码、异常类型、脱敏异常消息和 HResult。`status` 再与 WSL 内
-`status.json` 合并，独立显示 `python_feed_error` 和最终
+stderr、原生退出码、异常类型、脱敏异常消息、HResult 和本次 `attempt_id`。`status`
+严格校验包装状态的带时区时间，并与 WSL 内 `status.json` 按更新时间合并：更新且健康
+的 Python 运行状态可把更早的包装失败降为历史证据，同时间或更晚的包装失败仍失败关闭；
+陈旧、无效、未来时间以及缺失或不可读的包装状态分别显示，不冒充当前健康。状态还独立
+显示 `python_feed_error` 和最终
 `service_operational_state`；`scheduler_state=installed` 只表示任务存在，不代表
 服务健康。
 

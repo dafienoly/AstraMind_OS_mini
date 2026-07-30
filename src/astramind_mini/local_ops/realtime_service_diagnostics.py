@@ -6,7 +6,7 @@ import json
 import os
 import subprocess
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from astramind_mini.local_ops.realtime_service_deployment import (
@@ -18,9 +18,13 @@ from astramind_mini.local_ops.realtime_service_runtime import (
     RealtimeStatusStore,
 )
 from astramind_mini.local_ops.realtime_windows_diagnostics import (
-    WindowsWrapperDiagnostic,
-    read_windows_wrapper_diagnostic,
+    read_windows_wrapper_diagnostic_result,
     redact_diagnostic_text,
+)
+from astramind_mini.local_ops.realtime_wrapper_status import (
+    correlate_wrapper_timing,
+    resolve_operational_state,
+    wrapper_status_lines,
 )
 
 
@@ -56,69 +60,48 @@ def realtime_status_lines(
     lines.append(f"scheduler_exit_code={completed.returncode}")
     last_result = _scheduler_field(completed.stdout, "上次结果", "Last Result")
     lines.extend(_scheduler_result_lines(last_result))
-    wrapper = read_windows_wrapper_diagnostic(environ=environ)
-    lines.extend(_wrapper_lines(wrapper))
+    current_time = datetime.now(UTC) if now is None else now.astimezone(UTC)
+    wrapper_read = read_windows_wrapper_diagnostic_result(
+        environ=environ,
+        now=current_time,
+    )
     runtime = RealtimeStatusStore(control_root).read()
-    runtime_state, runtime_lines = _runtime_lines(runtime, now=now)
+    runtime_state, runtime_updated_at, runtime_healthy, runtime_lines = _runtime_lines(
+        runtime,
+        now=current_time,
+    )
+    wrapper_timing = correlate_wrapper_timing(
+        wrapper_read.diagnostic,
+        runtime_updated_at=runtime_updated_at,
+        runtime_healthy=runtime_healthy,
+        now=current_time,
+    )
+    lines.extend(wrapper_status_lines(wrapper_read, wrapper_timing))
     lines.extend(runtime_lines)
     lines.append(
         "service_operational_state="
-        + _operational_state(scheduler_state, last_result, wrapper, runtime_state)
+        + resolve_operational_state(
+            scheduler_state,
+            last_result,
+            wrapper_read,
+            runtime_state,
+            wrapper_timing,
+        )
     )
     lines.append("broker_actions_allowed=false")
-    return tuple(lines)
-
-
-def _wrapper_lines(wrapper: WindowsWrapperDiagnostic | None) -> tuple[str, ...]:
-    if wrapper is None:
-        return ("wrapper_state=not_available", "wrapper_status_compatibility=legacy_or_missing")
-    lines = [
-        f"wrapper_state={wrapper.state}",
-        f"wrapper_status_schema_version={wrapper.schema_version}",
-    ]
-    for name in ("updated_at", "wsl_executable", "exception_type", "exception_hresult"):
-        value = getattr(wrapper, name)
-        if value is not None:
-            lines.append(f"wrapper_{name}={value}")
-    if wrapper.native_exit_code is not None:
-        lines.append(f"wrapper_native_exit_code={wrapper.native_exit_code}")
-    if wrapper.exception_message:
-        lines.append(f"wrapper_exception_message={wrapper.exception_message}")
-    lines.extend(
-        (
-            f"wrapper_stdout_characters_seen={wrapper.stdout_characters_seen}",
-            f"wrapper_stderr_characters_seen={wrapper.stderr_characters_seen}",
-            f"wrapper_stdout_truncated={str(wrapper.stdout_truncated).lower()}",
-            f"wrapper_stderr_truncated={str(wrapper.stderr_truncated).lower()}",
-        )
-    )
-    if wrapper.log_path:
-        lines.append(f"wrapper_log_path={wrapper.log_path}")
-    if wrapper.state == "wrapper_launch_exception":
-        lines.extend(
-            (
-                "wrapper_failure_origin=wrapper_launch_exception",
-                "wrapper_recovery_action=核对绝对 wsl.exe、任务身份与异常 HResult 后重试",
-            )
-        )
-    elif wrapper.state == "wsl_native_exit":
-        lines.extend(
-            (
-                "wrapper_failure_origin=wsl_native_exit",
-                "wrapper_recovery_action=读取 Windows 包装日志与 WSL 运行状态后修复原生退出",
-            )
-        )
     return tuple(lines)
 
 
 def _runtime_lines(
     runtime: RealtimeRuntimeStatus | None,
     *,
-    now: datetime | None,
-) -> tuple[str, tuple[str, ...]]:
+    now: datetime,
+) -> tuple[str, datetime | None, bool, tuple[str, ...]]:
     if runtime is None:
         return (
             "not_running",
+            None,
+            False,
             (
                 "wsl_process_state=not_running",
                 "feed_session_state=not_started",
@@ -126,14 +109,19 @@ def _runtime_lines(
                 "completed_day_state=unknown",
             ),
         )
-    current_time = datetime.now(UTC) if now is None else now.astimezone(UTC)
+    try:
+        updated_at = datetime.fromisoformat(runtime.updated_at)
+    except (TypeError, ValueError):
+        return _invalid_runtime_timestamp()
+    if updated_at.tzinfo is None or updated_at.utcoffset() is None:
+        return _invalid_runtime_timestamp()
+    updated_at = updated_at.astimezone(UTC)
+    current_time = now.astimezone(UTC)
+    if updated_at > current_time + timedelta(minutes=5):
+        return _invalid_runtime_timestamp()
     age = max(
         0,
-        int(
-            (
-                current_time - datetime.fromisoformat(runtime.updated_at).astimezone(UTC)
-            ).total_seconds()
-        ),
+        int((current_time - updated_at).total_seconds()),
     )
     process_alive = Path(f"/proc/{runtime.pid}").is_dir()
     terminal = runtime.process_state == "exited" or runtime.state in {
@@ -152,7 +140,36 @@ def _runtime_lines(
         f"runtime_heartbeat_age_seconds={age}",
     ]
     _append_runtime_evidence(lines, runtime)
-    return runtime_state, tuple(lines)
+    healthy = (
+        age <= 90
+        and runtime_state
+        not in {
+            "blocked",
+            "connecting",
+            "error",
+            "not_running",
+            "recovering",
+            "stale_process",
+            "stopped",
+        }
+        and runtime.last_error is None
+    )
+    return runtime_state, updated_at, healthy, tuple(lines)
+
+
+def _invalid_runtime_timestamp() -> tuple[str, None, bool, tuple[str, ...]]:
+    return (
+        "invalid_runtime_status",
+        None,
+        False,
+        (
+            "wsl_process_state=invalid_runtime_status",
+            "runtime_timestamp_state=invalid",
+            "feed_session_state=unknown",
+            "projection_state=not_available",
+            "completed_day_state=unknown",
+        ),
+    )
 
 
 def _append_runtime_evidence(lines: list[str], runtime: RealtimeRuntimeStatus) -> None:
@@ -208,28 +225,6 @@ def _scheduler_result_lines(last_result: str | None) -> tuple[str, ...]:
             )
         )
     return tuple(lines)
-
-
-def _operational_state(
-    scheduler_state: str,
-    last_result: str | None,
-    wrapper: WindowsWrapperDiagnostic | None,
-    runtime_state: str,
-) -> str:
-    if scheduler_state == "not_installed":
-        return "not_installed"
-    if wrapper is not None and wrapper.state in {
-        "wrapper_launch_exception",
-        "wsl_native_exit",
-    }:
-        return "blocked"
-    if last_result not in {None, "0", "0x0", "267009", "0x41301"}:
-        return "blocked"
-    if runtime_state in {"error", "blocked", "stale_process"}:
-        return "blocked"
-    if scheduler_state == "query_failed":
-        return "unknown"
-    return runtime_state
 
 
 def _scheduler_field(payload: str, *labels: str) -> str | None:

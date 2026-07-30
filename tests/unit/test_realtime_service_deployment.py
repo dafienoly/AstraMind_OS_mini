@@ -96,6 +96,8 @@ def test_windows_task_wrapper_bounds_logs_and_exposes_wsl_exit() -> None:
     assert "RedirectStandardOutput = true" in payload
     assert "RedirectStandardError = true" in payload
     assert "BuildArguments(arguments)" in payload
+    assert '$AttemptId = [guid]::NewGuid().ToString("D")' in payload
+    assert "attempt_id = $AttemptId" in payload
     assert "& wsl.exe" not in payload
     assert "2>&1" not in payload
     assert "/bin/bash" not in payload

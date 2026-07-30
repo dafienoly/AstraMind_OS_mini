@@ -102,7 +102,7 @@ def test_status_separates_scheduler_wrapper_and_python_feed_failures(tmp_path: P
         completed,
         control_root=control_root,
         environ={"LOCALAPPDATA": str(local_app_data)},
-        now=datetime.now(UTC),
+        now=datetime(2026, 7, 31, 2, 0, tzinfo=UTC),
     )
     rendered = "\n".join(lines)
 
@@ -149,6 +149,7 @@ def test_status_projects_wrapper_launch_exception_with_recovery(tmp_path: Path) 
             completed,
             control_root=tmp_path / "control",
             environ={"LOCALAPPDATA": str(local_app_data)},
+            now=datetime(2026, 7, 31, 2, 0, tzinfo=UTC),
         )
     )
 
@@ -188,7 +189,8 @@ def test_status_accepts_old_runtime_state_and_missing_wrapper(tmp_path: Path) ->
     rendered = "\n".join(lines)
 
     assert "wrapper_state=not_available" in rendered
-    assert "wrapper_status_compatibility=legacy_or_missing" in rendered
+    assert "wrapper_status_read_state=missing" in rendered
+    assert "wrapper_status_read_error=status_file_missing" in rendered
     assert "runtime_failure_origin=python_feed_error" in rendered
     assert "runtime_recovery_action=读取 service.log 与具体 Python feed 根因后恢复" in rendered
     assert "service_operational_state=blocked" in rendered

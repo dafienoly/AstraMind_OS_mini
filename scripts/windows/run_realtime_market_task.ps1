@@ -331,11 +331,16 @@ function Write-CapturedOutput([string]$StreamName, [string]$Value) {
     }
 }
 
-function Write-WrapperStatus([string]$State, [hashtable]$Evidence) {
+function Write-WrapperStatus(
+    [string]$State,
+    [string]$AttemptId,
+    [hashtable]$Evidence
+) {
     $Record = [ordered]@{
         schema_version = 2
         state = $State
         updated_at = [DateTimeOffset]::UtcNow.ToString("o")
+        attempt_id = $AttemptId
         wsl_executable = $null
         native_exit_code = $null
         exception_type = $null
@@ -380,6 +385,7 @@ function Get-WslExecutablePath {
 
 function Invoke-RealtimeMarketTask {
     $WslPath = Get-WslExecutablePath
+    $AttemptId = [guid]::NewGuid().ToString("D")
     $NativeArguments = @(
         "-d",
         $Distro,
@@ -396,7 +402,7 @@ function Invoke-RealtimeMarketTask {
     )
     Rotate-Log 0
     try {
-        Write-WrapperStatus "running" @{wsl_executable = $WslPath}
+        Write-WrapperStatus "running" $AttemptId @{wsl_executable = $WslPath}
         Initialize-NativeProcessRunner
         if (-not [System.IO.File]::Exists($WslPath)) {
             throw New-Object System.IO.FileNotFoundException(
@@ -433,10 +439,10 @@ function Invoke-RealtimeMarketTask {
             stderr_truncated = $Result.StandardError.Truncated
         }
         if ($Result.ExitCode -ne 0) {
-            Write-WrapperStatus "wsl_native_exit" $Evidence
+            Write-WrapperStatus "wsl_native_exit" $AttemptId $Evidence
             Write-BoundedLog "wsl_native_exit_code=$($Result.ExitCode)"
         } else {
-            Write-WrapperStatus "completed" $Evidence
+            Write-WrapperStatus "completed" $AttemptId $Evidence
             Write-BoundedLog "wsl_exit_code=0"
         }
         exit $Result.ExitCode
@@ -450,7 +456,7 @@ function Invoke-RealtimeMarketTask {
             "hresult=$ExceptionHResult message=$ExceptionMessage"
         )
         try {
-            Write-WrapperStatus "wrapper_launch_exception" @{
+            Write-WrapperStatus "wrapper_launch_exception" $AttemptId @{
                 wsl_executable = $WslPath
                 native_exit_code = 127
                 exception_type = $ExceptionType
