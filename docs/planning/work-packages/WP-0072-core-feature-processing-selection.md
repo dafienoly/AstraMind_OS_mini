@@ -1,7 +1,7 @@
 # WP-0072：核心特征处理、冻结选择与平行中性化诊断
 
-- 版本：1.2.0
-- 状态：已授权，依赖门已满足；Stage P 待派发
+- 版本：1.3.0
+- 状态：Stage P 已实现；等待独立复核，Stage S 未开始
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5B
 - UI 提案：不适用
@@ -398,3 +398,16 @@ git diff --check
 
 本授权仍不包含新 UI、生产数据补采、MiniQMT 新调用、账户、StandingMandate、
 Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本包扩大。
+
+## Stage P 实施结果
+
+- 已从主线 `27fb4113e7a7c7f92a94a5c90c5815852bd5bbe8` 集成的三个公开公式注册表机械提取
+  24/158/101 项规范顺序、定义版本、表达式和 registry/computation manifest 身份；
+- `core_selection_priors_v1.json` 共冻结 283 项事前方向和简体中文经济机制，内容哈希为
+  `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
+- 复杂度使用 `core-selection-complexity-tokenizer-v1`，规则哈希为
+  `sha256:7e2fa6eed8a0b668393f5b40ba65360b83d20f47742fd430bdbe7efa8b7aa3e4`；
+- Alpha101 四个申万三级公式保留 `+1` 先验并显式登记当前 capability
+  `unavailable`，不改变公式身份或方向；
+- 本阶段未实现处理、标签、选择统计或运行时代码，未读取任何开发统计、回放、选择或
+  模型结果；Stage S 只能消费已冻结内容哈希，任何先验变化必须新建版本与 lineage。
