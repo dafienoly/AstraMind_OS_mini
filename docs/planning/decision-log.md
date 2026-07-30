@@ -132,6 +132,7 @@
 | D-123 | WP-0072 最终可实施性预检发现多日 panel 不能由单个 `CoreInputSnapshot` 表达、非成员标签比较域不清、coverage fail 可穿透 full、跨包去重落在训练器造成所有权冲突，以及 BH/换手分母未冻结。WP-0072 升至 v1.2.0：panel 绑定完整日级 tuple，标签 rank 只消费 `research_member=true` 的合法成熟收益，coverage fail 阻断 full，选择层发布每周期三个 pair/一个 triple 联合 manifest，BH 只对有限 p 的 selection-eligible 准确集合执行，换手先按每日完整 observed U0 排名再取交集。WP-0073A 升至 v1.2.0，只消费冻结联合列，C2 只能改变 triple 资格不能改列。该修订属于 D-114 已授权的失败关闭与统计口径细化，不扩大功能或受保护边界 | 2026-07-30 |
 | D-124 | WP-0071B Alpha158 首次完成提交虽通过既有测试，但独立随机差分发现 `rolling_corr` 把 Qlib/Pandas 应保留的 ±Inf 错分为 NaN，故主控拒绝集成并返修。新单提交以原始左右序列 rolling std 执行 2e-5 mask，固定 1000×16 独立差分中有限值和 NaN/±Inf 分类误差均为 0，且相对 3×75×158 主 golden 无意外漂移；两轮独立复核、主线交叉合同、Ruff 和 strict mypy 通过后集成。该事件证明测试绿色不替代公式保真与计算身份审计 | 2026-07-30 |
 | D-125 | WP-0071A F0 的四轮独立复核依次发现并关闭 U0/期间绑定、稳定修订归并、市场计算 manifest、行情与公司分类输入顺序以及 golden 血缘缺口；最终 24 式、点时财务、统一最大权威时点选择、完整输入指纹和全部市场归约语义通过独立反例并集成。随后 Alpha101 复核发现公共行业选择器错误把 `effective_to` 当作有效当日，WP-0070 升至 1.1.1，严格执行 `[effective_from, effective_to)` 并拒绝空区间；该公共修复先于 Alpha101 返修集成，避免包内复制第二套选择器 | 2026-07-30 |
+| D-126 | WP-0071C Alpha101 的三轮独立复核关闭了第二套 U0 身份、同源 golden、L3 字符串绕门、行业边界和 unary/power 优先级问题。最终 101/101 生产 AST 与独立 grammar-ladder AST 一致，第三参考重建 1,212 个 cell，Python 999 个随机表达式与 NumPy 1,000 组算子差分通过；97 个非 L3 公式均有至少 2 个有限观测，四个 L3 公式在显式 unavailable capability 下稳定 N/A。三包联合回归通过后，WP-0071A/B/C 全部集成，WP-0072 依赖门解除；下一步必须先执行不查看 RankIC/标签/回放的 Stage P 并由主控冻结 283 项先验 | 2026-07-30 |
 
 ## 暂定方案
 
