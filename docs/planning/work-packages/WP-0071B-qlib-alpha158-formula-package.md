@@ -1,13 +1,13 @@
 # WP-0071B：Qlib Alpha158 保真公式包
 
 - 版本：1.0.0
-- 状态：已授权，待派发
+- 状态：实施中；独立复核返修与 WP-0070 v1.1 适配进行中
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
 - UI 提案：不适用
 - 前置：WP-0070 已集成；只消费其 `U0-v1`、`core-data-semantics-v1`、
   `CoreInputSnapshot`、`CoreFeaturePackageSpec` 和原始公式输出公共合同
-- 所有者：待派发 / Strategy Research
+- 所有者：Worker A / Strategy Research
 
 ## 目标
 

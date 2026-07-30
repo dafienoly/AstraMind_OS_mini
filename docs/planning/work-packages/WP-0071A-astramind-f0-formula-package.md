@@ -1,11 +1,11 @@
 # WP-0071A：AstraMind F0 原生 24 因子公式包
 
 - 版本：1.0.0
-- 状态：已授权，待派发
+- 状态：实施中；独立复核返修与 WP-0070 v1.1 适配进行中
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
 - UI 提案：不适用
-- 所有者：临时并行因子通道 / Strategy Research
+- 所有者：Worker B / Strategy Research
 
 ## 目标
 
