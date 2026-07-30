@@ -35,8 +35,8 @@ class IndustryMembershipObservation(ContractModel):
 
     @model_validator(mode="after")
     def validate_interval(self) -> IndustryMembershipObservation:
-        if self.valid_to is not None and self.valid_from > self.valid_to:
-            raise ValueError("industry membership interval is reversed")
+        if self.valid_to is not None and self.valid_from >= self.valid_to:
+            raise ValueError("industry membership interval must be non-empty and half-open")
         return self
 
 
@@ -83,7 +83,7 @@ def select_point_in_time_industry(
         for item in observations
         if item.instrument_id == instrument_id
         and item.valid_from <= decision_date
-        and (item.valid_to is None or item.valid_to >= decision_date)
+        and (item.valid_to is None or decision_date < item.valid_to)
         and item.available_at <= cutoff_at
     ]
     return max(visible, key=lambda item: (item.valid_from, item.available_at)) if visible else None

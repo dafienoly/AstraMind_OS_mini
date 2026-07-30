@@ -1,6 +1,6 @@
 # WP-0070：核心 U0、点时数据语义与特征合同
 
-- 版本：1.1.0
+- 版本：1.1.1
 - 状态：已完成并通过主控复核
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
@@ -28,6 +28,7 @@
 - `src/astramind_mini/strategy_research/core/**`
 - `tests/unit/test_core_universe.py`
 - `tests/unit/test_core_data_semantics.py`
+- `tests/unit/test_core_industry_semantics.py`
 - `tests/unit/test_core_feature_identity.py`
 - `tests/unit/test_core_common_calendar.py`
 - `tests/fixtures/core/**`
@@ -108,7 +109,8 @@ Alpha101 覆盖原论文身份、规范 AST、严格行业算子及版本。只�
 
 ```text
 uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py \
-  tests/unit/test_core_feature_identity.py tests/unit/test_core_common_calendar.py
+  tests/unit/test_core_industry_semantics.py tests/unit/test_core_feature_identity.py \
+  tests/unit/test_core_common_calendar.py
 uv run pytest tests/unit/test_architecture.py tests/unit/test_contracts.py
 make docs-check
 git diff --check
@@ -127,6 +129,9 @@ WP-0071A/B/C。三个因子包可以并行计算，但不得并行修改本包�
   2,000 万元门槛；决策分别保存研究成员、新增风险资格、诊断池、稳定原因码和可复算
   内容身份，20 个共同交易日逐日补零只用于流动性资格；
 - 行业与财务选择器按历史截止过滤未来归属、公告和修订，严格行业层级不向上回退；
+- 行业归属严格消费数据合同的 `[effective_from, effective_to)` 半开区间；
+  `effective_to` 当日记录已经失效，空区间在合同构造时失败关闭，避免边界日继续读取
+  已退出行业；
 - 核心输入身份绑定准确 `DataSnapshot`、共同日历、U0 决策集、数据集内容哈希、
   行数、日期范围、最大可用时间和封存层级，并拒绝重复数据集名、当前会话与未封存
   日内输入；

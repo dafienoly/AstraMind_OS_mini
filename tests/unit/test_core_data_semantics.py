@@ -20,14 +20,11 @@ from astramind_mini.strategy_research.core import (
     CoreRawFeatureRowDraft,
     FeatureAvailabilityState,
     FinancialObservation,
-    IndustryMembershipObservation,
     build_core_raw_feature_envelope,
     finalize_core_raw_feature_envelope,
     freeze_core_input_snapshot,
-    point_in_time_industry_level,
     prepare_core_raw_feature_batch,
     select_point_in_time_financial,
-    select_point_in_time_industry,
     visible_core_market_observations,
 )
 from astramind_mini.strategy_research.core.packages import CORE_FEATURE_ORDERS
@@ -154,36 +151,6 @@ def test_non_finite_raw_and_processed_values_fail_closed(bad_value: float) -> No
             value_winsorized=bad_value,
             value_standardized=0.0,
         )
-
-
-def test_future_industry_membership_is_excluded() -> None:
-    old = IndustryMembershipObservation(
-        instrument_id="600000.SH",
-        valid_from=date(2025, 1, 1),
-        sw_l1="bank",
-        sw_l2="state_bank",
-        sw_l3="large_bank",
-        available_at=datetime(2025, 1, 2, 18, 0, tzinfo=TZ),
-        source_record_hash=HASH_A,
-    )
-    future = IndustryMembershipObservation(
-        instrument_id="600000.SH",
-        valid_from=date(2026, 1, 1),
-        sw_l1="non_bank",
-        sw_l2="broker",
-        sw_l3="broker",
-        available_at=datetime(2026, 2, 2, 18, 0, tzinfo=TZ),
-        source_record_hash=HASH_B,
-    )
-    selected = select_point_in_time_industry(
-        (future, old),
-        instrument_id="600000.SH",
-        decision_date=date(2026, 1, 30),
-        cutoff_at=CUTOFF,
-    )
-    assert selected == old
-    l1_only = old.model_copy(update={"sw_l2": None, "sw_l3": None})
-    assert point_in_time_industry_level(l1_only, level="sw_l2") is None
 
 
 def test_future_financial_announcement_and_revision_do_not_rewrite_history() -> None:
