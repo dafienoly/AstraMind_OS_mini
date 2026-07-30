@@ -1,0 +1,27 @@
+{
+  "calendar_id": "sse-szse-common-fixture-v1",
+  "calendar_version": "sse-szse-common-2025-2026-v1",
+  "source_identity": "sse-szse-annual-closure-notices-2025-2026",
+  "authoritative_sources": [
+    "https://www.sse.com.cn/disclosure/dealinstruc/closed/c/c_20241223_10767110.shtml",
+    "https://www.sse.com.cn/disclosure/dealinstruc/closed/c/c_20251222_10802510.shtml",
+    "https://investor.szse.cn/disclosure/notice/general/t20241223_611283.html",
+    "https://investor.szse.cn/disclosure/notice/general/t20251222_618087.html"
+  ],
+  "first_date": "2025-01-02",
+  "last_date": "2026-07-31",
+  "closure_ranges": [
+    ["2025-01-28", "2025-02-04"],
+    ["2025-04-04", "2025-04-06"],
+    ["2025-05-01", "2025-05-05"],
+    ["2025-05-31", "2025-06-02"],
+    ["2025-10-01", "2025-10-08"],
+    ["2026-01-01", "2026-01-03"],
+    ["2026-02-15", "2026-02-23"],
+    ["2026-04-04", "2026-04-06"],
+    ["2026-05-01", "2026-05-05"],
+    ["2026-06-19", "2026-06-21"]
+  ],
+  "expected_open_session_count": 382,
+  "expected_calendar_content_hash": "sha256:931d28a5db9d6ae88b0fdb82c7f6588f2a01b8c8cf3d4dd8de51a144d0abea09"
+}

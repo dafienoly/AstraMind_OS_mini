@@ -1,0 +1,17 @@
+{
+  "authoritative_source": "arxiv-1601.00991v3",
+  "source_pdf_sha256": "1f9c21afe32dcb3ee77b31548acdaea00451fbfa1c0ee10c907867bcc736fce9",
+  "formula_registry_version": "formulaic-alpha101-v3-registry-v1",
+  "formula_registry_hash": "sha256:b2c9dcbeb8c81449cc2e60227aaf87da17a58bb51a04d0eca2468c594fa34a5c",
+  "operator_semantics_version": "alpha101-operator-semantics-v1",
+  "computation_manifest_hash": "sha256:26625f1b77bd63cc0064207e1612e2916ff99682aa4685807beeff3c735adc61",
+  "l3_capability_status": "unavailable",
+  "l3_capability_version": "sw2021-l3-unavailable-until-data-wp-v1",
+  "l3_capability_manifest_hash": "sha256:afce84df4dfc634b6b93fc371f5f68dc238dd921c3fc05f6a09f3964cf572c73",
+  "generator_name": "human-audited-alpha101-operator-oracle",
+  "generator_version": "2.0.0",
+  "generator_source_hash": "sha256:c77ddd67dd3089c3715f4755af36b8624fb3009cf051368df704b89092c86e46",
+  "dependency_versions": ["python-stdlib-math-only", "paper-and-written-arithmetic"],
+  "input_hash": "sha256:b147f12a7912cf2c466fe491dc6d07bc720f806fa5f85661078cf58be3f496e7",
+  "expected_output_hash": "sha256:3dbe62cf57c1bff0593144c40c5bbe94a56efb9a428fc50a015c06247ebf0936"
+}

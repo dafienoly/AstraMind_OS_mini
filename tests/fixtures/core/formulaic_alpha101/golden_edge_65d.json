@@ -1,0 +1,2679 @@
+{
+  "schema_version": "formulaic-alpha101-cell-golden-v2",
+  "case": "edge_65d",
+  "authoritative_source": "arxiv-1601.00991v3",
+  "source_pdf_sha256": "1f9c21afe32dcb3ee77b31548acdaea00451fbfa1c0ee10c907867bcc736fce9",
+  "formula_registry_version": "formulaic-alpha101-v3-registry-v1",
+  "formula_registry_hash": "sha256:b2c9dcbeb8c81449cc2e60227aaf87da17a58bb51a04d0eca2468c594fa34a5c",
+  "formulae_content_hash": "sha256:f2bc4248676ef49e74a2c931109750a24096892502ae65d0d1cdd16ba306df44",
+  "operator_semantics_version": "alpha101-operator-semantics-v1",
+  "computation_manifest_hash": "sha256:26625f1b77bd63cc0064207e1612e2916ff99682aa4685807beeff3c735adc61",
+  "l3_capability_status": "unavailable",
+  "l3_capability_version": "sw2021-l3-unavailable-until-data-wp-v1",
+  "l3_capability_manifest_hash": "sha256:afce84df4dfc634b6b93fc371f5f68dc238dd921c3fc05f6a09f3964cf572c73",
+  "generator_name": "standalone-stdlib-alpha101-golden",
+  "generator_version": "3.1.0",
+  "generator_source_hash": "sha256:30dcea7041aa3540e4b93714cd61b8bee1d242a101abc506f6c5efea39a31e55",
+  "dependency_versions": [
+    "python-stdlib-only"
+  ],
+  "production_imports": [],
+  "method": "Grammar-ladder parser, standalone synthetic input mapper, scalar operators and cell evaluator; no production parser, input mapper, operator or evaluator is imported.",
+  "formula_count": 101,
+  "instrument_count": 3,
+  "cell_count": 303,
+  "oracle_input_hash": "sha256:36d6977b447aba35f905e8bab451c6fc3610fa0631e38575967ad17f0e89b9ba",
+  "input_boundary_expectations": {
+    "finite": "accepted",
+    "nan": "rejected",
+    "positive_inf": "rejected",
+    "negative_inf": "rejected"
+  },
+  "coverage": {
+    "alpha101_cross_section_too_small": 10,
+    "alpha101_log_domain": 3,
+    "alpha101_no_legal_bar": 33,
+    "alpha101_nonfinite": 20,
+    "alpha101_power_domain": 1,
+    "alpha101_sw_l1_not_point_in_time": 5,
+    "alpha101_sw_l2_not_point_in_time": 10,
+    "alpha101_sw_l3_unavailable": 11,
+    "alpha101_window_incomplete": 42,
+    "alpha101_zero_denominator": 40,
+    "alpha101_zero_variance": 9,
+    "missing": 158,
+    "not_applicable": 26,
+    "observed": 119
+  },
+  "formula_coverage": {
+    "alpha101_001": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_002": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_003": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_004": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_005": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_006": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_007": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_008": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_009": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_010": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_011": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_012": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_013": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_014": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_015": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_016": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_017": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_018": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_019": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_020": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_021": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_022": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_023": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_024": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_025": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_026": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_027": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_028": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_029": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_030": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_031": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_032": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_033": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_034": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_035": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_036": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_037": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_038": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_039": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_040": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_041": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_042": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_043": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_044": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_045": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_046": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_047": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_048": {
+      "observed": 0,
+      "missing": 0,
+      "not_applicable": 3
+    },
+    "alpha101_049": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_050": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_051": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_052": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_053": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_054": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_055": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_056": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    },
+    "alpha101_057": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_058": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_059": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_060": {
+      "observed": 2,
+      "missing": 1,
+      "not_applicable": 0
+    },
+    "alpha101_061": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_062": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_063": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_064": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_065": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_066": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_067": {
+      "observed": 0,
+      "missing": 0,
+      "not_applicable": 3
+    },
+    "alpha101_068": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_069": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_070": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_071": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_072": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_073": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_074": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_075": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_076": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_077": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_078": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_079": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_080": {
+      "observed": 1,
+      "missing": 1,
+      "not_applicable": 1
+    },
+    "alpha101_081": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_082": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_083": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_084": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_085": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_086": {
+      "observed": 1,
+      "missing": 2,
+      "not_applicable": 0
+    },
+    "alpha101_087": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_088": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_089": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_090": {
+      "observed": 0,
+      "missing": 0,
+      "not_applicable": 3
+    },
+    "alpha101_091": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_092": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_093": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_094": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_095": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_096": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_097": {
+      "observed": 0,
+      "missing": 2,
+      "not_applicable": 1
+    },
+    "alpha101_098": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_099": {
+      "observed": 0,
+      "missing": 3,
+      "not_applicable": 0
+    },
+    "alpha101_100": {
+      "observed": 0,
+      "missing": 0,
+      "not_applicable": 3
+    },
+    "alpha101_101": {
+      "observed": 3,
+      "missing": 0,
+      "not_applicable": 0
+    }
+  },
+  "cells_content_hash": "sha256:61dd2fceb05f38b18843a87e2591cfbcc7acaa7fc8082ebb793afa693e62a572",
+  "cells": [
+    [
+      "alpha101_001",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_001",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_001",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_002",
+      "300000.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_002",
+      "300001.SZ",
+      "missing",
+      "alpha101_log_domain",
+      null
+    ],
+    [
+      "alpha101_002",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-2"
+    ],
+    [
+      "alpha101_003",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.042e9217b75b4p-2"
+    ],
+    [
+      "alpha101_003",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.47f144fe17f9ep-3"
+    ],
+    [
+      "alpha101_003",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.4e9a97db88ae7p-2"
+    ],
+    [
+      "alpha101_004",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.8000000000000p-2"
+    ],
+    [
+      "alpha101_004",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-3"
+    ],
+    [
+      "alpha101_004",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.e000000000000p-1"
+    ],
+    [
+      "alpha101_005",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_005",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_005",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_006",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_006",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.d3012c0fb3b4cp-3"
+    ],
+    [
+      "alpha101_006",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.57d0a3c6ff354p-1"
+    ],
+    [
+      "alpha101_007",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_007",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_007",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_008",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_008",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_008",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_009",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.1dec32a45c380p-5"
+    ],
+    [
+      "alpha101_009",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.575793362e8a0p-5"
+    ],
+    [
+      "alpha101_009",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.27d391c0df980p-4"
+    ],
+    [
+      "alpha101_010",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_010",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_010",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_011",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_011",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_011",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_012",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_012",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.575793362e8a0p-5"
+    ],
+    [
+      "alpha101_012",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.27d391c0df980p-4"
+    ],
+    [
+      "alpha101_013",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_013",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_013",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_014",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_014",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_014",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.57d0a3c6ff354p-1"
+    ],
+    [
+      "alpha101_015",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.4000000000000p+0"
+    ],
+    [
+      "alpha101_015",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.4000000000000p+0"
+    ],
+    [
+      "alpha101_015",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_016",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_016",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_016",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_017",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_017",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_017",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_018",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_018",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_018",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_019",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_019",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_019",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_020",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_020",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_020",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-2"
+    ],
+    [
+      "alpha101_021",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_021",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_021",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_022",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_022",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.d6f1f0fd14726p-1"
+    ],
+    [
+      "alpha101_022",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_023",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_023",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.178051b55a100p-8"
+    ],
+    [
+      "alpha101_023",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_024",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_024",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_024",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_025",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_025",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_025",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_026",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.924924924924bp-3"
+    ],
+    [
+      "alpha101_026",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.6a09e667f3bccp-56"
+    ],
+    [
+      "alpha101_026",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.6a09e667f3bccp-2"
+    ],
+    [
+      "alpha101_027",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_027",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_027",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_028",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_028",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.530564debf4b6p-4"
+    ],
+    [
+      "alpha101_028",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.d59f536428169p-1"
+    ],
+    [
+      "alpha101_029",
+      "300000.SZ",
+      "missing",
+      "alpha101_log_domain",
+      null
+    ],
+    [
+      "alpha101_029",
+      "300001.SZ",
+      "missing",
+      "alpha101_log_domain",
+      null
+    ],
+    [
+      "alpha101_029",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_030",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_030",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.b8c9b8bd68059p-3"
+    ],
+    [
+      "alpha101_030",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.e6b68bdc806e7p-5"
+    ],
+    [
+      "alpha101_031",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_031",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+1"
+    ],
+    [
+      "alpha101_031",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_032",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_032",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_032",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_033",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_033",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_033",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_034",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_034",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_034",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_035",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_035",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_035",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.bb45870f2f26dp-5"
+    ],
+    [
+      "alpha101_036",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_036",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_036",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_037",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_037",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_037",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_038",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_038",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_038",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-2"
+    ],
+    [
+      "alpha101_039",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_039",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_039",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_040",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_040",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.2fc3cf980c638p-3"
+    ],
+    [
+      "alpha101_040",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_041",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.f9a52b3292227p-1"
+    ],
+    [
+      "alpha101_041",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_041",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.690f031e0f000p-8"
+    ],
+    [
+      "alpha101_042",
+      "300000.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_042",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_042",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_043",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_043",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_043",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.71905c6417190p-5"
+    ],
+    [
+      "alpha101_044",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.37b007aed1578p-2"
+    ],
+    [
+      "alpha101_044",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.5ddb790164c4ep-8"
+    ],
+    [
+      "alpha101_044",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.1f1fd8d72c878p-2"
+    ],
+    [
+      "alpha101_045",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_045",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_045",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_046",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.1dec32a45c380p-5"
+    ],
+    [
+      "alpha101_046",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_046",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_047",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_047",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_047",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_048",
+      "300000.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_048",
+      "300001.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_048",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_049",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.1dec32a45c380p-5"
+    ],
+    [
+      "alpha101_049",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.575793362e8a0p-5"
+    ],
+    [
+      "alpha101_049",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.27d391c0df980p-4"
+    ],
+    [
+      "alpha101_050",
+      "300000.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_050",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_050",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_051",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.1dec32a45c380p-5"
+    ],
+    [
+      "alpha101_051",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.575793362e8a0p-5"
+    ],
+    [
+      "alpha101_051",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.27d391c0df980p-4"
+    ],
+    [
+      "alpha101_052",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_052",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_052",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_053",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.75a9d518f7367p+0"
+    ],
+    [
+      "alpha101_053",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.b036abe76fb9cp+1"
+    ],
+    [
+      "alpha101_053",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_054",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.ea30fa4a96809p-3"
+    ],
+    [
+      "alpha101_054",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.4c882cf47979ap-1"
+    ],
+    [
+      "alpha101_054",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_055",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_055",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.15abc5bd2feafp-1"
+    ],
+    [
+      "alpha101_055",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_056",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_056",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_056",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p-1"
+    ],
+    [
+      "alpha101_057",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_057",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_057",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_058",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_058",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_058",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l1_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_059",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_059",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_059",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_060",
+      "300000.SZ",
+      "observed",
+      null,
+      "0x1.5555555555555p-1"
+    ],
+    [
+      "alpha101_060",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x1.aaaaaaaaaaaabp+0"
+    ],
+    [
+      "alpha101_060",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_061",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_061",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_061",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_062",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_062",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_062",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_063",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_063",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_063",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_064",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_064",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_064",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_065",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_065",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_065",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_066",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_066",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_066",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_067",
+      "300000.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_067",
+      "300001.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_067",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l1_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_068",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_068",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_068",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_069",
+      "300000.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_069",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_069",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_070",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_070",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_070",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_071",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_071",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_071",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_072",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_072",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_072",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ],
+    [
+      "alpha101_073",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_073",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_073",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_074",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_074",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_074",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_075",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_075",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_075",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_076",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_076",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_076",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l1_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_077",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_077",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_077",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_078",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_078",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_078",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_079",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_079",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_079",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l1_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_080",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_080",
+      "300001.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_080",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_081",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_081",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_081",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_082",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_082",
+      "300001.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_082",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l1_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_083",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.ca65e5d2bac7ep+3"
+    ],
+    [
+      "alpha101_083",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_083",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_084",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_084",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_084",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x1.f8d2452046f48p-1"
+    ],
+    [
+      "alpha101_085",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_085",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0000000000000p+0"
+    ],
+    [
+      "alpha101_085",
+      "300002.SZ",
+      "missing",
+      "alpha101_power_domain",
+      null
+    ],
+    [
+      "alpha101_086",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_086",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_086",
+      "300002.SZ",
+      "observed",
+      null,
+      "-0x0.0p+0"
+    ],
+    [
+      "alpha101_087",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_087",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_087",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_088",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_088",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_088",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_089",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_089",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_089",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_090",
+      "300000.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_090",
+      "300001.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_090",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_091",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_091",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_091",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_092",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_092",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_092",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_093",
+      "300000.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_093",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_093",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_094",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_094",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_094",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_095",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_095",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_095",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_096",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_096",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_096",
+      "300002.SZ",
+      "missing",
+      "alpha101_zero_variance",
+      null
+    ],
+    [
+      "alpha101_097",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_097",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_097",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l2_not_point_in_time",
+      null
+    ],
+    [
+      "alpha101_098",
+      "300000.SZ",
+      "missing",
+      "alpha101_nonfinite",
+      null
+    ],
+    [
+      "alpha101_098",
+      "300001.SZ",
+      "missing",
+      "alpha101_zero_denominator",
+      null
+    ],
+    [
+      "alpha101_098",
+      "300002.SZ",
+      "missing",
+      "alpha101_cross_section_too_small",
+      null
+    ],
+    [
+      "alpha101_099",
+      "300000.SZ",
+      "missing",
+      "alpha101_no_legal_bar",
+      null
+    ],
+    [
+      "alpha101_099",
+      "300001.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_099",
+      "300002.SZ",
+      "missing",
+      "alpha101_window_incomplete",
+      null
+    ],
+    [
+      "alpha101_100",
+      "300000.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_100",
+      "300001.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_100",
+      "300002.SZ",
+      "not_applicable",
+      "alpha101_sw_l3_unavailable",
+      null
+    ],
+    [
+      "alpha101_101",
+      "300000.SZ",
+      "observed",
+      null,
+      "-0x1.2dba814131942p-1"
+    ],
+    [
+      "alpha101_101",
+      "300001.SZ",
+      "observed",
+      null,
+      "0x1.0075d2c6a0d1ep-1"
+    ],
+    [
+      "alpha101_101",
+      "300002.SZ",
+      "observed",
+      null,
+      "0x0.0p+0"
+    ]
+  ]
+}

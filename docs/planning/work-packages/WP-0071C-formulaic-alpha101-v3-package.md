@@ -1,7 +1,7 @@
 # WP-0071C：论文 Formulaic Alpha101 v3 保真计算包
 
-- 版本：1.0.0
-- 状态：实施中；独立复核返修与 WP-0070 v1.1 适配进行中
+- 版本：1.3.0
+- 状态：已完成；等待主控独立复核与集成
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
 - UI 提案：不适用
@@ -185,6 +185,14 @@ point-in-time IndClass
 去均值必须使用每个历史日当时可知的 U0 与行业身份，不能用决策日成员或当前行业回填
 历史窗口。
 
+`CoreInputSnapshot.universe_content_hash` 只绑定最终 `decision_date` 的公共
+`core_universe_content_hash(current_decisions)`，不得改写为 Alpha101 私有历史哈希。
+完整历史成员切片另以 `formulaic-alpha101-u0-history-v1` manifest 和
+`history_content_hash` 冻结，精确覆盖有序日期×证券轴、每日截止、每行
+`CoreUniverseDecision`、行数和日期范围，并作为独立 sealed dataset slice 进入同一
+`CoreInputSnapshot`。入口分别校验最终日公共 U0 身份和历史 manifest；二者不可互相
+替代。
+
 ## `alpha101-operator-semantics-v1`
 
 ### 标量、布尔与数值域
@@ -196,6 +204,8 @@ point-in-time IndClass
   是公式常数，不属于实现补丁；
 - `log(x)` 要求 `x > 0`；
 - 普通 `^` 使用实数幂；负底非整数指数、`0^0` 和零的负指数均失败关闭；
+- `^` 右结合且优先于前缀一元正负号：`-2^2 = -(2^2) = -4`、
+  `(-2)^2 = 4`、`2^-2 = 0.25`；比较和条件表达式的优先级低于幂与一元运算；
 - `signedpower(x,a) = sign(x) * abs(x)^a` 是独立算子，不能退化为普通幂；
   Alpha#001 即使指数为 2 也必须保留输入符号；
 - 任一非有限中间值或最终值转为 `missing`，不得夹紧为有限极值。
@@ -250,6 +260,12 @@ Alpha#067 同时要求 L1 和 L3，缺任一级即 N/A。缺某证券的准确�
 Alpha#048、#067、#090、#100 必须稳定输出 `not_applicable`。L1/L2 历史回溯若不能
 证明当时可知，对相应历史日期同样 N/A。101 个注册定义和输出顺序仍完整保留，不得
 删除这些列或改名为 97 维。
+
+首版 L3 能力由 `formulaic-alpha101-industry-capability-v1` 显式冻结为
+`unavailable`，版本为 `sw2021-l3-unavailable-until-data-wp-v1`。非空、重命名或补齐
+`sw_l3` 字符串都不能启用能力；能力 manifest 与哈希进入 computation manifest 和
+原始输出身份。未来只能由独立数据工作包建立新的能力版本，不得自动探测字符串，也
+不得回退到 L2/L1。
 
 ## 三态、停牌与失败关闭
 
@@ -326,7 +342,8 @@ alpha101_sw_l3_unavailable
 
 ### `pit_industry`
 
-- 包含行业 `effective_from` 与 `available_at` 不同日、未来修订和层级缺失；
+- 包含行业 `valid_from` 与 `available_at` 不同日、`[valid_from, valid_to)` 半开有效期、
+  未来修订和层级缺失；
 - 证明未来行业不能回写历史；
 - 证明 L1/L2/L3 不向上回退；
 - 精确证明 #048/#067/#090/#100 在无 L3 时 N/A；
@@ -340,6 +357,10 @@ source_pdf_sha256
 formula_registry_version
 formula_registry_hash
 operator_semantics_version
+computation_manifest_hash
+l3_capability_status
+l3_capability_version
+l3_capability_manifest_hash
 generator_name
 generator_version
 dependency_versions
@@ -347,8 +368,14 @@ input_hash
 expected_output_hash
 ```
 
-完整 101 式 expected 使用独立、简单的标量 reference evaluator 生成，并人工复核
-关键易误抄公式；生产向量 evaluator 不得同时充当唯一 oracle。
+完整 101 式 expected 使用只依赖 Python 标准库的独立 parser、输入映射、算子和
+cell-at-a-time evaluator 一次性生成并冻结。full、edge、PIT 的每个
+`feature × instrument` cell 均保存 `value/state/reason`，生成器源码、版本、输入身份、
+输出内容哈希和生产导入空集同时进入 fixture。主 golden 断言只读取冻结 expected，
+不调用生产入口生成 expected；另有 provenance 回归在测试时实际运行结构不同的
+grammar-ladder parser、独立输入映射、独立算子和 cell-at-a-time evaluator，并要求
+101/101 式、full/edge/PIT 全部 cell 与冻结制品精确一致。包内 scalar reference 仅
+作为次级 differential，生产向量 evaluator 不得同时充当唯一 oracle。
 
 ## 数值验收
 
@@ -416,3 +443,66 @@ git diff --check
 主控复核论文 PDF hash、101 公式注册表、算子语义、行业 N/A 矩阵、260/65/PIT golden
 以及三态失败关闭，再允许 WP-0072 消费 F2 原始 envelope。本包完成不表示申万 L3
 数据已具备，也不授权 MiniQMT、Paper、Live 或真实资金。
+
+## 实施结果（2026-07-30）
+
+- 已从 arXiv v3 原始 PDF 独立提取 Alpha#001～#101；去除 PDF 分页号并仅归一化空白
+  后，101/101 条与本地原始公式逐字一致。PDF 仍为 244,416 字节，SHA-256 与本包
+  登记值一致。
+- 本地严格公式注册表固定为
+  `sha256:b2c9dcbeb8c81449cc2e60227aaf87da17a58bb51a04d0eca2468c594fa34a5c`；
+  WP-0070 公共名称/顺序/版本注册表仍为
+  `sha256:6895ebea945ed4c95e43d8fd7d19cd97a77fb3a32f7868133c320a5f9ebde1c5`。
+  最大完整输入需求按“所需会话数”固定为 252，不再误记为 251 个回看偏移。
+- 包内 `computation_manifest_hash` 固定为
+  `sha256:26625f1b77bd63cc0064207e1612e2916ff99682aa4685807beeff3c735adc61`，
+  同时绑定 PDF 来源、101 条原始公式与 AST、算子语义、公共包规格、
+  `core-data-semantics-v1`、`U0-v1`、严格申万 L1/L2/L3 映射、输入映射和两个
+  行情/行业切片、一个历史 U0 manifest 哈希语义、表达式语法和 L3 capability；
+  调用方不能注入替代 manifest。
+- L3 capability manifest 固定为
+  `sha256:afce84df4dfc634b6b93fc371f5f68dc238dd921c3fc05f6a09f3964cf572c73`
+  且状态为 `unavailable`。注入、重命名或补齐任意 L3 字符串后，#048/#067/#090/#100
+  仍稳定 N/A，97 个非 L3 公式不受影响；能力或哈希伪造会改变受保护身份并失败关闭。
+- bar 与行业行分别使用 `alpha101-daily-input-slice-v1` 和
+  `alpha101-industry-input-slice-v1` 内容身份，并与 `CoreInputSnapshot` 的准确数据集
+  哈希和行数核对。同一核心输入下修改 OHLCV/amount/cap、可用时间或行业记录会在入口
+ 失败关闭；每日 U0、共同日历和历史行业截止继续使用 WP-0070/点时合同。
+- 已删除第二套 U0 identity：核心输入只使用最终日公共
+  `core_universe_content_hash`；完整日序列另由
+  `formulaic-alpha101-u0-history-v1/history_content_hash` manifest 及独立数据切片
+  绑定。最终成员、历史成员、重复键、未来截止和非规范输入顺序攻击分别失败关闭，
+  fixture 使用公共 helper 构造诚实 snapshot。
+- full、edge、PIT 共冻结 1,212 个独立 golden cell，逐一保存
+  `value/state/reason`。生成器含不使用生产 precedence table 的 grammar-ladder
+  parser、合成输入映射、算子和 cell-at-a-time evaluator，不导入生产 Alpha101 模块；
+  测试实际重跑第三参考并对 1,212/1,212 cell 精确比对。生产向量实现先对冻结 golden
+  验证，再与包内 scalar reference 作次级 differential。parser、close 输入映射和
+  除法算子单点故障注入均能触发 golden 失败。
+- 生产 parser 和独立 parser 分别执行并证明 `-2^2=-4`、`(-2)^2=4`、
+  `2^-2=0.25`、`--2=2`、`2^3^2=512` 以及比较/条件与幂结合；修复不依赖公式文本
+  恰好避开歧义。full fixture 保持 6 证券×260 共同交易日，97 个非 L3 公式每式至少
+  2 个 finite observed cell；四个严格 L3 公式各 6 个 cell 全为 N/A。
+- 独立生成器源码身份固定为
+  `sha256:30dcea7041aa3540e4b93714cd61b8bee1d242a101abc506f6c5efea39a31e55`；
+  full、edge、PIT 的独立输入哈希依次为
+  `sha256:5dbcb1dbf29d01ee85296bf21b4a78750128f8a9e70fbbff0b3c4781296393f7`、
+  `sha256:36d6977b447aba35f905e8bab451c6fc3610fa0631e38575967ad17f0e89b9ba`、
+  `sha256:dafe6e27d2e65e513b988ebcab04d134cd9679314a6c9e8db24c12a36c087cad`；
+  full、edge、PIT 的冻结 cell 内容哈希依次为
+  `sha256:2da2c8bcca4b41aef4815126a2da8831c38c114cbbaf42238164b5e40e8e067e`、
+  `sha256:61dd2fceb05f38b18843a87e2591cfbcc7acaa7fc8082ebb793afa693e62a572`、
+  `sha256:70fd69b3d56658f88b80f9e41c715c6bb80e49d3457c673eacd23618c00de758`。
+- 已覆盖 3 证券×65 日停牌、零成交、一字板、窗口不完整、零方差、除零、非法 log、
+  非有限结果和严格行业缺层；`observed/missing/not_applicable` 不使用数值占位。
+  缺申万 L3 时 #048/#067/#090/#100 稳定 N/A，不回退到 L2/L1 或任何 A 股近似身份。
+- 已增加前缀因果性、公式分块/逆序幂等、证券局部隔离、共同日历删日、未来 bar/行业、
+  U0 翻转、输入内容篡改、输出行与 manifest 篡改反例。全部数值比较继续使用
+  `atol=rtol=1e-12`，没有 `1e-9` 例外。
+- `factory.py`、registry/provenance 测试和端到端 evaluator 测试按 fixture 构造、
+  来源身份与完整合同矩阵分责，均低于 500 行阻断阈值，未机械压行或拆出无责任边界
+  文件。独立 golden JSON 属生成制品，生产模块与函数均低于阻断阈值。
+
+论文没有唯一规定 rank 归一化、总体/样本统计、并列、非整数窗口、三值短路和中国行业
+映射；这些已按本包既有批准决定失败关闭固化，没有引入新的用户选择。真实点时申万 L3
+仍是外部数据门，本提交只保证缺失时的严格 N/A，不声称生产数据已经具备。
