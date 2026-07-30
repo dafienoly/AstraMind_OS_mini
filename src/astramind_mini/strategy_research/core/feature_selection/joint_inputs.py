@@ -59,6 +59,24 @@ def collect_joint_inputs(
         )
         for package in package_ids
     )
+    return _collect_validated_joint_inputs(
+        package_ids=package_ids,
+        horizon=horizon,
+        manifests=manifests,
+        selection_parents=selection_parents,
+        single_views=single_views,
+    )
+
+
+def _collect_validated_joint_inputs(
+    *,
+    package_ids: tuple[str, ...],
+    horizon: CoreLabelHorizon,
+    manifests: tuple[CoreFeatureSelectionManifest, ...],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents],
+    single_views: Mapping[str, CoreFeatureViewManifest],
+) -> JointInputs:
+    """Collect after the caller rebuilt each exact selection in this same call."""
     prior_hash = _validate_shared_selection_inputs(manifests, horizon)
     evidence_by_key: dict[str, CoreFeatureSelectionEvidence] = {}
     candidates: list[CoreJointFeatureParent] = []

@@ -1,11 +1,11 @@
 # WP-0072：核心特征处理、冻结选择与平行中性化诊断
 
-- 版本：1.3.0
-- 状态：Stage P / Stage S 均已实现、独立复核并集成
+- 版本：1.3.1
+- 状态：Stage P / Stage S 已集成；后续周期投影扩展已实现、待独立复核
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5B
 - UI 提案：不适用
-- 所有者：下一空闲永久工作树 / Strategy Research
+- 所有者：Strategy Research；周期投影扩展由永久 Worker A 单写
 
 ## 目标
 
@@ -92,6 +92,12 @@ Strategy Research 的三个内聚子包分别拥有：
 - `CoreJointSelectedViewManifest`：按 H20/H60 分别冻结三个 selected 两两联合和一个
   selected 三包联合的准确父级、跨包相关、完全链接簇、代表选择、最终列顺序和内容
   哈希；它拥有跨包去重，模型训练器只能消费，不能重新选择或改列。
+- `CoreFrozenFeatureDefinition` / `CoreFrozenJointFeatureDefinition`：只从开发期完整
+  selection 父级重建并冻结可复用的 full/selected 列定义、包顺序、horizon、簇和代表；
+- `CorePeriodFeatureMatrixProjection` / `CorePeriodJointMatrixProjection`：把上述稳定
+  定义应用到开发窗之后、从真实当期 CoreInputSnapshot、U0、raw、控制面和处理规格
+  重建验证的 processed panel；不把当期数据送回选择器，也不接受任意 processed
+  envelope。
 
 以上制品全部使用规范 JSON 序列化和 SHA-256 内容身份。重复运行必须幂等；上游 raw
 身份、U0、决策日、处理规格、标签、折边界、方向、种子、选择结果或列顺序变化必须
@@ -497,3 +503,20 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
   本阶段未读取生产 `var/`、历史胜负或模型结果，也未触碰 MiniQMT、账户、Paper、
   Live、组合或订单。
+
+## 后续周期投影扩展结果
+
+- 单包 `full`、单包 `selected`、三个 selected pair 和一个 selected triple 均先通过
+  完整开发期 parents 重建原 selection/view，再冻结 feature ID、列顺序、包顺序、
+  horizon、fold/plan/spec/Stage P prior、相关簇、代表和跨包去重结果；投影期间不重新
+  选择、不改变列定义；
+- 当期入口逐日从规范 `CoreInputSnapshot`、完整 U0 审计行、公共 raw envelope、
+  控制面和固定处理规格调用唯一 `process_core_raw_feature_envelope` 重建 processed
+  envelope，再重建有序 panel；candidate 与重建结果使用基类 Pydantic serializer
+  的 canonical bytes 逐字段比较，不信任 receipt、缓存、实例 `model_dump` 或
+  自重哈希 processed 制品；
+- 当期 panel 必须整体晚于开发 selection 窗口；其包定义、registry/computation/
+  processing hash、feature order、decision date、U0、证券行序和三态值必须与真实
+  parents 一致。联合投影还要求所有包的 U0 内容身份和行序完全相同；
+- 原有仅允许开发期父 envelope 的 single/joint view projector 未放宽；扩展通过独立
+  rebuild/validate API 提供，不修改标签、模型、共享合同、Stage P prior 或因子算法。

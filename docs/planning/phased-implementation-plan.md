@@ -106,7 +106,7 @@ WP-0064 是交付治理基线；下表是后续顺序和授权状态的唯一计
 | WP-0069 | 实时封存、候选长任务和 Shadow 故障恢复验收 | A | 待运行实施授权；依赖 WP-0065/0067 |
 | WP-0070 | 核心 U0、点时数据语义、唯一共同日历和公共特征合同 | C | 1.1.1 已完成并通过独立复核 |
 | WP-0071A/B/C | F0、Qlib Alpha158、论文 Alpha101 三个独立保真计算包 | A/B/C 临时并行 | 三包均已独立复核并集成；持续授权已释放，依赖 WP-0070 |
-| [WP-0072](./work-packages/WP-0072-core-feature-processing-selection.md) | 公共标签/多日 panel、full/selected、三态处理、冻结选择与中性化诊断 | Worker B 单写者 | 1.3.0 Stage P / Stage S 均已独立复核并集成 |
+| [WP-0072](./work-packages/WP-0072-core-feature-processing-selection.md) | 公共标签/多日 panel、full/selected、三态处理、冻结选择与中性化诊断 | Stage S Worker B；周期投影扩展 Worker A | 1.3.1；Stage P / Stage S 已集成，后续周期投影扩展待独立复核 |
 | [WP-0073A](./work-packages/WP-0073A-core-h20-h60-ridge-calibration.md) | H20/H60 B0/Ridge、滚动预测与校准 | 后续核心模型通道 | 1.2.0 已固化并授权；WP-0072 依赖门已满足，已释放 |
 | [WP-0073B](./work-packages/WP-0073B-core-lightgbm-challenge.md) | 最多四槽 LightGBM 有预算挑战 | 非线性模型通道 | 已固化并授权；等待 WP-0074A 槽位 manifest |
 | [WP-0074A](./work-packages/WP-0074A-core-ridge-o0-evidence-slots.md) | Ridge O0/C2 回放、联合资格与 LightGBM 槽位 | 组合证据通道 | 已固化并授权；等待 WP-0073A |
@@ -699,7 +699,8 @@ Paper 和经授权的 Live；候选账本相互隔离，Paper 分仓可归因且
 
 **状态：REQ-2026-0007 v2.3.0 需求基线与首期离线链持续实施均已批准；WP-0070
 1.1.1 已完成共同日历、计算语义身份与行业半开区间补强，WP-0071A/B/C 均已集成；
-WP-0072 v1.3.0 Stage P / Stage S 已独立复核并集成，WP-0073A 已释放。新 UI、生产
+WP-0072 v1.3.1 Stage P / Stage S 已集成，后续周期投影扩展待独立复核；WP-0073A
+已释放。新 UI、生产
 补采、MiniQMT、Paper/Live、StandingMandate、账户和订单继续使用各自保护门。**
 
 ### 目标

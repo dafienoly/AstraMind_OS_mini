@@ -82,15 +82,7 @@ def project_core_feature_matrix(
         raise ValueError("blocked feature view cannot project a model matrix")
     if any(item.decision_date == envelope.decision_date for item in view.excluded_dates):
         raise ValueError("excluded no-observed date cannot project a model matrix")
-    rows_by_key = {(item.instrument_id, item.feature_id): item for item in envelope.rows}
-    values = tuple(
-        tuple(
-            component
-            for feature_id in view.feature_ids
-            for component in _row_components(rows_by_key[(instrument, feature_id)])
-        )
-        for instrument in envelope.instrument_order
-    )
+    values = _projection_values(envelope, view.feature_ids)
     payload = {
         "schema": "core-feature-matrix-projection-v1",
         "view_id": view.view_id,
@@ -109,6 +101,21 @@ def project_core_feature_matrix(
             "content_hash": content_hash,
             **{key: value for key, value in payload.items() if key != "schema"},
         }
+    )
+
+
+def _projection_values(
+    envelope: CoreProcessedFeatureEnvelope,
+    feature_ids: tuple[str, ...],
+) -> tuple[tuple[float, ...], ...]:
+    rows_by_key = {(item.instrument_id, item.feature_id): item for item in envelope.rows}
+    return tuple(
+        tuple(
+            component
+            for feature_id in feature_ids
+            for component in _row_components(rows_by_key[(instrument, feature_id)])
+        )
+        for instrument in envelope.instrument_order
     )
 
 

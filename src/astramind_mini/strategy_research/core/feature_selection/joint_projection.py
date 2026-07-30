@@ -17,7 +17,11 @@ from ..feature_processing import (
     CoreProcessedFeatureRow,
 )
 from .joint import build_core_joint_selected_view_manifests
-from .joint_models import CoreJointSelectedViewManifest, CoreJointViewStatus
+from .joint_models import (
+    CoreJointFeatureParent,
+    CoreJointSelectedViewManifest,
+    CoreJointViewStatus,
+)
 from .models import CoreFeatureSelectionManifest
 from .parent_validation import (
     CoreFeatureSelectionParents,
@@ -65,7 +69,7 @@ def project_core_joint_selected_matrix(
         selection_parents=selection_parents,
         single_views=single_views,
     )
-    values = _projection_values(envelopes, view, row_order)
+    values = _projection_values(envelopes, view.selected_parents, row_order)
     payload = {
         "schema": "core-joint-matrix-projection-v1",
         "joint_view_id": view.joint_view_id,
@@ -156,7 +160,7 @@ def _validate_projection_parents(
 
 def _projection_values(
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
-    view: CoreJointSelectedViewManifest,
+    selected_parents: tuple[CoreJointFeatureParent, ...],
     row_order: tuple[str, ...],
 ) -> tuple[tuple[float, ...], ...]:
     rows_by_parent = {
@@ -167,7 +171,7 @@ def _projection_values(
     return tuple(
         tuple(
             component
-            for parent in view.selected_parents
+            for parent in selected_parents
             for component in _row_components(
                 rows_by_parent[(parent.package_id, instrument, parent.feature_id)]
             )

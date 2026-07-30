@@ -57,6 +57,8 @@ def profile_ranks(
     day_index: int,
 ) -> tuple[float | None, ...]:
     ascending = (0.0, 1.0, 2.0, 3.0, 4.0, 5.0)
+    if profile == "full_ready":
+        return ascending if feature_index == 0 else (0.0,) * 6
     if profile == "single":
         return ascending if feature_index == 0 else (None,) * 6
     if profile == "complete_link":

@@ -61,6 +61,14 @@ def build_core_joint_selected_view_manifests(
         selection_parents=selection_parents,
         single_views=single_views,
     )
+    return _build_core_joint_views_from_inputs(horizon, validated_inputs)
+
+
+def _build_core_joint_views_from_inputs(
+    horizon: CoreLabelHorizon,
+    validated_inputs: JointInputs,
+) -> tuple[CoreJointSelectedViewManifest, ...]:
+    """Build the four canonical views after exact parents were collected once."""
     results = [
         _build_joint(
             package_ids=package_ids,

@@ -28,6 +28,22 @@ from .joint_models import (
     CoreJointSelectedViewManifest,
     CoreJointViewStatus,
 )
+from .joint_period_definition import (
+    CoreFrozenJointFeatureDefinitionParents,
+    rebuild_core_frozen_joint_feature_definition,
+    validate_core_frozen_joint_feature_definition,
+)
+from .joint_period_models import (
+    CoreFrozenJointFeatureDefinition,
+    CoreFrozenJointParentDefinition,
+    CorePeriodJointMatrixProjection,
+    CorePeriodJointPackageBinding,
+)
+from .joint_period_projection import (
+    CorePeriodJointProjectionParents,
+    rebuild_core_period_joint_projection,
+    validate_core_period_joint_projection,
+)
 from .joint_projection import CoreJointMatrixProjection, project_core_joint_selected_matrix
 from .metrics import pair_correlation_evidence
 from .models import (
@@ -82,6 +98,9 @@ __all__ = [
     "CoreFeatureSelectionManifest",
     "CoreFeatureSelectionParents",
     "CoreFoldCoverageEvidence",
+    "CoreFrozenJointFeatureDefinition",
+    "CoreFrozenJointFeatureDefinitionParents",
+    "CoreFrozenJointParentDefinition",
     "CoreJointDailyBinding",
     "CoreJointFeatureParent",
     "CoreJointMatrixProjection",
@@ -90,6 +109,9 @@ __all__ = [
     "CoreJointViewStatus",
     "CoreLabelBatchReference",
     "CorePairCorrelationEvidence",
+    "CorePeriodJointMatrixProjection",
+    "CorePeriodJointPackageBinding",
+    "CorePeriodJointProjectionParents",
     "CoreProcessedDayReference",
     "CoreSelectionCluster",
     "CoreSelectionFold",
@@ -115,6 +137,8 @@ __all__ = [
     "pair_correlation_evidence",
     "project_core_joint_selected_matrix",
     "rebuild_core_feature_selection",
+    "rebuild_core_frozen_joint_feature_definition",
+    "rebuild_core_period_joint_projection",
     "select_core_features",
     "selection_seed",
     "spearman",
@@ -123,4 +147,6 @@ __all__ = [
     "subfold_direction_consistent",
     "summarize_subfold_rankic",
     "validate_core_feature_selection",
+    "validate_core_frozen_joint_feature_definition",
+    "validate_core_period_joint_projection",
 ]
