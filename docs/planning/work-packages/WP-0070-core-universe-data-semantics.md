@@ -1,6 +1,6 @@
 # WP-0070：核心 U0、点时数据语义与特征合同
 
-- 版本：1.0.0
+- 版本：1.1.0
 - 状态：已完成并通过主控复核
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
@@ -29,6 +29,7 @@
 - `tests/unit/test_core_universe.py`
 - `tests/unit/test_core_data_semantics.py`
 - `tests/unit/test_core_feature_identity.py`
+- `tests/unit/test_core_common_calendar.py`
 - `tests/fixtures/core/**`
 - 本工作包及其直接需求/追踪状态
 
@@ -49,6 +50,18 @@ Strategy Research 的 `core` 子包拥有：
 5. `CoreFeaturePackageSpec`：只声明规范包身份、规范维数和输入语义；本包不生成因子值。
 
 后续包只能导入该子包公开入口，不得复制资格或语义常量。
+
+共同交易日历使用唯一的 `CoreCommonCalendar` / `core-common-calendar-v1` 公共合同：
+内容身份同时绑定日历 ID 和截至决策日的完整有序共同交易日序列。
+`CoreInputSnapshot` 直接保存该不可变日历证据，F0、Alpha158 和 Alpha101 只能消费
+这一个序列与哈希，不得在各自包内定义不同的日历哈希算法。删除、插入、调序任一
+共同交易日都会创建不同身份；伪造序列但沿用旧哈希必须在合同构造时失败关闭。
+
+原始因子制品除包规格和特征 ID 注册表外，还必须绑定
+`computation_manifest_hash`。该哈希由各因子包根据自己的完整计算语义生成：
+F0 覆盖全部公式与财务字段口径，Alpha158 覆盖固定 Qlib 提交、表达式和算子语义，
+Alpha101 覆盖原论文身份、规范 AST、严格行业算子及版本。只改公式而保留相同特征
+名称时也必须产生新制品身份。
 
 ## 行为
 
@@ -82,14 +95,20 @@ Strategy Research 的 `core` 子包拥有：
    缺失状态，不把成交约束口径回写成因子值。
 5. Given 数据集引用、截止、行数、日期范围或内容发生变化，When 冻结输入，
    Then 发布新身份；旧身份不被覆盖。
-6. 核心合同不导入 MiniQMT SDK、Market Regime 内部模块、Portfolio & Risk 或
+6. Given 三个因子包消费同一 `CoreInputSnapshot`，When 校验共同交易日，
+   Then 三包读取同一个完整 `CoreCommonCalendar`；所有证券同时删除一个中间交易日
+   也必须因日历身份不匹配而失败，不能静默压缩窗口。
+7. Given 因子 ID 和输出值不变但完整公式、源版本或算子语义变化，When 冻结原始
+   因子制品，Then `computation_manifest_hash`、`FeatureSnapshot` 和 manifest 身份
+   必须变化；沿用旧身份必须失败关闭。
+8. 核心合同不导入 MiniQMT SDK、Market Regime 内部模块、Portfolio & Risk 或
    Trading Execution；不创建 `PortfolioTarget`、`OrderPlan` 或券商动作。
 
 ## 检查
 
 ```text
 uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py \
-  tests/unit/test_core_feature_identity.py
+  tests/unit/test_core_feature_identity.py tests/unit/test_core_common_calendar.py
 uv run pytest tests/unit/test_architecture.py tests/unit/test_contracts.py
 make docs-check
 git diff --check
@@ -111,13 +130,20 @@ WP-0071A/B/C。三个因子包可以并行计算，但不得并行修改本包�
 - 核心输入身份绑定准确 `DataSnapshot`、共同日历、U0 决策集、数据集内容哈希、
   行数、日期范围、最大可用时间和封存层级，并拒绝重复数据集名、当前会话与未封存
   日内输入；
+- 1.1.0 将共同日历补强为唯一公共 `CoreCommonCalendar`，在快照内保存完整有序
+  sessions 并使用统一 `core-common-calendar-v1` 哈希；三包返修不得各建日历身份，
+  从而关闭“所有证券同时删一日、各包单测仍通过但联合快照不兼容”的缺口；
+- 同次补强把原始因子输出升级为 `core-raw-feature-output-v2`，新增完整计算语义
+  `computation_manifest_hash`；当前尚无已发布或持久化的生产
+  `CoreInputSnapshot`/原始因子制品，因此这是正式生产前的失败关闭合同升级，不迁移
+  旧测试/试制 payload，旧 v1 payload 明确拒绝；
 - `CoreFeatureValue` 与权威数据合同一致，完整保存
   `observed / missing / not_applicable`、原始/处理值、填补、指示和诊断字段，所有数值
   必须有限且字段状态严格一致；
 - 三包共用两阶段原始公式输出 builder：先对不含 `feature_snapshot_id` 的规范行草稿
   计算内容身份，再注入统一共享 `FeatureSnapshot`；manifest 保存规范特征顺序、逐行
-  身份、行数、逐特征覆盖和内容哈希，并显式绑定核心输入、完整包规范与定义注册表
-  哈希；draft、manifest、envelope 均用同一组规范身份函数重算验证，原始阶段不做
+  身份、行数、逐特征覆盖和内容哈希，并显式绑定核心输入、完整包规范、定义注册表
+  与完整计算语义哈希；draft、manifest、envelope 均用同一组规范身份函数重算验证，原始阶段不做
   缩尾、填补、标准化或中性化；
 - `CoreFeaturePackageSpec` 进一步冻结三包准确 `required_definition_registry_hash`：
   F0 使用第 6 节 24 个 ID 顺序，Alpha158 使用固定 Qlib 158 维顺序，Alpha101 使用

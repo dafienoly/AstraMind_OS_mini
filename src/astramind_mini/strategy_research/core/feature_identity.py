@@ -12,7 +12,8 @@ from ..application.identity import research_hash
 from .contracts import CoreFeaturePackageSpec
 from .feature_values import FeatureAvailabilityState
 
-RAW_OUTPUT_SCHEMA = "core-raw-feature-output-v1"
+RAW_OUTPUT_SCHEMA = "core-raw-feature-output-v2"
+DEFINITION_REGISTRY_SCHEMA = "core-raw-feature-output-v1"
 
 
 class DefinitionRow(Protocol):
@@ -55,7 +56,7 @@ def canonical_definition_registry_hash(
 ) -> str:
     return research_hash(
         {
-            "schema": RAW_OUTPUT_SCHEMA,
+            "schema": DEFINITION_REGISTRY_SCHEMA,
             "definitions": canonical_definition_registry(feature_order, rows),
         }
     )
@@ -107,6 +108,7 @@ def canonical_raw_snapshot_content_hash(
     decision_time: datetime,
     package_spec_hash: str,
     definition_registry_hash: str,
+    computation_manifest_hash: str,
     feature_order: Sequence[str],
     rows_content_hash: str,
 ) -> str:
@@ -119,6 +121,7 @@ def canonical_raw_snapshot_content_hash(
             "decision_time": decision_time,
             "package_spec_hash": package_spec_hash,
             "definition_registry_hash": definition_registry_hash,
+            "computation_manifest_hash": computation_manifest_hash,
             "feature_order": tuple(feature_order),
             "rows_content_hash": rows_content_hash,
         }
@@ -138,6 +141,7 @@ def canonical_manifest_content_hash(
     core_input_content_hash: str,
     package_spec_hash: str,
     definition_registry_hash: str,
+    computation_manifest_hash: str,
     package_id: str,
     feature_order: Sequence[str],
     row_order: Sequence[object],
@@ -159,6 +163,7 @@ def canonical_manifest_content_hash(
             "core_input_content_hash": core_input_content_hash,
             "package_spec_hash": package_spec_hash,
             "definition_registry_hash": definition_registry_hash,
+            "computation_manifest_hash": computation_manifest_hash,
             "package_id": package_id,
             "feature_order": tuple(feature_order),
             "row_order": tuple(row_order),
@@ -178,6 +183,7 @@ def canonical_manifest_id(content_hash: str) -> str:
 
 
 __all__ = [
+    "DEFINITION_REGISTRY_SCHEMA",
     "RAW_OUTPUT_SCHEMA",
     "canonical_definition_registry",
     "canonical_definition_registry_hash",

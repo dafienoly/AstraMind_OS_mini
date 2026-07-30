@@ -1,5 +1,11 @@
 """Public entry point for weekly core-research input contracts."""
 
+from .calendar import (
+    CORE_COMMON_CALENDAR_SEMANTICS,
+    CoreCommonCalendar,
+    canonical_core_common_calendar_hash,
+    freeze_core_common_calendar,
+)
 from .contracts import (
     CoreBoard,
     CoreDailyLiquidityObservation,
@@ -34,7 +40,11 @@ from .feature_values import (
     CoreRawFeatureRowDraft,
     FeatureAvailabilityState,
 )
-from .identity import freeze_core_input_snapshot
+from .identity import (
+    freeze_core_input_snapshot,
+    validate_core_factor_sessions,
+    validate_core_input_snapshot,
+)
 from .packages import (
     ASTRAMIND_F0,
     CORE_FEATURE_PACKAGES,
@@ -57,11 +67,13 @@ from .universe import core_universe_content_hash, evaluate_core_universe
 
 __all__ = [
     "ASTRAMIND_F0",
+    "CORE_COMMON_CALENDAR_SEMANTICS",
     "CORE_DATA_SEMANTICS",
     "CORE_FEATURE_PACKAGES",
     "FORMULAIC_ALPHA101",
     "QLIB_ALPHA158",
     "CoreBoard",
+    "CoreCommonCalendar",
     "CoreDailyLiquidityObservation",
     "CoreDataSemantics",
     "CoreDatasetSlice",
@@ -89,14 +101,18 @@ __all__ = [
     "IndustryMembershipObservation",
     "VisibleFinancialObservation",
     "build_core_raw_feature_envelope",
+    "canonical_core_common_calendar_hash",
     "core_universe_content_hash",
     "evaluate_core_universe",
     "finalize_core_raw_feature_envelope",
     "financial_available_at",
+    "freeze_core_common_calendar",
     "freeze_core_input_snapshot",
     "point_in_time_industry_level",
     "prepare_core_raw_feature_batch",
     "select_point_in_time_financial",
     "select_point_in_time_industry",
+    "validate_core_factor_sessions",
+    "validate_core_input_snapshot",
     "visible_core_market_observations",
 ]

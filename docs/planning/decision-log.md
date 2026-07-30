@@ -125,6 +125,7 @@
 | D-116 | 阶段计划中残留的“周度核心功能实施工作包尚未授权”与 D-114 冲突，现已删除。WP-0072 将三包共用的覆盖门、MAD/稳健 z、三态填补与指示、平行中性化、折内 RankIC/bootstrap/BH/完全链接和 H20/H60 独立 selected 身份固化为可验收合同；三包全部集成后可按持续授权自动实施，不再请求重复功能授权。新 UI、生产补采、MiniQMT、Paper/Live、账户、StandingMandate 和订单仍使用独立保护门 | 2026-07-30 |
 | D-117 | 长期波次表更新为真实 W1 公式波：Worker A/B/C 分别实现 Alpha158/F0/Alpha101，三包全部集成后才释放 WP-0072。quant-kb 审查发现 LightGBM 四槽需先由 Ridge 的 C2/O0 选父级，若把全部模型放在一个 WP 会形成循环，故拆为 `WP-0073A B0/Ridge/校准 → WP-0074A O0与槽位预选 → WP-0073B LightGBM → WP-0074B 最终 CorePolicy`；训练损失不得替代可交易证据。LightGBM 根依赖由主控单独锁定，工作树不得并发修改高争用配置 | 2026-07-30 |
 | D-118 | WP-0074A/B 已把核心模型后的执行研究口径固化：0074A 复用唯一研究 O0，以股票全佣万0.86、最低5元、法定印花税分段和 5/10/20/50bp 形成 C0～C3，按 C2 选择 Ridge 与最多四个 LightGBM 父级槽；0074B 复用同一引擎完成 RankIC、三级参照、配对区块、50%+50%、Top5/Top10、两周状态机、联合硬门和显式 CorePolicy 草稿。二者只产生 broker-free 研究制品，不授权生产训练、Shadow 运行、MiniQMT、Paper/Live 或订单 | 2026-07-30 |
+| D-119 | WP-0071 三包返修暴露两个公共身份缺口：若 F0、Alpha158、Alpha101 各自定义共同日历哈希，单包可通过但同一 `CoreInputSnapshot` 无法联合消费；只绑定包 ID/特征 ID 也无法识别公式或算子语义漂移。WP-0070 升至 1.1.0，以 `CoreCommonCalendar/core-common-calendar-v1` 唯一绑定日历 ID 与完整有序 sessions，并以 `computation_manifest_hash` 绑定每包完整计算语义；三包必须直接消费公共日历且不得复制算法，同删中间交易日、调序、公式漂移或沿用旧哈希均失败关闭。因尚无生产制品，本次是正式生产前不迁移旧 payload 的 v2 合同升级。同时清除 REQ-2026-0007 第 19 节残留的逐包授权要求，D-114 持续授权继续有效 | 2026-07-30 |
 
 ## 暂定方案
 

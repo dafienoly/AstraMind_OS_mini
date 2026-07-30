@@ -45,6 +45,7 @@ class CoreRawFeatureBatchDraft(ContractModel):
     package_spec: CoreFeaturePackageSpec
     package_spec_hash: ContentHash
     definition_registry_hash: ContentHash
+    computation_manifest_hash: ContentHash
     feature_order: tuple[Identifier, ...] = Field(min_length=1)
     rows: tuple[CoreRawFeatureRowDraft, ...] = Field(min_length=1)
 
@@ -65,6 +66,7 @@ class CoreRawFeatureBatchDraft(ContractModel):
             decision_time=self.decision_time,
             package_spec_hash=package_hash,
             definition_registry_hash=registry_hash,
+            computation_manifest_hash=self.computation_manifest_hash,
             feature_order=self.feature_order,
             rows_content_hash=rows_hash,
         )
@@ -126,6 +128,7 @@ class CoreRawFeatureManifest(ContractModel):
     package_spec: CoreFeaturePackageSpec
     package_spec_hash: ContentHash
     definition_registry_hash: ContentHash
+    computation_manifest_hash: ContentHash
     package_id: Identifier
     feature_order: tuple[Identifier, ...] = Field(min_length=1)
     row_order: tuple[CoreFeatureRowIdentity, ...] = Field(min_length=1)
@@ -164,9 +167,8 @@ class CoreRawFeatureManifest(ContractModel):
         if self.rows_content_hash != canonical_rows_content_hash(self.row_content_hashes):
             raise ValueError("manifest rows content hash mismatch")
         content_hash = _manifest_content_hash(self)
-        if (
-            self.content_hash != content_hash
-            or self.manifest_id != canonical_manifest_id(content_hash)
+        if self.content_hash != content_hash or self.manifest_id != canonical_manifest_id(
+            content_hash
         ):
             raise ValueError("raw feature manifest canonical identity mismatch")
         return self
@@ -197,14 +199,11 @@ class CoreRawFeatureEnvelope(ContractModel):
             raise ValueError("manifest feature order must match the envelope")
         if self.manifest.row_count != len(self.rows):
             raise ValueError("manifest row count must match the envelope rows")
-        if (
-            len(self.feature_order) != self.package_spec.canonical_dimension
-            or len(set(self.feature_order)) != len(self.feature_order)
-        ):
+        if len(self.feature_order) != self.package_spec.canonical_dimension or len(
+            set(self.feature_order)
+        ) != len(self.feature_order):
             raise ValueError("envelope feature order must be canonical and unique")
-        row_keys = {
-            (item.instrument_id, item.feature_definition_id) for item in self.rows
-        }
+        row_keys = {(item.instrument_id, item.feature_definition_id) for item in self.rows}
         instruments = {item.instrument_id for item in self.rows}
         if len(row_keys) != len(self.rows):
             raise ValueError("envelope rows cannot contain duplicate identities")
@@ -258,7 +257,7 @@ class CoreRawFeatureEnvelope(ContractModel):
         _validate_envelope_content_identity(self)
         if self.feature_snapshot.as_of != self.rows[0].decision_time:
             raise ValueError("FeatureSnapshot as_of must match raw row decision time")
-        expected_definition = f"{self.package_spec.package_id}-raw-v1"
+        expected_definition = f"{self.package_spec.package_id}-raw-v2"
         if self.feature_snapshot.definition_version != expected_definition:
             raise ValueError("FeatureSnapshot definition version mismatch")
         if any(item.value_winsorized is not None for item in self.rows):
@@ -294,6 +293,7 @@ def _validate_envelope_content_identity(envelope: CoreRawFeatureEnvelope) -> Non
         decision_time=envelope.feature_snapshot.as_of,
         package_spec_hash=package_hash,
         definition_registry_hash=registry_hash,
+        computation_manifest_hash=envelope.manifest.computation_manifest_hash,
         feature_order=envelope.feature_order,
         rows_content_hash=envelope.manifest.rows_content_hash,
     )
@@ -333,6 +333,7 @@ def _manifest_content_hash(manifest: CoreRawFeatureManifest) -> str:
         core_input_content_hash=manifest.core_input_content_hash,
         package_spec_hash=manifest.package_spec_hash,
         definition_registry_hash=manifest.definition_registry_hash,
+        computation_manifest_hash=manifest.computation_manifest_hash,
         package_id=manifest.package_id,
         feature_order=manifest.feature_order,
         row_order=manifest.row_order,

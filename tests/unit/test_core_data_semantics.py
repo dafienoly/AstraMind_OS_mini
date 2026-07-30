@@ -315,7 +315,7 @@ def _freeze(
         decision_date=date(2026, 1, 30),
         cutoff_at=cutoff_at,
         common_calendar_id="sse-szse-common-v1",
-        common_calendar_hash=HASH_B,
+        common_sessions=(date(2026, 1, 30),),
         universe_content_hash=HASH_C,
         datasets=(dataset or _slice(),),
     )
@@ -324,9 +324,7 @@ def _freeze(
 def test_core_input_snapshot_is_idempotent_and_every_content_change_reidentifies() -> None:
     baseline = _freeze()
     assert _freeze() == baseline
-    assert baseline.core_input_snapshot_id.endswith(
-        baseline.content_hash.removeprefix("sha256:")
-    )
+    assert baseline.core_input_snapshot_id.endswith(baseline.content_hash.removeprefix("sha256:"))
     version_changed = _freeze(
         snapshot=_snapshot(dataset_version="daily-v2"),
         dataset=_slice(dataset_version="daily-v2"),
@@ -354,20 +352,14 @@ def test_core_input_snapshot_is_idempotent_and_every_content_change_reidentifies
 
 def test_core_input_snapshot_rejects_future_or_mutable_data() -> None:
     with pytest.raises(ValueError, match="crosses the core cutoff"):
-        _freeze(
-            dataset=_slice(
-                max_available_at=datetime(2026, 2, 2, 18, 0, tzinfo=TZ)
-            )
-        )
+        _freeze(dataset=_slice(max_available_at=datetime(2026, 2, 2, 18, 0, tzinfo=TZ)))
     with pytest.raises(ValueError, match="input layer is forbidden"):
         _freeze(dataset=_slice(input_layer=CoreInputLayer.CURRENT_SESSION))
     original_ref = _snapshot().datasets[0]
     duplicate_ref = original_ref.model_copy(
         update={"dataset_version": "daily-v2", "content_hash": HASH_B}
     )
-    duplicate_snapshot = _snapshot().model_copy(
-        update={"datasets": (original_ref, duplicate_ref)}
-    )
+    duplicate_snapshot = _snapshot().model_copy(update={"datasets": (original_ref, duplicate_ref)})
     with pytest.raises(ValueError, match="duplicate dataset names"):
         _freeze(snapshot=duplicate_snapshot)
 
@@ -417,6 +409,8 @@ def _build_raw(
     return build_core_raw_feature_envelope(
         core_input=_freeze(),
         package_spec=package,
+        computation_manifest_hash=HASH_B,
+        calculation_sessions=_freeze().common_sessions,
         feature_order=feature_order,
         rows=rows,
     )
@@ -431,12 +425,16 @@ def test_all_three_packages_share_idempotent_two_stage_raw_envelope(
     prepared = prepare_core_raw_feature_batch(
         core_input=core_input,
         package_spec=package,
+        computation_manifest_hash=HASH_B,
+        calculation_sessions=core_input.common_sessions,
         feature_order=feature_order,
         rows=rows,
     )
     repeated = prepare_core_raw_feature_batch(
         core_input=core_input,
         package_spec=package,
+        computation_manifest_hash=HASH_B,
+        calculation_sessions=core_input.common_sessions,
         feature_order=feature_order,
         rows=tuple(reversed(rows)),
     )
@@ -463,8 +461,7 @@ def test_all_three_packages_share_idempotent_two_stage_raw_envelope(
         for item in envelope.rows
     )
     assert all(
-        item.value_winsorized is None and item.value_standardized is None
-        for item in envelope.rows
+        item.value_winsorized is None and item.value_standardized is None for item in envelope.rows
     )
     assert all(item.imputation_source == CoreImputationSource.NONE for item in envelope.rows)
     assert all(item.neutralized_diagnostic is None for item in envelope.rows)
@@ -489,9 +486,8 @@ def test_raw_envelope_fails_closed_on_width_duplicates_and_wrong_cutoff() -> Non
         _build_raw(ASTRAMIND_F0, feature_order, rows[:-1])
     with pytest.raises(ValueError, match="duplicate an instrument-feature"):
         _build_raw(ASTRAMIND_F0, feature_order, (*rows, rows[0]))
-    duplicate_order = (*feature_order[:-1], feature_order[0])
     with pytest.raises(ValueError, match="feature_order cannot contain duplicate"):
-        _build_raw(ASTRAMIND_F0, duplicate_order, rows)
+        _build_raw(ASTRAMIND_F0, (*feature_order[:-1], feature_order[0]), rows)
     wrong_time = rows[0].model_copy(
         update={"decision_time": datetime(2026, 1, 30, 17, 0, tzinfo=TZ)}
     )

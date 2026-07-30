@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 
 from astramind_mini.contracts import FeatureSnapshot
 
@@ -33,6 +33,7 @@ from .feature_values import (
     CoreRawFeatureRowDraft,
     FeatureAvailabilityState,
 )
+from .identity import validate_core_factor_sessions
 from .packages import CORE_FEATURE_PACKAGES
 
 
@@ -40,10 +41,13 @@ def prepare_core_raw_feature_batch(
     *,
     core_input: CoreInputSnapshot,
     package_spec: CoreFeaturePackageSpec,
+    computation_manifest_hash: str,
+    calculation_sessions: Sequence[date],
     feature_order: Sequence[str],
     rows: Sequence[CoreRawFeatureRowDraft],
 ) -> CoreRawFeatureBatchDraft:
     """Canonicalize snapshot-free row drafts and derive their content identity."""
+    validate_core_factor_sessions(core_input, calculation_sessions)
     if package_spec not in CORE_FEATURE_PACKAGES:
         raise ValueError("raw core features require a canonical package spec")
     ordered_features = tuple(feature_order)
@@ -74,6 +78,7 @@ def prepare_core_raw_feature_batch(
         decision_time=core_input.cutoff_at,
         package_spec_hash=package_spec_hash,
         definition_registry_hash=registry_hash,
+        computation_manifest_hash=computation_manifest_hash,
         feature_order=ordered_features,
         rows_content_hash=rows_content_hash,
     )
@@ -89,6 +94,7 @@ def prepare_core_raw_feature_batch(
         package_spec=package_spec,
         package_spec_hash=package_spec_hash,
         definition_registry_hash=registry_hash,
+        computation_manifest_hash=computation_manifest_hash,
         feature_order=ordered_features,
         rows=canonical_rows,
     )
@@ -102,7 +108,7 @@ def finalize_core_raw_feature_envelope(
         feature_snapshot_id=draft.feature_snapshot_id,
         data_snapshot_id=draft.data_snapshot_id,
         as_of=draft.decision_time,
-        definition_version=f"{draft.package_spec.package_id}-raw-v1",
+        definition_version=f"{draft.package_spec.package_id}-raw-v2",
         content_hash=draft.content_hash,
     )
     rows = tuple(_materialize_row(item, draft.feature_snapshot_id) for item in draft.rows)
@@ -121,12 +127,16 @@ def build_core_raw_feature_envelope(
     *,
     core_input: CoreInputSnapshot,
     package_spec: CoreFeaturePackageSpec,
+    computation_manifest_hash: str,
+    calculation_sessions: Sequence[date],
     feature_order: Sequence[str],
     rows: Sequence[CoreRawFeatureRowDraft],
 ) -> CoreRawFeatureEnvelope:
     draft = prepare_core_raw_feature_batch(
         core_input=core_input,
         package_spec=package_spec,
+        computation_manifest_hash=computation_manifest_hash,
+        calculation_sessions=calculation_sessions,
         feature_order=feature_order,
         rows=rows,
     )
@@ -217,6 +227,7 @@ def _build_manifest(draft: CoreRawFeatureBatchDraft) -> CoreRawFeatureManifest:
         core_input_content_hash=draft.core_input_content_hash,
         package_spec_hash=draft.package_spec_hash,
         definition_registry_hash=draft.definition_registry_hash,
+        computation_manifest_hash=draft.computation_manifest_hash,
         package_id=draft.package_spec.package_id,
         feature_order=draft.feature_order,
         row_order=row_order,
@@ -239,6 +250,7 @@ def _build_manifest(draft: CoreRawFeatureBatchDraft) -> CoreRawFeatureManifest:
         package_spec=draft.package_spec,
         package_spec_hash=draft.package_spec_hash,
         definition_registry_hash=draft.definition_registry_hash,
+        computation_manifest_hash=draft.computation_manifest_hash,
         package_id=draft.package_spec.package_id,
         feature_order=draft.feature_order,
         row_order=row_order,

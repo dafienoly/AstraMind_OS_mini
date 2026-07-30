@@ -18,6 +18,7 @@ from astramind_mini.strategy_research.core import (
     CoreRawFeatureRowDraft,
     FeatureAvailabilityState,
     finalize_core_raw_feature_envelope,
+    freeze_core_common_calendar,
     freeze_core_input_snapshot,
     prepare_core_raw_feature_batch,
 )
@@ -43,6 +44,9 @@ CUTOFF = datetime(2026, 1, 30, 18, 0, tzinfo=TZ)
 HASH_A = "sha256:" + ("a" * 64)
 HASH_B = "sha256:" + ("b" * 64)
 HASH_C = "sha256:" + ("c" * 64)
+COMMON_SESSIONS = tuple(
+    date(2026, 1, day) for day in range(2, 31) if date(2026, 1, day).weekday() < 5
+)
 Path = tuple[str | int, ...]
 Mutation = tuple[tuple[Path, object], ...]
 
@@ -80,10 +84,48 @@ def _core_input() -> CoreInputSnapshot:
         decision_date=date(2026, 1, 30),
         cutoff_at=CUTOFF,
         common_calendar_id="sse-szse-common-v1",
-        common_calendar_hash=HASH_B,
+        common_sessions=COMMON_SESSIONS,
         universe_content_hash=HASH_C,
         datasets=(dataset,),
     )
+
+
+def test_core_snapshot_rejects_a_decision_date_after_calendar_end() -> None:
+    core_input = _core_input()
+    core_payload = core_input.model_dump()
+    core_payload["decision_date"] = date(2026, 1, 29)
+    with pytest.raises(ValidationError, match="must end on the decision date"):
+        CoreInputSnapshot.model_validate(core_payload)
+    core_payload = core_input.model_dump()
+    sessions = core_payload["common_calendar"]["sessions"]
+    core_payload["common_calendar"]["sessions"] = sessions[:7] + sessions[8:]
+    with pytest.raises(ValidationError, match="content hash mismatch"):
+        CoreInputSnapshot.model_validate(core_payload)
+
+
+def test_core_snapshot_copy_and_raw_builder_reject_calendar_drift() -> None:
+    core_input = _core_input()
+    shortened = freeze_core_common_calendar(
+        calendar_id=core_input.common_calendar_id,
+        sessions=core_input.common_sessions[:7] + core_input.common_sessions[8:],
+    )
+    payload = core_input.model_dump()
+    payload["common_calendar"] = shortened.model_dump()
+    with pytest.raises(ValidationError, match="canonical content identity mismatch"):
+        CoreInputSnapshot.model_validate(payload)
+    with pytest.raises(ValidationError, match="canonical content identity mismatch"):
+        core_input.model_copy(update={"common_calendar": shortened})
+
+    order, rows = _raw_rows()
+    with pytest.raises(ValueError, match="calculation sessions do not match"):
+        prepare_core_raw_feature_batch(
+            core_input=core_input,
+            package_spec=ASTRAMIND_F0,
+            computation_manifest_hash=HASH_B,
+            calculation_sessions=shortened.sessions,
+            feature_order=order,
+            rows=rows,
+        )
 
 
 def _raw_rows() -> tuple[tuple[str, ...], tuple[CoreRawFeatureRowDraft, ...]]:
@@ -111,6 +153,8 @@ def _artifacts() -> tuple[
     draft = prepare_core_raw_feature_batch(
         core_input=_core_input(),
         package_spec=ASTRAMIND_F0,
+        computation_manifest_hash=HASH_B,
+        calculation_sessions=_core_input().common_sessions,
         feature_order=order,
         rows=rows,
     )
@@ -119,11 +163,7 @@ def _artifacts() -> tuple[
 
 def _replace_path(value: Any, path: Path, replacement: object) -> Any:
     key, *remaining = path
-    child = (
-        _replace_path(value[key], tuple(remaining), replacement)
-        if remaining
-        else replacement
-    )
+    child = _replace_path(value[key], tuple(remaining), replacement) if remaining else replacement
     if isinstance(value, tuple):
         if not isinstance(key, int):
             raise TypeError("tuple paths require an integer index")
@@ -151,9 +191,21 @@ def test_canonical_package_and_definition_registry_hashes_are_manifested() -> No
     order, draft, envelope = _artifacts()
     expected_package_hash = canonical_package_spec_hash(ASTRAMIND_F0)
     expected_registry_hash = canonical_definition_registry_hash(order, draft.rows)
-
+    changed = prepare_core_raw_feature_batch(
+        core_input=_core_input(),
+        package_spec=ASTRAMIND_F0,
+        computation_manifest_hash=HASH_A,
+        calculation_sessions=_core_input().common_sessions,
+        feature_order=order,
+        rows=draft.rows,
+    )
+    changed_envelope = finalize_core_raw_feature_envelope(changed)
     assert draft.package_spec_hash == expected_package_hash
     assert draft.definition_registry_hash == expected_registry_hash
+    assert draft.computation_manifest_hash == HASH_B
+    assert changed.content_hash != draft.content_hash
+    assert changed_envelope.feature_snapshot != envelope.feature_snapshot
+    assert changed_envelope.manifest.manifest_id != envelope.manifest.manifest_id
     assert envelope.manifest.core_input_content_hash == _core_input().content_hash
     assert envelope.manifest.package_spec_hash == expected_package_hash
     assert envelope.manifest.definition_registry_hash == expected_registry_hash
@@ -188,9 +240,10 @@ def test_all_three_packages_freeze_exact_definition_registry_order_and_hash() ->
         "VSUMD30",
         "VSUMD60",
     )
-    assert tuple(
-        f"alpha101_{ordinal:03d}" for ordinal in range(1, 102)
-    ) == FORMULAIC_ALPHA101_FEATURE_ORDER
+    assert (
+        tuple(f"alpha101_{ordinal:03d}" for ordinal in range(1, 102))
+        == FORMULAIC_ALPHA101_FEATURE_ORDER
+    )
     for package in CORE_FEATURE_PACKAGES:
         order = CORE_FEATURE_ORDERS[package.package_id]
         rows = tuple(
@@ -239,6 +292,7 @@ def test_dump_tampering_is_rejected_by_raw_draft_contract() -> None:
             ((("package_spec", "canonical_dimension"), 25),),
             ((("package_spec_hash",), HASH_A),),
             ((("definition_registry_hash",), HASH_A),),
+            ((("computation_manifest_hash",), HASH_A),),
             ((("feature_order",), tuple(reversed(order))),),
         ),
     )
@@ -260,6 +314,7 @@ def test_dump_tampering_is_rejected_by_raw_manifest_contract() -> None:
             ((("package_spec", "canonical_dimension"), 25),),
             ((("package_spec_hash",), HASH_A),),
             ((("definition_registry_hash",), HASH_A),),
+            ((("computation_manifest_hash",), HASH_A),),
             ((("feature_order",), tuple(reversed(order))),),
             ((("row_order", 0, "feature_definition_version"), "2.0.0"),),
         ),
@@ -293,6 +348,7 @@ def test_dump_tampering_is_rejected_by_raw_envelope_contract() -> None:
             ((("manifest", "manifest_id"), "core-raw-feature-manifest:tampered"),),
             ((("manifest", "package_spec_hash"), HASH_A),),
             ((("manifest", "definition_registry_hash"), HASH_A),),
+            ((("manifest", "computation_manifest_hash"), HASH_A),),
             ((("manifest", "row_order", 0, "feature_definition_version"), "2.0.0"),),
         ),
     )
@@ -340,6 +396,7 @@ def _fully_rehashed_fabrication() -> tuple[
         decision_time=draft.decision_time,
         package_spec_hash=draft.package_spec_hash,
         definition_registry_hash=registry_hash,
+        computation_manifest_hash=draft.computation_manifest_hash,
         feature_order=fake_order,
         rows_content_hash=rows_hash,
     )
@@ -376,6 +433,7 @@ def _fully_rehashed_fabrication() -> tuple[
         core_input_content_hash=draft.core_input_content_hash,
         package_spec_hash=draft.package_spec_hash,
         definition_registry_hash=registry_hash,
+        computation_manifest_hash=draft.computation_manifest_hash,
         package_id=ASTRAMIND_F0.package_id,
         feature_order=fake_order,
         row_order=row_order,
@@ -422,13 +480,13 @@ def _fully_rehashed_fabrication() -> tuple[
 
 
 def test_fully_rehashed_same_package_fabricated_registry_fails_closed() -> None:
-    fake_rows, draft_payload, manifest_payload, envelope_payload = (
-        _fully_rehashed_fabrication()
-    )
+    fake_rows, draft_payload, manifest_payload, envelope_payload = _fully_rehashed_fabrication()
     with pytest.raises(ValueError, match="canonical package"):
         prepare_core_raw_feature_batch(
             core_input=_core_input(),
             package_spec=ASTRAMIND_F0,
+            computation_manifest_hash=HASH_B,
+            calculation_sessions=_core_input().common_sessions,
             feature_order=tuple(item.feature_definition_id for item in fake_rows),
             rows=fake_rows,
         )

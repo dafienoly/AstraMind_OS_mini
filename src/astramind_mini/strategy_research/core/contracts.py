@@ -18,6 +18,7 @@ from astramind_mini.contracts.base import (
     Version,
 )
 
+from .calendar import CoreCommonCalendar
 from .feature_values import FeatureAvailabilityState
 
 
@@ -170,20 +171,14 @@ class CoreUniverseDecision(ContractModel):
 
 class CoreDataSemantics(_ValidatedCopyContract):
     version: Literal["core-data-semantics-v1"] = "core-data-semantics-v1"
-    ohlc_source: Literal["continuous_research_price_index"] = (
-        "continuous_research_price_index"
-    )
+    ohlc_source: Literal["continuous_research_price_index"] = "continuous_research_price_index"
     return_source: Literal["continuous_research_close"] = "continuous_research_close"
     vwap_source: Literal["raw_amount_div_raw_volume_scaled_to_research_index"] = (
         "raw_amount_div_raw_volume_scaled_to_research_index"
     )
-    execution_source: Literal["point_in_time_raw_price_volume"] = (
-        "point_in_time_raw_price_volume"
-    )
+    execution_source: Literal["point_in_time_raw_price_volume"] = "point_in_time_raw_price_volume"
     compatible_adjusted_price_use: Literal["audit_only"] = "audit_only"
-    industry_taxonomy: Literal["SW2021-point-in-time-L1-L2-L3"] = (
-        "SW2021-point-in-time-L1-L2-L3"
-    )
+    industry_taxonomy: Literal["SW2021-point-in-time-L1-L2-L3"] = "SW2021-point-in-time-L1-L2-L3"
     financial_date_only_rule: Literal["next_common_session_after_close"] = (
         "next_common_session_after_close"
     )
@@ -238,12 +233,55 @@ class CoreInputSnapshot(ContractModel):
     data_snapshot: DataSnapshot
     decision_date: date
     cutoff_at: AwareDatetime
-    common_calendar_id: Identifier
-    common_calendar_hash: ContentHash
+    common_calendar: CoreCommonCalendar
     data_semantics_version: Literal["core-data-semantics-v1"]
     universe_version: Literal["U0-v1"]
     universe_content_hash: ContentHash
     datasets: tuple[CoreDatasetSlice, ...] = Field(min_length=1)
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool = False,
+    ) -> Self:
+        if not update:
+            return super().model_copy(deep=deep)
+        payload = self.model_dump()
+        payload.update(update)
+        return type(self).model_validate(payload)
+
+    @model_validator(mode="after")
+    def validate_canonical_identity(self) -> CoreInputSnapshot:
+        from .identity import canonical_core_input_identity
+
+        ordered, content_hash, snapshot_id = canonical_core_input_identity(
+            data_snapshot=self.data_snapshot,
+            decision_date=self.decision_date,
+            cutoff_at=self.cutoff_at,
+            common_calendar=self.common_calendar,
+            universe_content_hash=self.universe_content_hash,
+            datasets=self.datasets,
+        )
+        if (
+            self.datasets != ordered
+            or self.content_hash != content_hash
+            or self.core_input_snapshot_id != snapshot_id
+        ):
+            raise ValueError("CoreInputSnapshot canonical content identity mismatch")
+        return self
+
+    @property
+    def common_calendar_id(self) -> str:
+        return self.common_calendar.calendar_id
+
+    @property
+    def common_calendar_hash(self) -> str:
+        return self.common_calendar.content_hash
+
+    @property
+    def common_sessions(self) -> tuple[date, ...]:
+        return self.common_calendar.sessions
 
 
 class CoreFeaturePackageSpec(_ValidatedCopyContract):
