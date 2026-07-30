@@ -83,7 +83,7 @@ def validate_core_feature_selection(
     """Reject any candidate differing from a complete production reconstruction."""
     if not isinstance(candidate, CoreFeatureSelectionManifest):
         raise TypeError("selection boundaries accept only candidate manifests")
-    candidate_json = CoreFeatureSelectionManifest.__pydantic_serializer__.to_json(candidate)
+    candidate_json = _canonical_manifest_bytes(candidate)
     fingerprint = hashlib.sha256(candidate_json).digest()
     candidate_content_hash = _VALIDATED_CANDIDATES.get(fingerprint)
     if candidate_content_hash is None:
@@ -95,9 +95,15 @@ def validate_core_feature_selection(
     else:
         _VALIDATED_CANDIDATES.move_to_end(fingerprint)
     expected = rebuild_core_feature_selection(parents)
-    if candidate_content_hash != expected.content_hash:
+    expected_json = _canonical_manifest_bytes(expected)
+    if candidate_content_hash != expected.content_hash or candidate_json != expected_json:
         raise ValueError("selection manifest differs from its reconstructed true parents")
     return expected
+
+
+def _canonical_manifest_bytes(manifest: CoreFeatureSelectionManifest) -> bytes:
+    """Serialize through the frozen base contract, never an instance override."""
+    return CoreFeatureSelectionManifest.__pydantic_serializer__.to_json(manifest)
 
 
 __all__ = [

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import pytest
+from pydantic import model_serializer
 from test_core_feature_selection_attack_support import (
     forged_cluster_representative,
     forged_complete_link_split,
@@ -81,14 +82,38 @@ def test_manifest_subclass_cannot_override_content_comparison() -> None:
     )
     forged = forged_turnover(selection, 0.5)
 
-    class EqualityBypass(CoreFeatureSelectionManifest):
+    class InstanceHookBypass(CoreFeatureSelectionManifest):
         def __eq__(self, other: object) -> bool:
             del other
             return True
 
-    attack = EqualityBypass.model_validate(forged.model_dump())
+        def model_dump(
+            self,
+            *args: object,
+            **kwargs: object,
+        ) -> dict[str, object]:
+            del args, kwargs
+            return selection.model_dump()
+
+        @model_serializer(mode="plain")
+        def serialize_as_expected(self) -> dict[str, object]:
+            return selection.model_dump()
+
+    attack = InstanceHookBypass.model_construct(
+        **{field: getattr(forged, field) for field in CoreFeatureSelectionManifest.model_fields}
+    )
     with pytest.raises(ValueError, match="reconstructed true parents"):
         validate_core_feature_selection(attack, parents)
+
+
+def test_rebuilt_selection_has_exact_base_canonical_bytes() -> None:
+    parents, selection = production_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
+    )
+    rebuilt = validate_core_feature_selection(selection, parents)
+    serializer = CoreFeatureSelectionManifest.__pydantic_serializer__
+    assert serializer.to_json(selection) == serializer.to_json(rebuilt)
 
 
 def test_future_source_tail_is_excluded_before_parent_freeze_and_changes_no_identity() -> None:

@@ -487,10 +487,12 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   不进入 observed-only RankIC；
 - 旧 receipt 的子类覆盖、合法 guard 复制和 `object.__new__`/`object.__setattr__`
   三类伪造均不能通过 single view/projector 或 joint builder/projector；正常候选
-  manifest 也只有经完整真实父级重建相等后才能继续；
-- 最终 affected-scope 共 54 项处理、选择、标签与 golden 测试；首次冷环境基线为
-  80.78 秒，完整信任边界与安全内容缓存就绪后的连续暖运行分别为 79.85/79.28 秒，
-  保留 10,000 次 bootstrap 且满足本工作包 `<=80s` 暖运行目标；
+  manifest 也只有经完整真实父级重建后，以基类 serializer 得到的 candidate/expected
+  canonical bytes 逐字段完全相等才能继续；实例 `__eq__`、`model_dump` 和子类
+  serializer 均不参与判定；
+- 最终 affected-scope 共 55 项处理、选择、标签与 golden 测试；首次冷环境基线为
+  80.78 秒，本次完整 canonical bytes 信任边界就绪后的两次暖运行分别为
+  79.53/79.08 秒，保留 10,000 次 bootstrap 且满足本工作包 `<=80s` 暖运行目标；
 - Stage P 的 283 项先验文件保持零差异，冻结内容哈希继续为
   `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
   本阶段未读取生产 `var/`、历史胜负或模型结果，也未触碰 MiniQMT、账户、Paper、
