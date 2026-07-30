@@ -1,11 +1,11 @@
 # UI-PROP-0013：系统“方法与状态”
 
 - 版本：0.1
-- 状态：`awaiting_user_approval`
+- 状态：`approved`
 - 创建：2026-07-30
 - 对应需求：REQ-2026-0003 v1.8.0、REQ-2026-0008 v2.2.0
 - 对应工作包：WP-0061
-- 实现状态：仅提案；未授权 React、CSS、路由或 API 实现
+- 实现状态：已批准由 WP-0063 实施；尚未完成 React、CSS、路由和浏览器验收
 
 ## 页面与唯一任务
 
@@ -137,7 +137,7 @@
 - 策略 Promotion/Renewal/Fallback、`PortfolioTarget`、`OrderPlan`；
 - MiniQMT、Paper、Live 或真实资金动作。
 
-## 待用户确认
+## 已确认视觉决策
 
 1. 采用“左侧五类模型索引 + 右侧方法谱系尺”的桌面结构；
 2. System 二级页名称使用“方法与状态”，不新建一级入口；
@@ -148,11 +148,11 @@
 ## 批准记录
 
 ```text
-approved_version:
-approved_by:
-approved_at:
-source_message:
+approved_version: 0.1
+approved_by: user
+approved_at: 2026-07-30
+source_message: “批准UI-PROP-0013，编排并派发下一批并行工程包”
 ```
 
-需求和工作包批准不等于本视觉版本批准。只有用户明确批准
-`UI-PROP-0013 v0.1` 后，才能另立页面实现工作包。
+本次批准准确覆盖 UI-PROP-0013 v0.1，并授权另立 WP-0063 实施页面。它不授权模型
+训练、模型激活、策略晋级、生产数据变更、MiniQMT、Paper、Live 或订单。

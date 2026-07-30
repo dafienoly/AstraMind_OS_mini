@@ -61,7 +61,7 @@
 - [UI-PROP-0010：完整界面总览](./ui/proposals/0010-full-interface-atlas/proposal.md)
 - [UI-PROP-0011：行业生命周期结构地图与行业内研究排序](./ui/proposals/0011-industry-lifecycle-research/proposal.md)
 - [UI-PROP-0012 v0.1：市场模型方法与证据带（已批准）](./ui/proposals/0012-market-model-evidence-overlay/proposal.md)
-- [UI-PROP-0013 v0.1：系统“方法与状态”（等待用户批准）](./ui/proposals/0013-method-status/proposal.md)
+- [UI-PROP-0013 v0.1：系统“方法与状态”（已批准）](./ui/proposals/0013-method-status/proposal.md)
 
 ## 规划与开发
 
@@ -135,6 +135,7 @@
 - [WP-0060：业务文案门面与折叠技术详情](./planning/work-packages/WP-0060-business-language-and-technical-details.md)
 - [WP-0061：系统“方法与状态”页面提案](./planning/work-packages/WP-0061-method-status-page-proposal.md)
 - [WP-0062：V2 生产特征矩阵、训练编排与预测发布](./planning/work-packages/WP-0062-v2-production-training-pipeline.md)
+- [WP-0063：系统“方法与状态”页面实施](./planning/work-packages/WP-0063-method-status-page-implementation.md)
 - [本地开发指南](./development/local-development.md)
 - [Vibe Coding 规范（Agent 内部英文文档）](./development/vibe-coding.md)
 - [工作包模板（Agent 内部英文文档）](./development/work-package-template.md)
