@@ -447,8 +447,8 @@ def _repair_name_intervals(path: Path) -> None:
               SELECT * EXCLUDE (next_start) REPLACE (
                 CASE
                   WHEN next_start IS NULL THEN provider_end_date
-                  WHEN provider_end_date IS NULL THEN next_start
-                  ELSE least(provider_end_date, next_start)
+                  WHEN provider_end_date IS NULL THEN next_start - 1
+                  ELSE least(provider_end_date, next_start - 1)
                 END AS effective_end_date
               )
               FROM ordered

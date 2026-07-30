@@ -8,6 +8,7 @@ import duckdb
 from astramind_mini.data.adapters import DuckDBParquetEncoder
 from astramind_mini.data.application.daily_pipeline_inputs import events_waiting
 from astramind_mini.data.application.daily_reference_inputs import (
+    _repair_name_intervals,
     prepare_daily_reference_inputs,
 )
 from astramind_mini.data.application.dataset_schemas import (
@@ -180,6 +181,39 @@ def test_event_window_allows_next_morning_recovery(tmp_path: Path) -> None:
         date(2026, 1, 16),
         True,
     )
+
+
+def test_name_interval_repair_keeps_closed_ranges_non_overlapping(tmp_path: Path) -> None:
+    path = tmp_path / "security-name-history.parquet"
+    escaped = str(path).replace("'", "''")
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            f"""
+            COPY (
+              SELECT '000001.SZ' instrument_id, '*ST示例' AS "name",
+                     DATE '2025-04-30' effective_start_date,
+                     NULL::DATE effective_end_date, NULL::DATE provider_end_date
+              UNION ALL
+              SELECT '000001.SZ', '示例股份', DATE '2026-07-20',
+                     NULL::DATE, NULL::DATE
+            ) TO '{escaped}' (FORMAT PARQUET)
+            """
+        )
+
+    _repair_name_intervals(path)
+
+    with duckdb.connect(":memory:") as connection:
+        rows = connection.execute(
+            """
+            SELECT name, effective_start_date, effective_end_date
+            FROM read_parquet(?) ORDER BY effective_start_date
+            """,
+            [str(path)],
+        ).fetchall()
+    assert rows == [
+        ("*ST示例", date(2025, 4, 30), date(2026, 7, 19)),
+        ("示例股份", date(2026, 7, 20), None),
+    ]
 
 
 def test_daily_reference_inputs_refresh_all_five_datasets_atomically(tmp_path: Path) -> None:
