@@ -39,6 +39,20 @@ or the task is too broad.
   implementations fan out.
 - Do not run broad formatting or dependency updates inside an unrelated feature task.
 
+Permanent worker worktrees are reusable paths, not long-lived code baselines:
+
+- before every dispatch wave, the controller verifies that the worker worktree is
+  clean and creates a new `codex/worker-<id>-wave-<date>-<sequence>` branch from the
+  exact current integration commit;
+- after completed work is integrated, workers do not continue on their previous wave
+  branches; the next assignment starts only after the same synchronization check;
+- old wave branches remain available for audit and must not be rewritten with
+  destructive reset;
+- a dirty or still-running worker is not synchronized in place. Its work is first
+  handed off or integrated, then a fresh wave branch is created;
+- every dispatch records the integration commit so completion can be reviewed against
+  the intended base instead of whichever commit happens to be current later.
+
 ## Hotspot reduction
 
 Avoid repeatedly edited central files:
