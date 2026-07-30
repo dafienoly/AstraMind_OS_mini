@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from datetime import date
 
 from ...application.identity import research_hash
-from ..feature_processing import CoreProcessedFeatureEnvelope
+from ..feature_processing import (
+    CoreFeatureViewManifest,
+    CoreProcessedFeatureEnvelope,
+    CoreProcessedFeaturePanelManifest,
+)
 from ..labels import CoreLabelHorizon
 from .clustering import complete_linkage_clusters
+from .joint_inputs import JointInputs, collect_joint_inputs
 from .joint_models import (
     CANONICAL_JOINT_PACKAGE_ORDER,
     CoreJointDailyBinding,
@@ -21,20 +25,11 @@ from .joint_models import (
 )
 from .metrics import correlation_distance_map, pair_correlation_evidence
 from .models import (
-    CoreFeatureSelectionEvidence,
     CoreFeatureSelectionManifest,
     CorePairCorrelationEvidence,
     CoreSelectionCluster,
 )
-
-
-@dataclass(frozen=True)
-class _JointInputs:
-    manifests: tuple[CoreFeatureSelectionManifest, ...]
-    prior_content_hash: str
-    evidence_by_key: dict[str, CoreFeatureSelectionEvidence]
-    candidates: tuple[CoreJointFeatureParent, ...]
-    envelopes_by_package: dict[str, tuple[CoreProcessedFeatureEnvelope, ...]]
+from .representative import representative_sort_key
 
 
 def build_core_joint_selected_view_manifests(
@@ -42,6 +37,8 @@ def build_core_joint_selected_view_manifests(
     horizon: CoreLabelHorizon,
     selections: Mapping[str, CoreFeatureSelectionManifest],
     processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
+    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[CoreJointSelectedViewManifest, ...]:
     """Publish three pairs and one triple for one horizon."""
     if (
@@ -49,8 +46,10 @@ def build_core_joint_selected_view_manifests(
         != CANONICAL_JOINT_PACKAGE_ORDER
     ):
         raise ValueError("joint publication requires exactly all three canonical packages")
-    if set(selections) != set(CANONICAL_JOINT_PACKAGE_ORDER) or set(processed_envelopes) != set(
-        CANONICAL_JOINT_PACKAGE_ORDER
+    expected_packages = set(CANONICAL_JOINT_PACKAGE_ORDER)
+    if any(
+        set(inputs) != expected_packages
+        for inputs in (selections, processed_envelopes, panel_manifests, single_views)
     ):
         raise ValueError("joint publication cannot omit or add packages")
     results = [
@@ -59,6 +58,8 @@ def build_core_joint_selected_view_manifests(
             horizon=horizon,
             selections=selections,
             processed_envelopes=processed_envelopes,
+            panel_manifests=panel_manifests,
+            single_views=single_views,
         )
         for width in (2, 3)
         for package_ids in itertools.combinations(CANONICAL_JOINT_PACKAGE_ORDER, width)
@@ -74,26 +75,21 @@ def _build_joint(
     horizon: CoreLabelHorizon,
     selections: Mapping[str, CoreFeatureSelectionManifest],
     processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
+    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> CoreJointSelectedViewManifest:
-    joint_inputs = _collect_joint_inputs(
+    joint_inputs = collect_joint_inputs(
         package_ids=package_ids,
         horizon=horizon,
         selections=selections,
         processed_envelopes=processed_envelopes,
+        panel_manifests=panel_manifests,
+        single_views=single_views,
     )
     correlations, frozen_clusters, selected_parents = _joint_clusters(joint_inputs)
     selected_manifests = joint_inputs.manifests
     envelopes_by_package = joint_inputs.envelopes_by_package
-    parent_selections = tuple(
-        CoreJointParentSelection(
-            package_id=package,
-            selection_manifest_id=manifest.manifest_id,
-            selection_content_hash=manifest.content_hash,
-            panel_manifest_id=manifest.panel_manifest_id,
-            panel_content_hash=manifest.panel_content_hash,
-        )
-        for package, manifest in zip(package_ids, selected_manifests, strict=True)
-    )
+    parent_selections = _parent_selections(package_ids, joint_inputs)
     daily_bindings, excluded_dates = _joint_daily_bindings(
         envelopes_by_package,
         selected_parents,
@@ -140,8 +136,31 @@ def _build_joint(
     )
 
 
+def _parent_selections(
+    package_ids: tuple[str, ...],
+    inputs: JointInputs,
+) -> tuple[CoreJointParentSelection, ...]:
+    return tuple(
+        CoreJointParentSelection(
+            package_id=package,
+            selection_manifest_id=manifest.manifest_id,
+            selection_content_hash=manifest.content_hash,
+            panel_manifest_id=manifest.panel_manifest_id,
+            panel_content_hash=manifest.panel_content_hash,
+            single_view_id=single_view.view_id,
+            single_view_content_hash=single_view.content_hash,
+        )
+        for package, manifest, single_view in zip(
+            package_ids,
+            inputs.manifests,
+            inputs.single_views,
+            strict=True,
+        )
+    )
+
+
 def _joint_clusters(
-    inputs: _JointInputs,
+    inputs: JointInputs,
 ) -> tuple[
     tuple[CorePairCorrelationEvidence, ...],
     tuple[CoreSelectionCluster, ...],
@@ -168,7 +187,7 @@ def _joint_clusters(
             members=members,
             representative=min(
                 members,
-                key=lambda key: _representative_key(inputs.evidence_by_key[key]),
+                key=lambda key: representative_sort_key(inputs.evidence_by_key[key]),
             ),
         )
         for members in clusters
@@ -178,94 +197,6 @@ def _joint_clusters(
         item for item in inputs.candidates if item.feature_key in representatives
     )
     return correlations, frozen_clusters, selected_parents
-
-
-def _collect_joint_inputs(
-    *,
-    package_ids: tuple[str, ...],
-    horizon: CoreLabelHorizon,
-    selections: Mapping[str, CoreFeatureSelectionManifest],
-    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
-) -> _JointInputs:
-    manifests = tuple(selections[package] for package in package_ids)
-    fold_ids = {item.fold.fold_id for item in manifests}
-    prior_hashes = {item.prior_content_hash for item in manifests}
-    label_identities = {
-        tuple(
-            (item.decision_date, item.batch_id, item.content_hash)
-            for item in manifest.label_batches
-        )
-        for manifest in manifests
-    }
-    if (
-        any(item.horizon != horizon for item in manifests)
-        or len(fold_ids) != 1
-        or len(prior_hashes) != 1
-        or len(label_identities) != 1
-    ):
-        raise ValueError("joint parents must share horizon, fold, labels and prior")
-    evidence_by_key: dict[str, CoreFeatureSelectionEvidence] = {}
-    candidates: list[CoreJointFeatureParent] = []
-    envelopes_by_package: dict[str, tuple[CoreProcessedFeatureEnvelope, ...]] = {}
-    for package, manifest in zip(package_ids, manifests, strict=True):
-        envelopes = tuple(sorted(processed_envelopes[package], key=lambda item: item.decision_date))
-        actual_lineage = tuple(
-            (item.decision_date, item.envelope_id, item.content_hash, item.universe_content_hash)
-            for item in envelopes
-        )
-        expected_lineage = tuple(
-            (
-                item.decision_date,
-                item.processed_envelope_id,
-                item.processed_envelope_content_hash,
-                item.universe_content_hash,
-            )
-            for item in manifest.processed_days
-        )
-        if actual_lineage != expected_lineage:
-            raise ValueError("joint processed envelopes differ from frozen selection parents")
-        envelopes_by_package[package] = envelopes
-        manifest_evidence = {item.feature_key: item for item in manifest.feature_evidence}
-        for feature_key, feature_id in zip(
-            manifest.selected_feature_keys,
-            manifest.selected_feature_ids,
-            strict=True,
-        ):
-            if feature_key in evidence_by_key:
-                raise ValueError("versioned feature keys must be unique across joint parents")
-            evidence_by_key[feature_key] = manifest_evidence[feature_key]
-            candidates.append(
-                CoreJointFeatureParent(
-                    package_id=package,
-                    feature_key=feature_key,
-                    feature_id=feature_id,
-                )
-            )
-    _validate_joint_daily_calendars(envelopes_by_package)
-    return _JointInputs(
-        manifests=manifests,
-        prior_content_hash=next(iter(prior_hashes)),
-        evidence_by_key=evidence_by_key,
-        candidates=tuple(candidates),
-        envelopes_by_package=envelopes_by_package,
-    )
-
-
-def _validate_joint_daily_calendars(
-    envelopes: Mapping[str, tuple[CoreProcessedFeatureEnvelope, ...]],
-) -> None:
-    calendars = {
-        tuple(item.decision_date for item in package_envelopes)
-        for package_envelopes in envelopes.values()
-    }
-    if len(calendars) != 1:
-        raise ValueError("joint parent panels must use exactly the same decision dates")
-    for bundles in zip(*envelopes.values(), strict=True):
-        if (
-            len({item.universe_content_hash for item in bundles}) != 1
-            or len({item.instrument_order for item in bundles}) != 1
-        ):
-            raise ValueError("joint parent panels must share exact daily U0 identities")
 
 
 def _joint_daily_bindings(
@@ -301,20 +232,6 @@ def _joint_daily_bindings(
         )
     )
     return bindings, excluded
-
-
-def _representative_key(evidence: CoreFeatureSelectionEvidence) -> tuple[object, ...]:
-    return (
-        not evidence.direction_consistent,
-        evidence.complexity,
-        evidence.coverage_mean is None,
-        -(evidence.coverage_mean or 0.0),
-        evidence.turnover is None,
-        evidence.turnover or 0.0,
-        evidence.stability is None,
-        -(evidence.stability or 0.0),
-        evidence.feature_key,
-    )
 
 
 __all__ = ["build_core_joint_selected_view_manifests"]

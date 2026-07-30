@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import date
 from enum import StrEnum
-from typing import Protocol
+from typing import TYPE_CHECKING
 
 from pydantic import Field, model_validator
 
@@ -15,48 +15,10 @@ from ...application.identity import research_hash
 from ..labels import CoreLabelHorizon
 from .models import CoreCrossSectionStatus, CoreProcessedFeatureEnvelope
 from .panel import CoreProcessedFeaturePanelManifest
+from .view_lineage import validate_view_panel_envelopes
 
-
-class _CoverageShape(Protocol):
-    @property
-    def passed(self) -> bool: ...
-
-
-class _FeatureEvidenceShape(Protocol):
-    @property
-    def feature_key(self) -> str: ...
-
-    @property
-    def coverage(self) -> _CoverageShape: ...
-
-
-class _SelectionManifestShape(Protocol):
-    @property
-    def package_id(self) -> str: ...
-
-    @property
-    def horizon(self) -> CoreLabelHorizon: ...
-
-    @property
-    def panel_manifest_id(self) -> str: ...
-
-    @property
-    def panel_content_hash(self) -> str: ...
-
-    @property
-    def manifest_id(self) -> str: ...
-
-    @property
-    def content_hash(self) -> str: ...
-
-    @property
-    def feature_evidence(self) -> tuple[_FeatureEvidenceShape, ...]: ...
-
-    @property
-    def selected_feature_keys(self) -> tuple[str, ...]: ...
-
-    @property
-    def selected_feature_ids(self) -> tuple[str, ...]: ...
+if TYPE_CHECKING:
+    from ..feature_selection.models import CoreFeatureSelectionManifest
 
 
 class CoreFeatureViewKind(StrEnum):
@@ -73,6 +35,7 @@ class CoreViewDailyBinding(ContractModel):
     decision_date: date
     processed_envelope_id: Identifier
     processed_envelope_content_hash: ContentHash
+    universe_content_hash: ContentHash
 
 
 class CoreViewExcludedDate(ContractModel):
@@ -141,22 +104,84 @@ def build_core_feature_view_manifest(
     *,
     panel_manifest: CoreProcessedFeaturePanelManifest,
     processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
-    selection_manifest: _SelectionManifestShape,
+    selection_manifest: CoreFeatureSelectionManifest,
     view_kind: CoreFeatureViewKind,
 ) -> CoreFeatureViewManifest:
     """Freeze a view; selection evidence remains the sole owner of chosen parents."""
+    from ..feature_selection.models import CoreFeatureSelectionManifest
+
+    panel_manifest = CoreProcessedFeaturePanelManifest.model_validate(panel_manifest.model_dump())
+    selection_manifest = CoreFeatureSelectionManifest.model_validate(
+        selection_manifest.model_dump()
+    )
+    _validate_selection_panel(selection_manifest, panel_manifest)
+    envelopes = tuple(
+        sorted(
+            (
+                CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
+                for item in processed_envelopes
+            ),
+            key=lambda item: item.decision_date,
+        )
+    )
+    validate_view_panel_envelopes(panel_manifest, envelopes)
+    feature_keys, feature_ids, blockers = _view_feature_identity(
+        panel_manifest,
+        selection_manifest,
+        view_kind,
+    )
+    return _freeze_view(
+        panel=panel_manifest,
+        selection=selection_manifest,
+        envelopes=envelopes,
+        view_kind=view_kind,
+        feature_keys=feature_keys,
+        feature_ids=feature_ids,
+        blockers=blockers,
+    )
+
+
+def _validate_selection_panel(
+    selection: CoreFeatureSelectionManifest,
+    panel: CoreProcessedFeaturePanelManifest,
+) -> None:
     if (
-        selection_manifest.package_id != panel_manifest.package_id
-        or selection_manifest.panel_manifest_id != panel_manifest.panel_manifest_id
-        or selection_manifest.panel_content_hash != panel_manifest.content_hash
+        selection.package_id != panel.package_id
+        or selection.panel_manifest_id != panel.panel_manifest_id
+        or selection.panel_content_hash != panel.content_hash
+        or selection.feature_order != panel.feature_order
     ):
         raise ValueError("feature view selection and panel identities differ")
-    envelopes = tuple(sorted(processed_envelopes, key=lambda item: item.decision_date))
-    if tuple(item.decision_date for item in envelopes) != panel_manifest.decision_dates:
-        raise ValueError("feature view envelopes do not cover the panel calendar")
-    evidence = selection_manifest.feature_evidence
+    selection_lineage = tuple(
+        (
+            item.decision_date,
+            item.processed_envelope_id,
+            item.processed_envelope_content_hash,
+            item.universe_content_hash,
+        )
+        for item in selection.processed_days
+    )
+    panel_lineage = tuple(
+        (
+            item.decision_date,
+            item.processed_envelope_id,
+            item.processed_envelope_content_hash,
+            item.universe_content_hash,
+        )
+        for item in panel.entries
+    )
+    if selection_lineage != panel_lineage:
+        raise ValueError("feature view selection lineage differs from the processed panel")
+
+
+def _view_feature_identity(
+    panel: CoreProcessedFeaturePanelManifest,
+    selection: CoreFeatureSelectionManifest,
+    view_kind: CoreFeatureViewKind,
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    evidence = selection.feature_evidence
     if view_kind == CoreFeatureViewKind.FULL:
-        feature_ids = panel_manifest.feature_order
+        feature_ids = panel.feature_order
         feature_keys = tuple(item.feature_key for item in evidence)
         blockers = tuple(
             f"coverage_gate_failed:{item.feature_key}"
@@ -164,15 +189,29 @@ def build_core_feature_view_manifest(
             if not item.coverage.passed
         )
     else:
-        feature_ids = selection_manifest.selected_feature_ids
-        feature_keys = selection_manifest.selected_feature_keys
+        feature_ids = selection.selected_feature_ids
+        feature_keys = selection.selected_feature_keys
         blockers = ("selection_empty",) if not feature_ids else ()
+    return feature_keys, feature_ids, blockers
+
+
+def _freeze_view(
+    *,
+    panel: CoreProcessedFeaturePanelManifest,
+    selection: CoreFeatureSelectionManifest,
+    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
+    view_kind: CoreFeatureViewKind,
+    feature_keys: tuple[str, ...],
+    feature_ids: tuple[str, ...],
+    blockers: tuple[str, ...],
+) -> CoreFeatureViewManifest:
     excluded_dates = _excluded_dates(envelopes, feature_ids)
     bindings = tuple(
         CoreViewDailyBinding(
             decision_date=item.decision_date,
             processed_envelope_id=item.envelope_id,
             processed_envelope_content_hash=item.content_hash,
+            universe_content_hash=item.universe_content_hash,
         )
         for item in envelopes
     )
@@ -180,12 +219,12 @@ def build_core_feature_view_manifest(
     payload = {
         "schema": "core-feature-view-manifest-v1",
         "view_kind": view_kind,
-        "package_id": panel_manifest.package_id,
-        "horizon": selection_manifest.horizon,
-        "panel_manifest_id": panel_manifest.panel_manifest_id,
-        "panel_content_hash": panel_manifest.content_hash,
-        "selection_manifest_id": selection_manifest.manifest_id,
-        "selection_content_hash": selection_manifest.content_hash,
+        "package_id": panel.package_id,
+        "horizon": selection.horizon,
+        "panel_manifest_id": panel.panel_manifest_id,
+        "panel_content_hash": panel.content_hash,
+        "selection_manifest_id": selection.manifest_id,
+        "selection_content_hash": selection.content_hash,
         "feature_keys": feature_keys,
         "feature_ids": feature_ids,
         "model_columns": columns,
@@ -203,6 +242,26 @@ def build_core_feature_view_manifest(
             **{key: value for key, value in payload.items() if key != "schema"},
         }
     )
+
+
+def validate_core_feature_view_parents(
+    *,
+    view: CoreFeatureViewManifest,
+    panel_manifest: CoreProcessedFeaturePanelManifest,
+    processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
+    selection_manifest: CoreFeatureSelectionManifest,
+) -> tuple[CoreProcessedFeatureEnvelope, ...]:
+    """Rebuild a view from validated parents and reject a self-rehashed substitute."""
+    view = CoreFeatureViewManifest.model_validate(view.model_dump())
+    expected = build_core_feature_view_manifest(
+        panel_manifest=panel_manifest,
+        processed_envelopes=processed_envelopes,
+        selection_manifest=selection_manifest,
+        view_kind=view.view_kind,
+    )
+    if view != expected:
+        raise ValueError("feature view differs from its validated parent objects")
+    return tuple(sorted(processed_envelopes, key=lambda item: item.decision_date))
 
 
 def _excluded_dates(
@@ -259,4 +318,5 @@ __all__ = [
     "CoreViewDailyBinding",
     "CoreViewExcludedDate",
     "build_core_feature_view_manifest",
+    "validate_core_feature_view_parents",
 ]

@@ -16,6 +16,9 @@ from ...application.identity import research_hash
 STAGE_P_PRIORS_CONTENT_HASH = (
     "sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952"
 )
+STAGE_P_TOKENIZER_RULES_HASH = (
+    "sha256:7e2fa6eed8a0b668393f5b40ba65360b83d20f47742fd430bdbe7efa8b7aa3e4"
+)
 _PRIORS_PATH = Path(__file__).with_name("core_selection_priors_v1.json")
 
 
@@ -70,6 +73,8 @@ class CoreSelectionPriorManifest(ContractModel):
     def validate_frozen_identity(self) -> CoreSelectionPriorManifest:
         if self.priors_content_hash != STAGE_P_PRIORS_CONTENT_HASH:
             raise ValueError("Stage P prior hash is not the integrated frozen identity")
+        if self.tokenizer.get("rules_hash") != STAGE_P_TOKENIZER_RULES_HASH:
+            raise ValueError("Stage P tokenizer hash is not the integrated frozen identity")
         if len({item.feature_key for item in self.entries}) != 283:
             raise ValueError("selection prior definitions must be unique")
         if tuple(item.canonical_order for item in self.entries) != tuple(range(1, 284)):
@@ -95,6 +100,7 @@ def load_core_selection_prior_manifest() -> CoreSelectionPriorManifest:
 
 __all__ = [
     "STAGE_P_PRIORS_CONTENT_HASH",
+    "STAGE_P_TOKENIZER_RULES_HASH",
     "CoreSelectionPriorEntry",
     "CoreSelectionPriorManifest",
     "load_core_selection_prior_manifest",

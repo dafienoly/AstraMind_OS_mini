@@ -23,6 +23,7 @@ def state_aware_imputation_values(
     spec: CoreProcessingSpec,
 ) -> dict[str, tuple[float, CoreImputationSource]]:
     """Fill non-observed rows while preserving their tri-state indicators."""
+    spec = CoreProcessingSpec.model_validate(spec.model_dump())
     if not standardized_by_instrument:
         return {}
     u0_median = float(median(standardized_by_instrument.values()))

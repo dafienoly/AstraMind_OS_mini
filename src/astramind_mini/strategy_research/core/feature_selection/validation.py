@@ -13,6 +13,7 @@ from .models import CoreSelectionSpec
 from .plan import CoreSelectionFold
 from .priors import (
     STAGE_P_PRIORS_CONTENT_HASH,
+    STAGE_P_TOKENIZER_RULES_HASH,
     CoreSelectionPriorEntry,
     CoreSelectionPriorManifest,
     load_core_selection_prior_manifest,
@@ -39,6 +40,8 @@ def validate_selection_inputs(
     prior = prior_manifest or load_core_selection_prior_manifest()
     if prior.priors_content_hash != STAGE_P_PRIORS_CONTENT_HASH:
         raise ValueError("selection requires the integrated immutable Stage P prior")
+    if prior.tokenizer.get("rules_hash") != STAGE_P_TOKENIZER_RULES_HASH:
+        raise ValueError("selection requires the integrated Stage P tokenizer identity")
     envelopes = tuple(sorted(processed_envelopes, key=lambda item: item.decision_date))
     labels = tuple(sorted(label_batches, key=lambda item: item.decision_date))
     if (

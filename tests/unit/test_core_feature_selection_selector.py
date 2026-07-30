@@ -17,6 +17,7 @@ from astramind_mini.strategy_research.core.feature_processing import (
 )
 from astramind_mini.strategy_research.core.feature_selection import (
     STAGE_P_PRIORS_CONTENT_HASH,
+    STAGE_P_TOKENIZER_RULES_HASH,
     CoreFeatureSelectionManifest,
     CoreSelectionFold,
     CoreSelectionPriorEntry,
@@ -205,6 +206,7 @@ def _prior() -> CoreSelectionPriorManifest:
                 "computation_manifest_hash": COMPUTATION_HASH,
             }
         },
+        tokenizer={"rules_hash": STAGE_P_TOKENIZER_RULES_HASH},
         priors_content_hash=STAGE_P_PRIORS_CONTENT_HASH,
     )
 

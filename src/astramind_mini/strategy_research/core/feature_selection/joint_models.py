@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 from datetime import date
 from enum import StrEnum
 
@@ -28,12 +27,19 @@ class CoreJointParentSelection(ContractModel):
     selection_content_hash: ContentHash
     panel_manifest_id: Identifier
     panel_content_hash: ContentHash
+    single_view_id: Identifier
+    single_view_content_hash: ContentHash
 
 
 class CoreJointFeatureParent(ContractModel):
     package_id: Identifier
     feature_key: Identifier
     feature_id: Identifier
+    direction_consistent: bool
+    complexity: int = Field(ge=1)
+    coverage_mean: float | None = Field(default=None, ge=0.0, le=1.0)
+    turnover: float | None = Field(default=None, ge=0.0)
+    stability: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class CoreJointDailyBinding(ContractModel):
@@ -89,27 +95,9 @@ class CoreJointSelectedViewManifest(ContractModel):
             item.package_id not in self.package_ids for item in self.candidate_parents
         ):
             raise ValueError("joint candidate parents must be unique declared-package features")
-        expected_pairs = tuple(
-            tuple(sorted((left.feature_key, right.feature_key)))
-            for left, right in itertools.combinations(self.candidate_parents, 2)
-            if left.package_id != right.package_id
-        )
-        actual_pairs = tuple(
-            (item.left_feature_key, item.right_feature_key) for item in self.pair_correlations
-        )
-        if actual_pairs != expected_pairs:
-            raise ValueError("joint correlations must cover exact cross-package pairs")
-        clustered_keys = tuple(key for cluster in self.clusters for key in cluster.members)
-        if len(set(clustered_keys)) != len(clustered_keys) or set(clustered_keys) != set(
-            candidate_keys
-        ):
-            raise ValueError("joint clusters must partition all candidate parents")
-        representatives = {item.representative for item in self.clusters}
-        expected_selected = tuple(
-            item for item in self.candidate_parents if item.feature_key in representatives
-        )
-        if self.selected_parents != expected_selected:
-            raise ValueError("joint selected parents must exactly equal cluster representatives")
+        from .joint_validation import validate_joint_evidence
+
+        validate_joint_evidence(self)
         binding_dates = tuple(item.decision_date for item in self.daily_bindings)
         if binding_dates != tuple(sorted(set(binding_dates))) or any(
             tuple(item[0] for item in binding.package_envelopes) != self.package_ids

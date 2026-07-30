@@ -32,11 +32,18 @@ class CoreDailyCoverageEvidence(ContractModel):
         expected = self.observed_count / self.applicable_count if self.applicable_count else None
         if self.coverage != expected:
             raise ValueError("daily coverage ratio mismatch")
-        if self.applicable_count == 0 and (
-            self.passes_date_threshold
-            or self.reason_code != CoreCoverageReason.NO_APPLICABLE_MEMBERS
-        ):
-            raise ValueError("all-N/A date must be excluded from coverage denominator")
+        expected_passed = expected is not None and expected >= 0.8
+        expected_reason = (
+            CoreCoverageReason.PASSED
+            if expected_passed
+            else (
+                CoreCoverageReason.NO_APPLICABLE_MEMBERS
+                if expected is None
+                else CoreCoverageReason.COVERAGE_GATE_FAILED
+            )
+        )
+        if self.passes_date_threshold != expected_passed or self.reason_code != expected_reason:
+            raise ValueError("daily coverage threshold or reason mismatch")
         return self
 
 
@@ -52,6 +59,9 @@ class CoreFoldCoverageEvidence(ContractModel):
 
     @model_validator(mode="after")
     def validate_gate(self) -> CoreFoldCoverageEvidence:
+        dates = tuple(item.decision_date for item in self.daily)
+        if dates != tuple(sorted(set(dates))):
+            raise ValueError("fold coverage dates must be unique and ordered")
         qualifying = sum(item.applicable_count > 0 for item in self.daily)
         passing = sum(item.passes_date_threshold for item in self.daily)
         ratio = passing / qualifying if qualifying else None

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import date
 
 from pydantic import Field, model_validator
@@ -11,8 +11,15 @@ from pydantic import Field, model_validator
 from astramind_mini.contracts.base import ContentHash, ContractModel, Identifier
 
 from ...application.identity import research_hash
-from ..feature_processing import CoreProcessedFeatureEnvelope, CoreProcessedFeatureRow
+from ..feature_processing import (
+    CoreFeatureViewManifest,
+    CoreProcessedFeatureEnvelope,
+    CoreProcessedFeaturePanelManifest,
+    CoreProcessedFeatureRow,
+)
+from .joint import build_core_joint_selected_view_manifests
 from .joint_models import CoreJointSelectedViewManifest, CoreJointViewStatus
+from .models import CoreFeatureSelectionManifest
 
 
 class CoreJointMatrixProjection(ContractModel):
@@ -44,10 +51,86 @@ def project_core_joint_selected_matrix(
     *,
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
     view: CoreJointSelectedViewManifest,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
+    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> CoreJointMatrixProjection:
     """Project exact view columns; downstream modeling performs no feature work."""
+    view, envelopes, decision_date, row_order = _validate_projection_parents(
+        envelopes=envelopes,
+        view=view,
+        selections=selections,
+        processed_envelopes=processed_envelopes,
+        panel_manifests=panel_manifests,
+        single_views=single_views,
+    )
+    values = _projection_values(envelopes, view, row_order)
+    payload = {
+        "schema": "core-joint-matrix-projection-v1",
+        "joint_view_id": view.joint_view_id,
+        "joint_view_content_hash": view.content_hash,
+        "decision_date": decision_date,
+        "row_order": row_order,
+        "column_order": view.model_columns,
+        "values": values,
+    }
+    content_hash = research_hash(payload)
+    return CoreJointMatrixProjection.model_validate(
+        {
+            "projection_id": f"core-joint-matrix:{content_hash.removeprefix('sha256:')}",
+            "content_hash": content_hash,
+            **{key: value for key, value in payload.items() if key != "schema"},
+        }
+    )
+
+
+def _validate_projection_parents(
+    *,
+    envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
+    view: CoreJointSelectedViewManifest,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
+    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    single_views: Mapping[str, CoreFeatureViewManifest],
+) -> tuple[
+    CoreJointSelectedViewManifest,
+    dict[str, CoreProcessedFeatureEnvelope],
+    date,
+    tuple[str, ...],
+]:
+    rebuilt = build_core_joint_selected_view_manifests(
+        horizon=view.horizon,
+        selections=selections,
+        processed_envelopes=processed_envelopes,
+        panel_manifests=panel_manifests,
+        single_views=single_views,
+    )
+    expected = next(
+        (item for item in rebuilt if item.package_ids == view.package_ids),
+        None,
+    )
+    view = CoreJointSelectedViewManifest.model_validate(view.model_dump())
+    if expected is None or view != expected:
+        raise ValueError("joint view differs from its validated parent objects")
+    validated_daily_envelopes = {
+        package: tuple(
+            CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
+            for item in processed_envelopes[package]
+        )
+        for package in view.package_ids
+    }
+    envelopes = {
+        package: CoreProcessedFeatureEnvelope.model_validate(envelope.model_dump())
+        for package, envelope in envelopes.items()
+    }
     if set(envelopes) != set(view.package_ids):
         raise ValueError("joint projection requires every and only declared parent package")
+    if any(
+        envelope not in validated_daily_envelopes[package]
+        for package, envelope in envelopes.items()
+    ):
+        raise ValueError("joint projection envelope is not a validated parent")
     if view.status == CoreJointViewStatus.BLOCKED:
         raise ValueError("blocked joint selected view cannot project a model matrix")
     decision_dates = {item.decision_date for item in envelopes.values()}
@@ -74,12 +157,20 @@ def project_core_joint_selected_matrix(
     if len(row_orders) != 1:
         raise ValueError("joint parent U0 row order must exactly match")
     row_order = next(iter(row_orders))
+    return view, envelopes, decision_date, row_order
+
+
+def _projection_values(
+    envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
+    view: CoreJointSelectedViewManifest,
+    row_order: tuple[str, ...],
+) -> tuple[tuple[float, ...], ...]:
     rows_by_parent = {
         (package, row.instrument_id, row.feature_id): row
         for package, envelope in envelopes.items()
         for row in envelope.rows
     }
-    values = tuple(
+    return tuple(
         tuple(
             component
             for parent in view.selected_parents
@@ -88,23 +179,6 @@ def project_core_joint_selected_matrix(
             )
         )
         for instrument in row_order
-    )
-    payload = {
-        "schema": "core-joint-matrix-projection-v1",
-        "joint_view_id": view.joint_view_id,
-        "joint_view_content_hash": view.content_hash,
-        "decision_date": decision_date,
-        "row_order": row_order,
-        "column_order": view.model_columns,
-        "values": values,
-    }
-    content_hash = research_hash(payload)
-    return CoreJointMatrixProjection.model_validate(
-        {
-            "projection_id": f"core-joint-matrix:{content_hash.removeprefix('sha256:')}",
-            "content_hash": content_hash,
-            **{key: value for key, value in payload.items() if key != "schema"},
-        }
     )
 
 

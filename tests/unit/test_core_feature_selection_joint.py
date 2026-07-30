@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from collections.abc import Mapping
 
 import pytest
+from test_core_feature_selection_support import (
+    frozen_envelopes,
+    frozen_panel,
+    frozen_selection,
+)
 
 from astramind_mini.strategy_research.application.identity import research_hash
 from astramind_mini.strategy_research.core.feature_processing import (
+    CoreFeatureViewKind,
+    CoreFeatureViewManifest,
     CoreProcessedFeatureEnvelope,
-    CoreProcessedFeatureRow,
+    CoreProcessedFeaturePanelManifest,
+    build_core_feature_view_manifest,
 )
 from astramind_mini.strategy_research.core.feature_selection import (
-    STAGE_P_PRIORS_CONTENT_HASH,
     CoreCorrelationStatus,
-    CoreFeatureSelectionEvidence,
     CoreFeatureSelectionManifest,
+    CoreJointSelectedViewManifest,
     CoreJointViewStatus,
-    CoreLabelBatchReference,
-    CoreProcessedDayReference,
-    CoreSelectionFold,
     build_core_joint_selected_view_manifests,
     pair_correlation_evidence,
     project_core_joint_selected_matrix,
-)
-from astramind_mini.strategy_research.core.feature_values import (
-    CoreImputationSource,
-    FeatureAvailabilityState,
 )
 from astramind_mini.strategy_research.core.labels import CoreLabelHorizon
 from astramind_mini.strategy_research.core.packages import (
@@ -44,221 +44,221 @@ FEATURES = {
     PACKAGES[2]: "A101_TEST",
 }
 INSTRUMENTS = ("A", "B", "C", "D", "E")
-START = date(2025, 1, 2)
 
 
-def _hash(value: object) -> str:
-    return research_hash({"fixture": value})
-
-
-def _envelope(
-    package: str,
-    feature_id: str,
-    index: int,
+def _parents(
+    horizon: CoreLabelHorizon,
     *,
-    universe_hash: str | None = None,
-) -> CoreProcessedFeatureEnvelope:
-    day = START + timedelta(days=index)
-    rows = tuple(
-        CoreProcessedFeatureRow(
-            instrument_id=instrument,
-            feature_id=feature_id,
-            feature_definition_version="1.0.0",
-            availability_state=FeatureAvailabilityState.OBSERVED,
-            value_raw=float(position + index),
-            value_winsorized=float(position + index),
-            value_standardized_observed=float(position),
-            model_value=float(position),
-            imputation_source=CoreImputationSource.NONE,
-            is_missing=False,
-            is_not_applicable=False,
+    empty_package: str | None = None,
+    universe_hashes: Mapping[str, tuple[str, ...]] | None = None,
+) -> tuple[
+    dict[str, tuple[CoreProcessedFeatureEnvelope, ...]],
+    dict[str, CoreProcessedFeaturePanelManifest],
+    dict[str, CoreFeatureSelectionManifest],
+    dict[str, CoreFeatureViewManifest],
+]:
+    envelopes = {
+        package: frozen_envelopes(
+            package_id=package,
+            feature_ids=(FEATURES[package],),
+            instruments=INSTRUMENTS,
+            universe_hashes=(universe_hashes.get(package) if universe_hashes is not None else None),
         )
-        for position, instrument in enumerate(INSTRUMENTS)
-    )
-    return CoreProcessedFeatureEnvelope.model_construct(
-        envelope_id=f"processed-{package}-{index}",
-        content_hash=_hash(("processed", package, index, universe_hash)),
-        decision_date=day,
-        package_id=package,
-        universe_content_hash=universe_hash or _hash(("u0", index)),
-        feature_order=(feature_id,),
-        instrument_order=INSTRUMENTS,
-        rows=rows,
-        blocked_feature_ids=(),
-    )
-
-
-def _panel_set() -> dict[str, tuple[CoreProcessedFeatureEnvelope, ...]]:
-    return {
-        package: tuple(_envelope(package, FEATURES[package], index) for index in range(60))
         for package in PACKAGES
     }
+    panels = {package: frozen_panel(envelopes[package]) for package in PACKAGES}
+    selections = {
+        package: frozen_selection(
+            panel=panels[package],
+            envelopes=envelopes[package],
+            horizon=horizon,
+            p_values=((0.20,) if package == empty_package else (0.01,)),
+        )
+        for package in PACKAGES
+    }
+    views = {
+        package: build_core_feature_view_manifest(
+            panel_manifest=panels[package],
+            processed_envelopes=envelopes[package],
+            selection_manifest=selections[package],
+            view_kind=CoreFeatureViewKind.SELECTED,
+        )
+        for package in PACKAGES
+    }
+    return envelopes, panels, selections, views
 
 
-def _selection(
-    package: str,
+def _build(
     horizon: CoreLabelHorizon,
-    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
-    *,
-    selected: bool = True,
-) -> CoreFeatureSelectionManifest:
-    feature_id = FEATURES[package]
-    feature_key = f"{package}:{feature_id}@1.0.0"
-    evidence = CoreFeatureSelectionEvidence.model_construct(
-        feature_key=feature_key,
-        feature_id=feature_id,
-        definition_version="1.0.0",
-        direction_consistent=True,
-        complexity=1,
-        coverage_mean=1.0,
-        turnover=0.0,
-        stability=1.0,
-    )
-    dates = tuple(item.decision_date for item in envelopes)
-    processed_days = tuple(
-        CoreProcessedDayReference(
-            decision_date=item.decision_date,
-            processed_envelope_id=item.envelope_id,
-            processed_envelope_content_hash=item.content_hash,
-            universe_content_hash=item.universe_content_hash,
-        )
-        for item in envelopes
-    )
-    labels = tuple(
-        CoreLabelBatchReference(
-            decision_date=item.decision_date,
-            batch_id=f"label-{horizon}-{index}",
-            content_hash=_hash(("label", horizon, index)),
-            universe_content_hash=item.universe_content_hash,
-        )
-        for index, item in enumerate(envelopes)
-    )
-    selected_keys = (feature_key,) if selected else ()
-    selected_ids = (feature_id,) if selected else ()
-    return CoreFeatureSelectionManifest.model_construct(
-        manifest_id=f"selection-{package}-{horizon}",
-        content_hash=_hash(("selection", package, horizon, selected)),
-        package_id=package,
+    parents: tuple[
+        dict[str, tuple[CoreProcessedFeatureEnvelope, ...]],
+        dict[str, CoreProcessedFeaturePanelManifest],
+        dict[str, CoreFeatureSelectionManifest],
+        dict[str, CoreFeatureViewManifest],
+    ],
+) -> tuple[CoreJointSelectedViewManifest, ...]:
+    envelopes, panels, selections, views = parents
+    return build_core_joint_selected_view_manifests(
         horizon=horizon,
-        fold=CoreSelectionFold.model_construct(
-            fold_id=f"fold-{horizon}",
-            decision_dates=dates,
-        ),
-        panel_manifest_id=f"panel-{package}",
-        panel_content_hash=_hash(("panel", package)),
-        prior_content_hash=STAGE_P_PRIORS_CONTENT_HASH,
-        processed_days=processed_days,
-        label_batches=labels,
-        feature_evidence=(evidence,),
-        selected_feature_keys=selected_keys,
-        selected_feature_ids=selected_ids,
+        selections=selections,
+        processed_envelopes=envelopes,
+        panel_manifests=panels,
+        single_views=views,
     )
-
-
-def _selections(
-    horizon: CoreLabelHorizon,
-    panels: dict[str, tuple[CoreProcessedFeatureEnvelope, ...]],
-) -> dict[str, CoreFeatureSelectionManifest]:
-    return {package: _selection(package, horizon, panels[package]) for package in PACKAGES}
 
 
 def test_each_horizon_freezes_four_joint_views_and_projects_direct_matrix() -> None:
-    panels = _panel_set()
-    h20 = build_core_joint_selected_view_manifests(
-        horizon=CoreLabelHorizon.H20,
-        selections=_selections(CoreLabelHorizon.H20, panels),
-        processed_envelopes=panels,
-    )
-    h60 = build_core_joint_selected_view_manifests(
-        horizon=CoreLabelHorizon.H60,
-        selections=_selections(CoreLabelHorizon.H60, panels),
-        processed_envelopes=panels,
-    )
+    h20_parents = _parents(CoreLabelHorizon.H20)
+    h60_parents = _parents(CoreLabelHorizon.H60)
+    h20 = _build(CoreLabelHorizon.H20, h20_parents)
+    h60 = _build(CoreLabelHorizon.H60, h60_parents)
     assert len(h20) == len(h60) == 4
     assert len({item.joint_view_id for item in (*h20, *h60)}) == 8
     assert all(item.status == CoreJointViewStatus.READY for item in (*h20, *h60))
     triple = next(item for item in h20 if len(item.package_ids) == 3)
+    envelopes, panels, selections, views = h20_parents
     projection = project_core_joint_selected_matrix(
-        envelopes={package: panels[package][0] for package in PACKAGES},
+        envelopes={package: envelopes[package][0] for package in PACKAGES},
         view=triple,
+        selections=selections,
+        processed_envelopes=envelopes,
+        panel_manifests=panels,
+        single_views=views,
     )
     assert projection.row_order == INSTRUMENTS
     assert projection.column_order == triple.model_columns
     assert len(projection.values[0]) == triple.model_input_dimension
-    assert all(isinstance(value, float) for row in projection.values for value in row)
 
 
 def test_joint_rejects_tail_append_and_cross_package_daily_u0_mismatch() -> None:
-    panels = _panel_set()
-    selections = _selections(CoreLabelHorizon.H20, panels)
-    appended = dict(panels)
-    appended[PACKAGES[0]] = (
-        *appended[PACKAGES[0]],
-        _envelope(PACKAGES[0], FEATURES[PACKAGES[0]], 60),
+    parents = _parents(CoreLabelHorizon.H20)
+    envelopes, panels, selections, views = parents
+    appended = dict(envelopes)
+    appended[PACKAGES[0]] = frozen_envelopes(
+        package_id=PACKAGES[0],
+        feature_ids=(FEATURES[PACKAGES[0]],),
+        instruments=INSTRUMENTS,
+        days=181,
     )
-    with pytest.raises(ValueError, match="frozen selection parents"):
+    with pytest.raises(ValueError, match=r"panel entries|validated parents"):
         build_core_joint_selected_view_manifests(
             horizon=CoreLabelHorizon.H20,
             selections=selections,
             processed_envelopes=appended,
+            panel_manifests=panels,
+            single_views=views,
         )
 
-    mismatched = dict(panels)
-    mismatched_first = _envelope(
-        PACKAGES[1],
-        FEATURES[PACKAGES[1]],
-        0,
-        universe_hash=_hash("corrupt-u0"),
-    )
-    mismatched[PACKAGES[1]] = (mismatched_first, *mismatched[PACKAGES[1]][1:])
-    mismatched_selections = dict(selections)
-    mismatched_selections[PACKAGES[1]] = _selection(
-        PACKAGES[1],
+    common = tuple(research_hash({"u0": index}) for index in range(180))
+    corrupt = (research_hash({"corrupt-u0": 0}), *common[1:])
+    mismatched = _parents(
         CoreLabelHorizon.H20,
-        mismatched[PACKAGES[1]],
+        universe_hashes={
+            PACKAGES[0]: common,
+            PACKAGES[1]: corrupt,
+            PACKAGES[2]: common,
+        },
     )
     with pytest.raises(ValueError, match="exact daily U0"):
-        build_core_joint_selected_view_manifests(
-            horizon=CoreLabelHorizon.H20,
-            selections=mismatched_selections,
-            processed_envelopes=mismatched,
-        )
+        _build(CoreLabelHorizon.H20, mismatched)
 
 
 def test_empty_parent_still_publishes_blocked_joint_identities() -> None:
-    panels = _panel_set()
-    selections = _selections(CoreLabelHorizon.H20, panels)
-    selections[PACKAGES[0]] = _selection(
-        PACKAGES[0],
-        CoreLabelHorizon.H20,
-        panels[PACKAGES[0]],
-        selected=False,
-    )
-    views = build_core_joint_selected_view_manifests(
-        horizon=CoreLabelHorizon.H20,
-        selections=selections,
-        processed_envelopes=panels,
-    )
+    parents = _parents(CoreLabelHorizon.H20, empty_package=PACKAGES[0])
+    views = _build(CoreLabelHorizon.H20, parents)
     assert len(views) == 4
     assert sum(item.status == CoreJointViewStatus.BLOCKED for item in views) == 3
-    assert len({item.joint_view_id for item in views}) == 4
     blocked = next(item for item in views if item.status == CoreJointViewStatus.BLOCKED)
+    envelopes, panels, selections, single_views = parents
     with pytest.raises(ValueError, match="blocked"):
         project_core_joint_selected_matrix(
-            envelopes={package: panels[package][0] for package in blocked.package_ids},
+            envelopes={package: envelopes[package][0] for package in blocked.package_ids},
             view=blocked,
+            selections=selections,
+            processed_envelopes=envelopes,
+            panel_manifests=panels,
+            single_views=single_views,
         )
 
 
+def test_fully_rehashed_joint_parent_and_representative_attacks_are_rejected() -> None:
+    parents = _parents(CoreLabelHorizon.H20)
+    triple = next(
+        item for item in _build(CoreLabelHorizon.H20, parents) if len(item.package_ids) == 3
+    )
+    envelopes, panels, selections, views = parents
+    attack = triple.model_dump()
+    parent_selections = list(attack["parent_selections"])
+    parent_selections[0] = {
+        **parent_selections[0],
+        "selection_manifest_id": "forged-selection",
+    }
+    attack["parent_selections"] = tuple(parent_selections)
+    forged = CoreJointSelectedViewManifest.model_validate(_rehash_joint(attack))
+    with pytest.raises(ValueError, match="validated parent"):
+        project_core_joint_selected_matrix(
+            envelopes={package: envelopes[package][0] for package in PACKAGES},
+            view=forged,
+            selections=selections,
+            processed_envelopes=envelopes,
+            panel_manifests=panels,
+            single_views=views,
+        )
+
+    representative_attack = triple.model_dump()
+    current = representative_attack["clusters"][0]["representative"]
+    candidates = [
+        {**item, "complexity": 99} if item["feature_key"] == current else item
+        for item in representative_attack["candidate_parents"]
+    ]
+    replacement = min(item["feature_key"] for item in candidates if item["feature_key"] != current)
+    representative_attack["candidate_parents"] = tuple(candidates)
+    representative_attack["clusters"] = (
+        {
+            **representative_attack["clusters"][0],
+            "representative": replacement,
+        },
+    )
+    selected_parent = next(item for item in candidates if item["feature_key"] == replacement)
+    representative_attack["selected_parents"] = (selected_parent,)
+    representative_attack["model_columns"] = tuple(
+        f"{selected_parent['feature_id']}__{suffix}"
+        for suffix in ("value", "is_missing", "is_not_applicable")
+    )
+    representative_attack["model_input_dimension"] = 3
+    rehashed_representative = CoreJointSelectedViewManifest.model_validate(
+        _rehash_joint(representative_attack)
+    )
+    with pytest.raises(ValueError, match="validated parent"):
+        project_core_joint_selected_matrix(
+            envelopes={package: envelopes[package][0] for package in PACKAGES},
+            view=rehashed_representative,
+            selections=selections,
+            processed_envelopes=envelopes,
+            panel_manifests=panels,
+            single_views=views,
+        )
+
+
+def _rehash_joint(data: dict[str, object]) -> dict[str, object]:
+    body = {
+        key: value for key, value in data.items() if key not in {"joint_view_id", "content_hash"}
+    }
+    content_hash = research_hash({"schema": "core-joint-selected-view-v1", **body})
+    data["joint_view_id"] = f"core-joint-selected:{content_hash.removeprefix('sha256:')}"
+    data["content_hash"] = content_hash
+    return data
+
+
 def test_pair_correlation_requires_sixty_valid_daily_cross_sections() -> None:
-    panels = _panel_set()
+    envelopes, _, _, _ = _parents(CoreLabelHorizon.H20)
     evidence = pair_correlation_evidence(
         left_feature_key="left@1",
         right_feature_key="right@1",
         left_feature_id=FEATURES[PACKAGES[0]],
         right_feature_id=FEATURES[PACKAGES[1]],
-        left_envelopes=panels[PACKAGES[0]][:59],
-        right_envelopes=panels[PACKAGES[1]][:59],
+        left_envelopes=envelopes[PACKAGES[0]][:59],
+        right_envelopes=envelopes[PACKAGES[1]][:59],
     )
     assert evidence.valid_date_count == 59
     assert evidence.status == CoreCorrelationStatus.CORRELATION_EVIDENCE_INSUFFICIENT

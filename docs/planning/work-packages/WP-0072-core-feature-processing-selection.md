@@ -436,11 +436,28 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
 - 单包和联合 view 可直接按 manifest 物化已填补、有限、行列顺序固定的实际矩阵；
   blocked/空 selected 仍发布准确身份，但不能投影模型矩阵，下游不得重做填补、选择或
   列排序；
-- 受控 oracle 声明三个包、260 个固定真实沪深共同交易日、24 只证券和三个行业，
-  fixture 内容哈希为
-  `sha256:ff2030ad7ece6cb2f04bec0742dc285462406f2d19ffa38db927e8c8d64f0747`；
-  手算 MAD/平均秩/BH/完全链接和独立 10,000 次 bootstrap 参考均未调用生产 evaluator
-  生成期望值；
+- 受控 oracle 已升级为三个包、260 个固定真实沪深共同交易日、24 只证券和三个行业
+  的实际 18,720 条输入及 18,720 条处理输出，并冻结两个 180 日折、H20/H60 共四个
+  选择回放身份和三个 bootstrap seed/index 向量。fixture 规范内容哈希为
+  `sha256:d5b1f3fa6ba6fd26d0fda2f3c1154e1bcf0d5b44d1b5c1bb8f57076c59ab10ce`，
+  输入、处理输出和选择回放哈希分别为
+  `sha256:52b49d96423a5c5d7c1cb874968e220c5ab8db7524935a8e40f98632c6c1f4f2`、
+  `sha256:ffdd2285807fe7d6fcdd5a87204cb938c1e76bfaa8ce7ba093e97d7611227ed6` 和
+  `sha256:6c3aec3b6d9f1f8dd1a34f2d87cc01ab6a67bcb0f957fc906b9564ce331d8a67`；
+- oracle 由 `generate_stage_s_oracle.py` v2.0.0 仅用标准库和冻结输入生成，生成器
+  SHA-256 为 `4f6d728c4d78e4f4be49c7c5a320f2052a4cb5103bac7ba889dd8bb8d6999fd4`，
+  运行 `uv run python tests/fixtures/core/processing/generate_stage_s_oracle.py` 可确定性
+  重建；测试独立重算生成器、输入、输出、回放和 fixture 哈希，并用手算
+  MAD/平均秩/BH/完全链接及独立 10,000 次 bootstrap 校验生产原语，未调用生产
+  evaluator 生成期望值；
+- 生成器 497 行和约 4.6 MB fixture 分别属于单用途、可审计生成过程与高内聚逐行
+  oracle 数据，按仓库规则作生成/fixture 豁免；生产源码均不超过 350 行，新增函数
+  均不超过 80 行；
+- selection manifest 会从逐日证据重算固定 Stage P/tokenizer 身份、coverage 日历与
+  阈值、BH 检验族、完全链接簇、代表和 selected；单包及联合 view/projector 必须消费
+  准确 panel、processed envelope、selection 和单包 view 父对象，替换内容后重算全部
+  ID/hash 仍失败关闭。换手证据逐相邻日保存两日 `n_day`、`n_common`、比率及有效/失效
+  原因；
 - Stage P 的 283 项先验文件保持零差异，冻结内容哈希继续为
   `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
   本阶段未读取生产 `var/`、历史胜负或模型结果，也未触碰 MiniQMT、账户、Paper、

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import itertools
 from datetime import date
 from enum import StrEnum
+from statistics import median
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -13,9 +13,10 @@ from astramind_mini.contracts.base import ContentHash, ContractModel, Identifier
 
 from ...application.identity import research_hash
 from ..labels import CoreLabelHorizon
-from .bh import benjamini_hochberg
 from .coverage import CoreFoldCoverageEvidence
 from .plan import CoreSelectionFold
+from .priors import STAGE_P_PRIORS_CONTENT_HASH, STAGE_P_TOKENIZER_RULES_HASH
+from .turnover import CoreTurnoverTransitionEvidence
 
 
 class CoreSelectionReason(StrEnum):
@@ -52,10 +53,18 @@ class CoreSelectionSpec(ContractModel):
     @model_validator(mode="after")
     def validate_fixed_v1(self) -> CoreSelectionSpec:
         if (
-            self.allowed_horizons != (CoreLabelHorizon.H20, CoreLabelHorizon.H60)
+            self.spec_version != "core-feature-selection-v1"
+            or self.allowed_horizons != (CoreLabelHorizon.H20, CoreLabelHorizon.H60)
+            or self.bootstrap_block_length != 20
+            or self.bootstrap_replicates != 10_000
             or self.bh_fdr != 0.10
+            or self.minimum_subfold_valid_rankic != 60
+            or self.correlation_minimum_daily_pairs != 5
+            or self.correlation_minimum_valid_dates != 60
             or self.correlation_cluster_absolute_threshold != 0.85
             or self.complete_linkage_maximum_distance != 0.15
+            or self.turnover_minimum_common_instruments != 5
+            or self.turnover_minimum_valid_transitions != 60
         ):
             raise ValueError("core-feature-selection-v1 constants are immutable")
         return self
@@ -64,14 +73,14 @@ class CoreSelectionSpec(ContractModel):
 class CoreDailyRankICEvidence(ContractModel):
     decision_date: date
     pair_count: int = Field(ge=0)
-    rank_ic: float | None = None
-    signed_rank_ic: float | None = None
+    rank_ic: float | None = Field(default=None, ge=-1.0, le=1.0)
+    signed_rank_ic: float | None = Field(default=None, ge=-1.0, le=1.0)
 
 
 class CoreSubfoldRankICEvidence(ContractModel):
     subfold_id: Identifier
     valid_count: int = Field(ge=0)
-    signed_mean_rank_ic: float | None = None
+    signed_mean_rank_ic: float | None = Field(default=None, ge=-1.0, le=1.0)
     sample_sufficient: bool
 
 
@@ -90,7 +99,7 @@ class CoreFeatureSelectionEvidence(ContractModel):
         CoreSubfoldRankICEvidence,
     ]
     direction_consistent: bool
-    signed_mean_rank_ic: float | None = None
+    signed_mean_rank_ic: float | None = Field(default=None, ge=-1.0, le=1.0)
     bootstrap_seed: int | None = Field(default=None, ge=0)
     bootstrap_p_value: float | None = Field(default=None, ge=0.0, le=1.0)
     selection_eligible: bool
@@ -98,10 +107,23 @@ class CoreFeatureSelectionEvidence(ContractModel):
     bh_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     bh_passed: bool
     coverage_mean: float | None = Field(default=None, ge=0.0, le=1.0)
-    turnover: float | None = Field(default=None, ge=0.0)
+    turnover: float | None = Field(default=None, ge=0.0, le=1.0)
     turnover_valid_transitions: int = Field(ge=0)
+    turnover_transitions: tuple[CoreTurnoverTransitionEvidence, ...]
     stability: float | None = Field(default=None, ge=0.0, le=1.0)
     reason_code: CoreSelectionReason
+
+    @model_validator(mode="after")
+    def validate_turnover(self) -> CoreFeatureSelectionEvidence:
+        valid = tuple(
+            float(item.turnover_ratio)
+            for item in self.turnover_transitions
+            if item.turnover_ratio is not None
+        )
+        expected = float(median(valid)) if len(valid) >= 60 else None
+        if self.turnover_valid_transitions != len(valid) or self.turnover != expected:
+            raise ValueError("feature turnover aggregate does not match transition evidence")
+        return self
 
 
 class CorePairCorrelationEvidence(ContractModel):
@@ -149,6 +171,7 @@ class CoreFeatureSelectionManifest(ContractModel):
     panel_manifest_id: Identifier
     panel_content_hash: ContentHash
     prior_content_hash: ContentHash
+    prior_tokenizer_rules_hash: ContentHash
     selection_spec: CoreSelectionSpec
     selection_spec_hash: ContentHash
     processed_days: tuple[CoreProcessedDayReference, ...] = Field(min_length=1)
@@ -162,11 +185,17 @@ class CoreFeatureSelectionManifest(ContractModel):
 
     @model_validator(mode="after")
     def validate_identity(self) -> CoreFeatureSelectionManifest:
+        CoreSelectionSpec.model_validate(self.selection_spec.model_dump())
         if self.horizon not in {
             CoreLabelHorizon.H20,
             CoreLabelHorizon.H60,
         }:
             raise ValueError("D1/D3/D5 cannot form a production selection manifest")
+        if (
+            self.prior_content_hash != STAGE_P_PRIORS_CONTENT_HASH
+            or self.prior_tokenizer_rules_hash != STAGE_P_TOKENIZER_RULES_HASH
+        ):
+            raise ValueError("selection manifest requires integrated Stage P identities")
         if self.selection_spec_hash != research_hash(self.selection_spec):
             raise ValueError("selection spec hash mismatch")
         if tuple(item.feature_id for item in self.feature_evidence) != self.feature_order:
@@ -185,68 +214,14 @@ class CoreFeatureSelectionManifest(ContractModel):
             != tuple(item.universe_content_hash for item in self.label_batches)
         ):
             raise ValueError("selection daily processed/label lineage must match the fold")
-        _validate_bh_and_clusters(self)
+        from .manifest_validation import validate_selection_evidence
+
+        validate_selection_evidence(self)
         expected_hash = research_hash(_selection_payload(self))
         expected_id = f"core-selection:{expected_hash.removeprefix('sha256:')}"
         if self.content_hash != expected_hash or self.manifest_id != expected_id:
             raise ValueError("selection manifest canonical identity mismatch")
         return self
-
-
-def _validate_bh_and_clusters(manifest: CoreFeatureSelectionManifest) -> None:
-    expected_bh = benjamini_hochberg(
-        {
-            item.feature_key: (item.bootstrap_p_value if item.selection_eligible else None)
-            for item in manifest.feature_evidence
-        },
-        fdr=manifest.selection_spec.bh_fdr,
-    )
-    for item in manifest.feature_evidence:
-        result = expected_bh.get(item.feature_key)
-        if result is None:
-            if item.bh_rank is not None or item.bh_threshold is not None or item.bh_passed:
-                raise ValueError("ineligible feature polluted the BH family")
-        elif (item.bh_rank, item.bh_threshold, item.bh_passed) != result:
-            raise ValueError("selection BH evidence is not canonical")
-    passed_keys = tuple(item.feature_key for item in manifest.feature_evidence if item.bh_passed)
-    expected_pairs = tuple(
-        tuple(sorted((left, right))) for left, right in itertools.combinations(passed_keys, 2)
-    )
-    actual_pairs = tuple(
-        (item.left_feature_key, item.right_feature_key) for item in manifest.pair_correlations
-    )
-    if actual_pairs != expected_pairs:
-        raise ValueError("selection correlations must cover the exact BH-passed pairs")
-    clustered_keys = tuple(key for cluster in manifest.clusters for key in cluster.members)
-    if len(set(clustered_keys)) != len(clustered_keys) or set(clustered_keys) != set(passed_keys):
-        raise ValueError("selection clusters must partition the BH-passed family")
-    selected_by_reason = tuple(
-        item.feature_key
-        for item in manifest.feature_evidence
-        if item.reason_code == CoreSelectionReason.SELECTED
-    )
-    representatives = {item.representative for item in manifest.clusters}
-    if (
-        manifest.selected_feature_keys != selected_by_reason
-        or set(manifest.selected_feature_keys) != representatives
-    ):
-        raise ValueError("selected features must exactly equal cluster representatives")
-    if any(
-        item.bh_passed
-        != (
-            item.reason_code
-            in {
-                CoreSelectionReason.SELECTED,
-                CoreSelectionReason.CLUSTER_REDUNDANT,
-            }
-        )
-        for item in manifest.feature_evidence
-    ):
-        raise ValueError("selection reasons must preserve BH pass state")
-    evidence_by_key = {item.feature_key: item for item in manifest.feature_evidence}
-    expected_ids = tuple(evidence_by_key[key].feature_id for key in manifest.selected_feature_keys)
-    if manifest.selected_feature_ids != expected_ids:
-        raise ValueError("selected IDs must correspond to selected versioned keys")
 
 
 def _selection_payload(manifest: CoreFeatureSelectionManifest) -> dict[str, object]:

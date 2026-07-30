@@ -26,6 +26,7 @@ from .models import (
 )
 from .plan import CoreSelectionFold
 from .priors import CoreSelectionPriorEntry, CoreSelectionPriorManifest
+from .representative import representative_sort_key
 from .selection_freeze import _freeze_selection_manifest
 from .validation import validate_selection_inputs
 
@@ -41,7 +42,7 @@ def select_core_features(
     spec: CoreSelectionSpec | None = None,
 ) -> CoreFeatureSelectionManifest:
     """Freeze one package/horizon selection using only exact fold inputs."""
-    rules = spec or CoreSelectionSpec()
+    rules = CoreSelectionSpec.model_validate((spec or CoreSelectionSpec()).model_dump())
     envelopes, labels, prior_entries, prior = validate_selection_inputs(
         panel_manifest=panel_manifest,
         processed_envelopes=processed_envelopes,
@@ -92,7 +93,7 @@ def select_core_features(
             members=members,
             representative=min(
                 members,
-                key=lambda key: _representative_key(evidence_by_key[key]),
+                key=lambda key: representative_sort_key(evidence_by_key[key]),
             ),
         )
         for members in clusters
@@ -151,20 +152,6 @@ def _apply_bh(
         ),
     )
     return CoreFeatureSelectionEvidence.model_validate(data)
-
-
-def _representative_key(evidence: CoreFeatureSelectionEvidence) -> tuple[object, ...]:
-    return (
-        not evidence.direction_consistent,
-        evidence.complexity,
-        evidence.coverage_mean is None,
-        -(evidence.coverage_mean or 0.0),
-        evidence.turnover is None,
-        evidence.turnover or 0.0,
-        evidence.stability is None,
-        -(evidence.stability or 0.0),
-        evidence.feature_key,
-    )
 
 
 def _apply_cluster_result(

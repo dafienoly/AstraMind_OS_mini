@@ -1,6 +1,6 @@
 """Public H20/H60 label API for weekly core research."""
 
-from .builder import average_rank_percentiles, build_core_forward_return_label_batch
+from .builder import build_core_forward_return_label_batch
 from .models import (
     CoreForwardPriceObservation,
     CoreForwardReturnLabelBatch,
@@ -9,6 +9,7 @@ from .models import (
     CoreLabelHorizon,
     CoreLabelReason,
 )
+from .ranking import average_rank_percentiles
 
 __all__ = [
     "CoreForwardPriceObservation",

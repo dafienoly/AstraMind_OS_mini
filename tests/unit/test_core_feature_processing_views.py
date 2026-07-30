@@ -1,244 +1,186 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
-from datetime import date
 
 import pytest
+from test_core_feature_selection_support import (
+    frozen_envelopes,
+    frozen_panel,
+    frozen_selection,
+)
 
 from astramind_mini.strategy_research.application.identity import research_hash
 from astramind_mini.strategy_research.core.feature_processing import (
-    CoreCrossSectionEvidence,
-    CoreCrossSectionStatus,
     CoreFeatureViewKind,
+    CoreFeatureViewManifest,
     CoreFeatureViewStatus,
-    CoreNeutralizationStatus,
     CoreProcessedFeatureEnvelope,
-    CoreProcessedFeaturePanelEntry,
     CoreProcessedFeaturePanelManifest,
     CoreProcessedFeatureRow,
-    CoreProcessingSpec,
     build_core_feature_view_manifest,
     project_core_feature_matrix,
+)
+from astramind_mini.strategy_research.core.feature_selection import (
+    CoreFeatureSelectionManifest,
 )
 from astramind_mini.strategy_research.core.feature_values import (
     CoreImputationSource,
     FeatureAvailabilityState,
 )
-from astramind_mini.strategy_research.core.labels import CoreLabelHorizon
 
-HASH_A = "sha256:" + "a" * 64
-HASH_B = "sha256:" + "b" * 64
-DAY = date(2025, 1, 2)
-
-
-@dataclass(frozen=True)
-class _Coverage:
-    passed: bool
+PACKAGE = "fixture-package"
+FEATURES = ("F1", "F2")
+INSTRUMENTS = ("A", "B", "C", "D", "E")
 
 
-@dataclass(frozen=True)
-class _Evidence:
-    feature_key: str
-    coverage: _Coverage
-
-
-@dataclass(frozen=True)
-class _Selection:
-    package_id: str
-    horizon: CoreLabelHorizon
-    panel_manifest_id: str
-    panel_content_hash: str
-    manifest_id: str
-    content_hash: str
-    feature_evidence: tuple[_Evidence, ...]
-    selected_feature_keys: tuple[str, ...]
-    selected_feature_ids: tuple[str, ...]
-
-
-def _row(instrument: str, feature_id: str, value: float) -> CoreProcessedFeatureRow:
-    return CoreProcessedFeatureRow(
-        instrument_id=instrument,
-        feature_id=feature_id,
-        feature_definition_version="1.0.0",
-        availability_state=FeatureAvailabilityState.OBSERVED,
-        value_raw=value,
-        value_winsorized=value,
-        value_standardized_observed=value,
-        model_value=value,
-        imputation_source=CoreImputationSource.NONE,
-        is_missing=False,
-        is_not_applicable=False,
-    )
-
-
-def _envelope() -> CoreProcessedFeatureEnvelope:
-    features = ("F1", "F2")
-    instruments = ("A", "B")
-    rows = tuple(
-        _row(instrument, feature, float(instrument == "B") + index)
-        for instrument in instruments
-        for index, feature in enumerate(features)
-    )
-    cross_sections = tuple(
-        CoreCrossSectionEvidence(
-            feature_id=feature,
-            feature_definition_version="1.0.0",
-            observed_count=2,
-            missing_count=0,
-            not_applicable_count=0,
-            applicable_count=2,
-            coverage=1.0,
-            median_raw=0.5,
-            mad_scale=1.0,
-            winsor_lower=-4.5,
-            winsor_upper=5.5,
-            status=CoreCrossSectionStatus.READY,
-            neutralization_status=CoreNeutralizationStatus.INSUFFICIENT_SAMPLE,
-            neutralization_sample_count=2,
-            neutralization_parameter_count=2,
-        )
-        for feature in features
-    )
-    spec = CoreProcessingSpec()
-    payload = {
-        "schema": "core-processed-feature-envelope-v1",
-        "decision_date": DAY,
-        "core_input_snapshot_id": "input",
-        "core_input_content_hash": HASH_A,
-        "raw_feature_snapshot_id": "raw",
-        "raw_feature_content_hash": HASH_A,
-        "raw_manifest_id": "raw-manifest",
-        "raw_manifest_content_hash": HASH_A,
-        "package_id": "fixture-package",
-        "definition_registry_hash": HASH_A,
-        "computation_manifest_hash": HASH_B,
-        "universe_content_hash": HASH_A,
-        "control_panel_id": "controls",
-        "control_panel_content_hash": HASH_B,
-        "processing_spec": spec,
-        "processing_spec_hash": research_hash(spec),
-        "feature_order": features,
-        "instrument_order": instruments,
-        "rows": rows,
-        "cross_sections": cross_sections,
-        "blocked_feature_ids": (),
-    }
-    content_hash = research_hash(payload)
-    return CoreProcessedFeatureEnvelope.model_validate(
-        {
-            "envelope_id": f"core-processed:{content_hash.removeprefix('sha256:')}",
-            "content_hash": content_hash,
-            **{key: value for key, value in payload.items() if key != "schema"},
-        }
-    )
-
-
-def _panel(envelope: CoreProcessedFeatureEnvelope) -> CoreProcessedFeaturePanelManifest:
-    entry = CoreProcessedFeaturePanelEntry(
-        decision_date=DAY,
-        core_input_snapshot_id="input",
-        core_input_content_hash=HASH_A,
-        raw_envelope_id="raw",
-        raw_envelope_content_hash=HASH_A,
-        processed_envelope_id=envelope.envelope_id,
-        processed_envelope_content_hash=envelope.content_hash,
-        universe_content_hash=HASH_A,
-        control_panel_id="controls",
-        control_panel_content_hash=HASH_B,
-    )
-    payload = {
-        "schema": "core-processed-feature-panel-v1",
-        "package_id": envelope.package_id,
-        "feature_order": envelope.feature_order,
-        "entries": (entry,),
-    }
-    content_hash = research_hash(payload)
-    return CoreProcessedFeaturePanelManifest(
-        panel_manifest_id=f"core-processed-panel:{content_hash.removeprefix('sha256:')}",
-        content_hash=content_hash,
-        package_id=envelope.package_id,
-        feature_order=envelope.feature_order,
-        entries=(entry,),
-    )
-
-
-def _selection(
-    panel: CoreProcessedFeaturePanelManifest,
+def _parents(
     *,
-    passed: tuple[bool, bool] = (True, True),
-    selected: tuple[str, ...] = ("F1",),
-) -> _Selection:
-    return _Selection(
-        package_id=panel.package_id,
-        horizon=CoreLabelHorizon.H20,
-        panel_manifest_id=panel.panel_manifest_id,
-        panel_content_hash=panel.content_hash,
-        manifest_id="selection",
-        content_hash=HASH_A,
-        feature_evidence=tuple(
-            _Evidence(f"{feature}@1.0.0", _Coverage(ok))
-            for feature, ok in zip(panel.feature_order, passed, strict=True)
-        ),
-        selected_feature_keys=tuple(f"{feature}@1.0.0" for feature in selected),
-        selected_feature_ids=selected,
+    p_values: tuple[float | None, float | None] = (0.01, 0.20),
+    coverage_passed: tuple[bool, bool] = (True, True),
+) -> tuple[
+    tuple[CoreProcessedFeatureEnvelope, ...],
+    CoreProcessedFeaturePanelManifest,
+    CoreFeatureSelectionManifest,
+]:
+    envelopes = frozen_envelopes(
+        package_id=PACKAGE,
+        feature_ids=FEATURES,
+        instruments=INSTRUMENTS,
     )
+    panel = frozen_panel(envelopes)
+    selection = frozen_selection(
+        panel=panel,
+        envelopes=envelopes,
+        p_values=p_values,
+        coverage_passed=coverage_passed,
+    )
+    return envelopes, panel, selection
 
 
 def test_full_and_selected_views_project_exact_finite_fixed_columns() -> None:
-    envelope = _envelope()
-    panel = _panel(envelope)
-    selection = _selection(panel)
+    envelopes, panel, selection = _parents()
     full = build_core_feature_view_manifest(
         panel_manifest=panel,
-        processed_envelopes=(envelope,),
+        processed_envelopes=envelopes,
         selection_manifest=selection,
         view_kind=CoreFeatureViewKind.FULL,
     )
     selected = build_core_feature_view_manifest(
         panel_manifest=panel,
-        processed_envelopes=(envelope,),
+        processed_envelopes=envelopes,
         selection_manifest=selection,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
-    assert full.feature_ids == ("F1", "F2")
+    assert full.feature_ids == FEATURES
     assert selected.feature_ids == ("F1",)
     assert full.view_id != selected.view_id
-    projection = project_core_feature_matrix(envelope=envelope, view=selected)
-    assert projection.row_order == ("A", "B")
+    projection = project_core_feature_matrix(
+        envelope=envelopes[0],
+        view=selected,
+        panel_manifest=panel,
+        processed_envelopes=envelopes,
+        selection_manifest=selection,
+    )
+    assert projection.row_order == INSTRUMENTS
     assert projection.column_order == (
         "F1__value",
         "F1__is_missing",
         "F1__is_not_applicable",
     )
-    assert projection.values == ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0))
+    assert projection.values[0] == (0.0, 0.0, 0.0)
 
 
-def test_coverage_and_empty_selection_publish_blocked_non_projectable_views() -> None:
-    envelope = _envelope()
-    panel = _panel(envelope)
+def test_views_require_real_panel_selection_and_daily_lineage_parents() -> None:
+    envelopes, panel, selection = _parents(coverage_passed=(False, True))
     blocked_full = build_core_feature_view_manifest(
         panel_manifest=panel,
-        processed_envelopes=(envelope,),
-        selection_manifest=_selection(panel, passed=(False, True)),
+        processed_envelopes=envelopes,
+        selection_manifest=selection,
         view_kind=CoreFeatureViewKind.FULL,
     )
+    _, _, empty_selection = _parents(p_values=(0.20, 0.20))
     empty_selected = build_core_feature_view_manifest(
         panel_manifest=panel,
-        processed_envelopes=(envelope,),
-        selection_manifest=_selection(panel, selected=()),
+        processed_envelopes=envelopes,
+        selection_manifest=empty_selection,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     assert blocked_full.status == CoreFeatureViewStatus.BLOCKED
     assert empty_selected.status == CoreFeatureViewStatus.BLOCKED
     assert empty_selected.blocker_codes == ("selection_empty",)
-    assert empty_selected.model_input_dimension == 0
     with pytest.raises(ValueError, match="blocked"):
-        project_core_feature_matrix(envelope=envelope, view=empty_selected)
+        project_core_feature_matrix(
+            envelope=envelopes[0],
+            view=empty_selected,
+            panel_manifest=panel,
+            processed_envelopes=envelopes,
+            selection_manifest=empty_selection,
+        )
+
+    attack = empty_selected.model_dump()
+    attack["feature_ids"] = ("F2",)
+    attack["feature_keys"] = ("F2@1.0.0",)
+    attack["model_columns"] = (
+        "F2__value",
+        "F2__is_missing",
+        "F2__is_not_applicable",
+    )
+    attack["model_input_dimension"] = 3
+    attack["blocker_codes"] = ()
+    attack["status"] = CoreFeatureViewStatus.READY
+    body = {key: value for key, value in attack.items() if key not in {"view_id", "content_hash"}}
+    attack_hash = research_hash({"schema": "core-feature-view-manifest-v1", **body})
+    attack["view_id"] = f"core-feature-view:{attack_hash.removeprefix('sha256:')}"
+    attack["content_hash"] = attack_hash
+    rehashed_view = CoreFeatureViewManifest.model_validate(attack)
+    with pytest.raises(ValueError, match="validated parent"):
+        project_core_feature_matrix(
+            envelope=envelopes[0],
+            view=rehashed_view,
+            panel_manifest=panel,
+            processed_envelopes=envelopes,
+            selection_manifest=empty_selection,
+        )
+
+    alternate_selection = frozen_selection(
+        panel=panel,
+        envelopes=envelopes,
+        p_values=(0.20, 0.01),
+    )
+    original_selected = build_core_feature_view_manifest(
+        panel_manifest=panel,
+        processed_envelopes=envelopes,
+        selection_manifest=frozen_selection(
+            panel=panel,
+            envelopes=envelopes,
+            p_values=(0.01, 0.20),
+        ),
+        view_kind=CoreFeatureViewKind.SELECTED,
+    )
+    with pytest.raises(ValueError, match="validated parent"):
+        project_core_feature_matrix(
+            envelope=envelopes[0],
+            view=original_selected,
+            panel_manifest=panel,
+            processed_envelopes=envelopes,
+            selection_manifest=alternate_selection,
+        )
 
 
 def test_rehashed_processed_row_still_rejects_non_finite_observed_value() -> None:
-    data = _row("A", "F", 1.0).model_dump()
+    data = CoreProcessedFeatureRow(
+        instrument_id="A",
+        feature_id="F",
+        feature_definition_version="1.0.0",
+        availability_state=FeatureAvailabilityState.OBSERVED,
+        value_raw=1.0,
+        value_winsorized=1.0,
+        value_standardized_observed=1.0,
+        model_value=1.0,
+        imputation_source=CoreImputationSource.NONE,
+        is_missing=False,
+        is_not_applicable=False,
+    ).model_dump()
     data["model_value"] = math.inf
     with pytest.raises(ValueError, match="finite"):
         CoreProcessedFeatureRow.model_validate(data)

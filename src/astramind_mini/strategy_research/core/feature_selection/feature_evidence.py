@@ -9,7 +9,7 @@ from ..feature_processing import CoreProcessedFeatureEnvelope
 from ..labels import CoreForwardReturnLabelBatch, CoreLabelHorizon
 from .bootstrap import centered_circular_block_bootstrap, selection_seed
 from .coverage import calculate_fold_coverage
-from .metrics import feature_turnover, observed_feature_map
+from .metrics import observed_feature_map
 from .models import (
     CoreDailyRankICEvidence,
     CoreFeatureSelectionEvidence,
@@ -20,6 +20,7 @@ from .models import (
 from .plan import CoreSelectionFold
 from .priors import CoreSelectionPriorEntry
 from .statistics import finite_mean, median_absolute_deviation, spearman_by_key
+from .turnover import CoreTurnoverTransitionEvidence, feature_turnover
 
 
 def build_initial_feature_evidence(
@@ -72,7 +73,7 @@ def build_initial_feature_evidence(
             replicates=spec.bootstrap_replicates,
         ).p_value
         eligible = math.isfinite(p_value)
-    turnover, transition_count, stability = _quality_metrics(
+    turnover, transition_count, transitions, stability = _quality_metrics(
         prior.feature_id,
         envelopes,
         signed_values,
@@ -98,6 +99,7 @@ def build_initial_feature_evidence(
         coverage_mean=coverage.mean_qualifying_coverage,
         turnover=turnover,
         turnover_valid_transitions=transition_count,
+        turnover_transitions=transitions,
         stability=stability,
         reason_code=reason,
     )
@@ -108,15 +110,25 @@ def _quality_metrics(
     envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
     signed_values: tuple[float, ...],
     spec: CoreSelectionSpec,
-) -> tuple[float | None, int, float | None]:
-    turnover, transition_count = feature_turnover(
+) -> tuple[
+    float | None,
+    int,
+    tuple[CoreTurnoverTransitionEvidence, ...],
+    float | None,
+]:
+    turnover, transition_count, transitions = feature_turnover(
         envelopes,
         feature_id=feature_id,
         minimum_common=spec.turnover_minimum_common_instruments,
         minimum_transitions=spec.turnover_minimum_valid_transitions,
     )
     mad = median_absolute_deviation(signed_values)
-    return turnover, transition_count, 1.0 / (1.0 + mad) if mad is not None else None
+    return (
+        turnover,
+        transition_count,
+        transitions,
+        1.0 / (1.0 + mad) if mad is not None else None,
+    )
 
 
 def _daily_rank_ic(

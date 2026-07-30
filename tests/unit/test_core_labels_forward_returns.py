@@ -4,9 +4,13 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
+from astramind_mini.strategy_research.application.identity import research_hash
+from astramind_mini.strategy_research.core.calendar import freeze_core_common_calendar
 from astramind_mini.strategy_research.core.contracts import CoreUniverseDecision
 from astramind_mini.strategy_research.core.labels import (
     CoreForwardPriceObservation,
+    CoreForwardReturnLabelBatch,
+    CoreForwardReturnLabelRow,
     CoreForwardReturnLabelSpec,
     CoreLabelHorizon,
     CoreLabelReason,
@@ -17,6 +21,7 @@ HASH = "sha256:" + "1" * 64
 SESSIONS = tuple(date(2025, 1, 1) + timedelta(days=index) for index in range(65))
 T0 = datetime(2025, 1, 1, 16, tzinfo=UTC)
 AVAILABLE = datetime(2025, 3, 10, 16, tzinfo=UTC)
+CALENDAR = freeze_core_common_calendar(calendar_id="label-fixture-v1", sessions=SESSIONS)
 
 
 def _decision(instrument: str, *, member: bool = True) -> CoreUniverseDecision:
@@ -64,7 +69,7 @@ def _build(
     return build_core_forward_return_label_batch(
         spec=CoreForwardReturnLabelSpec(horizon=horizon),
         decision_date=SESSIONS[0],
-        common_sessions=SESSIONS,
+        common_calendar=CALENDAR,
         universe_rows=universe,
         prices=prices,
         label_data_snapshot_id="label-snapshot",
@@ -192,3 +197,96 @@ def test_overflowing_forward_return_fails_closed() -> None:
             universe=universe,
             prices=prices,
         )
+
+
+def _rehash_batch(data: dict[str, object]) -> dict[str, object]:
+    normalized = dict(data)
+    normalized["spec"] = CoreForwardReturnLabelSpec.model_validate(data["spec"])
+    normalized["common_calendar"] = freeze_core_common_calendar(
+        calendar_id=data["common_calendar"]["calendar_id"],  # type: ignore[index]
+        sessions=data["common_calendar"]["sessions"],  # type: ignore[index]
+    )
+    normalized["universe_rows"] = tuple(
+        CoreUniverseDecision.model_validate(item)
+        for item in data["universe_rows"]  # type: ignore[union-attr]
+    )
+    normalized["rows"] = tuple(
+        CoreForwardReturnLabelRow.model_validate(item)
+        for item in data["rows"]  # type: ignore[union-attr]
+    )
+    draft = CoreForwardReturnLabelBatch.model_construct(**normalized)
+    body = {
+        "spec": draft.spec,
+        "decision_date": draft.decision_date,
+        "common_calendar": draft.common_calendar,
+        "entry_date": draft.entry_date,
+        "horizon_close_date": draft.horizon_close_date,
+        "decision_universe_content_hash": draft.decision_universe_content_hash,
+        "universe_rows": draft.universe_rows,
+        "label_data_snapshot_id": draft.label_data_snapshot_id,
+        "label_data_snapshot_content_hash": draft.label_data_snapshot_content_hash,
+        "label_data_snapshot_as_of": draft.label_data_snapshot_as_of,
+        "label_available_cutoff": draft.label_available_cutoff,
+        "matured": draft.matured,
+        "n_universe_rows": draft.n_universe_rows,
+        "n_research_members": draft.n_research_members,
+        "n_valid_returns": draft.n_valid_returns,
+        "label_coverage": draft.label_coverage,
+        "rows": draft.rows,
+    }
+    content_hash = research_hash({"schema": "core-forward-return-label-batch-v1", **body})
+    data["content_hash"] = content_hash
+    data["batch_id"] = f"core-label-batch:{content_hash.removeprefix('sha256:')}"
+    return data
+
+
+def test_bound_calendar_and_fully_rehashed_label_attacks_fail_closed() -> None:
+    batch = _build(
+        horizon=CoreLabelHorizon.H20,
+        universe=(_decision("A"), _decision("B")),
+        prices=(
+            _price("A", 1, open_price=10.0),
+            _price("A", 20, close_price=12.0),
+            _price("B", 1, open_price=10.0),
+            _price("B", 20, close_price=11.0),
+        ),
+    )
+    changed_sessions = list(SESSIONS)
+    changed_sessions[30] = date(2030, 1, 1)
+    changed_sessions.sort()
+    changed_calendar = freeze_core_common_calendar(
+        calendar_id=CALENDAR.calendar_id,
+        sessions=changed_sessions,
+    )
+    changed = batch.model_dump()
+    changed["common_calendar"] = changed_calendar.model_dump()
+    changed_batch = CoreForwardReturnLabelBatch.model_validate(_rehash_batch(changed))
+    assert changed_batch.content_hash != batch.content_hash
+
+    percentile_attack = batch.model_dump()
+    rows = list(percentile_attack["rows"])
+    rows[0] = {**rows[0], "percentile": 0.25}
+    percentile_attack["rows"] = tuple(rows)
+    with pytest.raises(ValueError, match="recomputed average rank"):
+        CoreForwardReturnLabelBatch.model_validate(_rehash_batch(percentile_attack))
+
+    endpoint_attack = batch.model_dump()
+    endpoint_attack["entry_date"] = SESSIONS[2]
+    with pytest.raises(ValueError, match="entry or horizon endpoint"):
+        CoreForwardReturnLabelBatch.model_validate(_rehash_batch(endpoint_attack))
+
+    maturity_attack = batch.model_dump()
+    maturity_attack["matured"] = False
+    maturity_attack["n_valid_returns"] = 0
+    maturity_attack["label_coverage"] = 0.0
+    maturity_attack["rows"] = tuple(
+        {
+            **row,
+            "absolute_return": None,
+            "percentile": None,
+            "reason_code": CoreLabelReason.NOT_MATURED,
+        }
+        for row in maturity_attack["rows"]
+    )
+    with pytest.raises(ValueError, match="maturity"):
+        CoreForwardReturnLabelBatch.model_validate(_rehash_batch(maturity_attack))

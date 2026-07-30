@@ -19,6 +19,7 @@ def neutralization_residuals(
     spec: CoreProcessingSpec,
 ) -> tuple[CoreNeutralizationStatus, int, int, dict[str, float]]:
     """Fit the frozen diagnostic OLS without changing the main feature."""
+    spec = CoreProcessingSpec.model_validate(spec.model_dump())
     if any(
         instrument not in controls
         or controls[instrument].sw_l1 is None

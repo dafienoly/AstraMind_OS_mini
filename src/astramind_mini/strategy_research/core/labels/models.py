@@ -17,8 +17,10 @@ from astramind_mini.contracts.base import (
 )
 
 from ...application.identity import research_hash
+from ..calendar import CoreCommonCalendar
 from ..contracts import CoreUniverseDecision
 from ..universe import core_universe_content_hash
+from .ranking import average_rank_percentiles
 
 
 class CoreLabelHorizon(StrEnum):
@@ -55,6 +57,19 @@ class CoreForwardReturnLabelSpec(ContractModel):
         "average_rank_minus_1_over_n_minus_1"
     )
 
+    @model_validator(mode="after")
+    def validate_fixed_v1(self) -> CoreForwardReturnLabelSpec:
+        if (
+            self.spec_version != "core-forward-return-label-v1"
+            or self.horizon not in set(CoreLabelHorizon)
+            or self.entry_offset_common_sessions != 1
+            or self.entry_price != "continuous_research_open"
+            or self.terminal_price != "continuous_research_close"
+            or self.percentile_rule != "average_rank_minus_1_over_n_minus_1"
+        ):
+            raise ValueError("core-forward-return-label-v1 semantics are immutable")
+        return self
+
 
 class CoreForwardPriceObservation(ContractModel):
     instrument_id: Identifier
@@ -74,8 +89,10 @@ class CoreForwardReturnLabelRow(ContractModel):
 
     @model_validator(mode="after")
     def validate_state(self) -> CoreForwardReturnLabelRow:
-        if self.absolute_return is not None and not math.isfinite(self.absolute_return):
-            raise ValueError("forward absolute return must be finite")
+        if self.absolute_return is not None and (
+            not math.isfinite(self.absolute_return) or self.absolute_return <= -1.0
+        ):
+            raise ValueError("forward absolute return must be finite and greater than -1")
         if self.reason_code is None:
             if self.absolute_return is None or self.percentile is None:
                 raise ValueError("valid label rows require return and percentile")
@@ -83,6 +100,8 @@ class CoreForwardReturnLabelRow(ContractModel):
             raise ValueError("invalid label rows cannot carry a percentile")
         if not self.research_member and self.reason_code != CoreLabelReason.NOT_RESEARCH_MEMBER:
             raise ValueError("non-members require not_research_member")
+        if not self.research_member and self.absolute_return is not None:
+            raise ValueError("non-members cannot carry a forward return")
         return self
 
 
@@ -91,6 +110,7 @@ class CoreForwardReturnLabelBatch(ContractModel):
     content_hash: ContentHash
     spec: CoreForwardReturnLabelSpec
     decision_date: date
+    common_calendar: CoreCommonCalendar
     entry_date: date | None
     horizon_close_date: date | None
     decision_universe_content_hash: ContentHash
@@ -108,6 +128,9 @@ class CoreForwardReturnLabelBatch(ContractModel):
 
     @model_validator(mode="after")
     def validate_identity_and_counts(self) -> CoreForwardReturnLabelBatch:
+        CoreForwardReturnLabelSpec.model_validate(self.spec.model_dump())
+        CoreCommonCalendar.model_validate(self.common_calendar.model_dump())
+        _validate_label_calendar_and_maturity(self)
         ordered_universe = tuple(sorted(self.universe_rows, key=lambda item: item.instrument_id))
         ordered_rows = tuple(sorted(self.rows, key=lambda item: item.instrument_id))
         if self.universe_rows != ordered_universe or self.rows != ordered_rows:
@@ -122,16 +145,7 @@ class CoreForwardReturnLabelBatch(ContractModel):
             raise ValueError("label universe decision date mismatch")
         if core_universe_content_hash(self.universe_rows) != (self.decision_universe_content_hash):
             raise ValueError("label universe hash mismatch")
-        members = sum(item.research_member for item in self.universe_rows)
-        valid = sum(item.absolute_return is not None for item in self.rows if item.research_member)
-        expected_coverage = valid / members if members else 0.0
-        if (
-            self.n_universe_rows != len(self.universe_rows)
-            or self.n_research_members != members
-            or self.n_valid_returns != valid
-            or self.label_coverage != expected_coverage
-        ):
-            raise ValueError("label counts or coverage mismatch")
+        _validate_label_rows_and_counts(self)
         expected_hash = research_hash(_label_batch_payload(self))
         expected_id = f"core-label-batch:{expected_hash.removeprefix('sha256:')}"
         if self.content_hash != expected_hash or self.batch_id != expected_id:
@@ -143,11 +157,85 @@ class CoreForwardReturnLabelBatch(ContractModel):
         return tuple(item.instrument_id for item in self.universe_rows if item.research_member)
 
 
+def _validate_label_calendar_and_maturity(batch: CoreForwardReturnLabelBatch) -> None:
+    sessions = batch.common_calendar.sessions
+    if batch.decision_date not in sessions:
+        raise ValueError("label decision date is absent from the bound common calendar")
+    decision_index = sessions.index(batch.decision_date)
+    entry_index = decision_index + batch.spec.entry_offset_common_sessions
+    terminal_index = decision_index + batch.spec.horizon.sessions
+    has_dates = entry_index < len(sessions) and terminal_index < len(sessions)
+    expected_entry = sessions[entry_index] if has_dates else None
+    expected_terminal = sessions[terminal_index] if has_dates else None
+    if batch.entry_date != expected_entry or batch.horizon_close_date != expected_terminal:
+        raise ValueError("label entry or horizon endpoint differs from the bound calendar")
+    expected_matured = bool(
+        has_dates
+        and expected_terminal is not None
+        and batch.label_data_snapshot_as_of <= batch.label_available_cutoff
+        and batch.label_data_snapshot_as_of.date() >= expected_terminal
+    )
+    if batch.matured != expected_matured:
+        raise ValueError("label maturity does not match calendar and snapshot cutoff")
+
+
+def _validate_label_rows_and_counts(batch: CoreForwardReturnLabelBatch) -> None:
+    membership = {item.instrument_id: item.research_member for item in batch.universe_rows}
+    if any(item.research_member != membership[item.instrument_id] for item in batch.rows):
+        raise ValueError("label row membership differs from the audited universe")
+    valid = tuple(
+        (item.instrument_id, float(item.absolute_return))
+        for item in batch.rows
+        if item.research_member and item.absolute_return is not None
+    )
+    percentiles = average_rank_percentiles(valid)
+    for item in batch.rows:
+        _validate_label_row_semantics(item, batch.matured, percentiles)
+    members = sum(membership.values())
+    expected_coverage = len(valid) / members if members else 0.0
+    if (
+        batch.n_universe_rows != len(batch.universe_rows)
+        or batch.n_research_members != members
+        or batch.n_valid_returns != len(valid)
+        or batch.label_coverage != expected_coverage
+    ):
+        raise ValueError("label counts or coverage mismatch")
+
+
+def _validate_label_row_semantics(
+    row: CoreForwardReturnLabelRow,
+    matured: bool,
+    percentiles: dict[str, float],
+) -> None:
+    if not row.research_member:
+        return
+    if not matured:
+        if (
+            row.absolute_return is not None
+            or row.percentile is not None
+            or row.reason_code != CoreLabelReason.NOT_MATURED
+        ):
+            raise ValueError("immature labels cannot carry returns or percentiles")
+        return
+    if row.absolute_return is None:
+        if row.reason_code not in {
+            CoreLabelReason.ENTRY_MISSING,
+            CoreLabelReason.HORIZON_CLOSE_MISSING,
+        }:
+            raise ValueError("mature missing label has an invalid reason")
+        return
+    expected = percentiles.get(row.instrument_id)
+    expected_reason = None if expected is not None else CoreLabelReason.CROSS_SECTION_INSUFFICIENT
+    if row.percentile != expected or row.reason_code != expected_reason:
+        raise ValueError("label percentile or reason differs from recomputed average rank")
+
+
 def _label_batch_payload(batch: CoreForwardReturnLabelBatch) -> dict[str, object]:
     return {
         "schema": "core-forward-return-label-batch-v1",
         "spec": batch.spec,
         "decision_date": batch.decision_date,
+        "common_calendar": batch.common_calendar,
         "entry_date": batch.entry_date,
         "horizon_close_date": batch.horizon_close_date,
         "decision_universe_content_hash": batch.decision_universe_content_hash,

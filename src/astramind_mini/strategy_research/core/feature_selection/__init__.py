@@ -29,7 +29,7 @@ from .joint_models import (
     CoreJointViewStatus,
 )
 from .joint_projection import CoreJointMatrixProjection, project_core_joint_selected_matrix
-from .metrics import feature_turnover, pair_correlation_evidence
+from .metrics import pair_correlation_evidence
 from .models import (
     CoreCorrelationStatus,
     CoreDailyRankICEvidence,
@@ -52,15 +52,22 @@ from .plan import (
 )
 from .priors import (
     STAGE_P_PRIORS_CONTENT_HASH,
+    STAGE_P_TOKENIZER_RULES_HASH,
     CoreSelectionPriorEntry,
     CoreSelectionPriorManifest,
     load_core_selection_prior_manifest,
 )
 from .selector import select_core_features
 from .statistics import average_ranks, spearman, spearman_by_key
+from .turnover import (
+    CoreTurnoverReason,
+    CoreTurnoverTransitionEvidence,
+    feature_turnover,
+)
 
 __all__ = [
     "STAGE_P_PRIORS_CONTENT_HASH",
+    "STAGE_P_TOKENIZER_RULES_HASH",
     "CoreBootstrapResult",
     "CoreCorrelationStatus",
     "CoreCoverageReason",
@@ -87,6 +94,8 @@ __all__ = [
     "CoreSelectionSpec",
     "CoreSelectionSubfold",
     "CoreSubfoldRankICEvidence",
+    "CoreTurnoverReason",
+    "CoreTurnoverTransitionEvidence",
     "average_ranks",
     "benjamini_hochberg",
     "build_core_joint_selected_view_manifests",

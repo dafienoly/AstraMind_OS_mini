@@ -9,6 +9,7 @@ from datetime import date, datetime
 from typing import cast
 
 from ...application.identity import research_hash
+from ..calendar import CoreCommonCalendar
 from ..contracts import CoreUniverseDecision
 from ..universe import core_universe_content_hash
 from .models import (
@@ -18,32 +19,14 @@ from .models import (
     CoreForwardReturnLabelSpec,
     CoreLabelReason,
 )
-
-
-def average_rank_percentiles(values: Sequence[tuple[str, float]]) -> dict[str, float]:
-    """Return deterministic ascending average-rank percentiles."""
-    ordered = sorted(values, key=lambda item: (item[1], item[0]))
-    if len(ordered) < 2:
-        return {}
-    result: dict[str, float] = {}
-    index = 0
-    while index < len(ordered):
-        end = index + 1
-        while end < len(ordered) and ordered[end][1] == ordered[index][1]:
-            end += 1
-        average_rank = ((index + 1) + end) / 2.0
-        percentile = (average_rank - 1.0) / (len(ordered) - 1)
-        for instrument_id, _ in ordered[index:end]:
-            result[instrument_id] = percentile
-        index = end
-    return result
+from .ranking import average_rank_percentiles
 
 
 def build_core_forward_return_label_batch(
     *,
     spec: CoreForwardReturnLabelSpec,
     decision_date: date,
-    common_sessions: Sequence[date],
+    common_calendar: CoreCommonCalendar,
     universe_rows: Sequence[CoreUniverseDecision],
     prices: Sequence[CoreForwardPriceObservation],
     label_data_snapshot_id: str,
@@ -52,20 +35,19 @@ def build_core_forward_return_label_batch(
     label_available_cutoff: datetime,
 ) -> CoreForwardReturnLabelBatch:
     """Build one audited daily label cross-section without future backfill."""
-    sessions = _validate_sessions(common_sessions, decision_date)
+    spec = CoreForwardReturnLabelSpec.model_validate(spec.model_dump())
+    calendar = CoreCommonCalendar.model_validate(common_calendar.model_dump())
+    sessions = calendar.sessions
+    if decision_date not in sessions:
+        raise ValueError("label decision date must be a common session")
     universe = tuple(sorted(universe_rows, key=lambda item: item.instrument_id))
     _validate_universe(universe, decision_date)
-    decision_index = sessions.index(decision_date)
-    terminal_index = decision_index + spec.horizon.sessions
-    entry_index = decision_index + spec.entry_offset_common_sessions
-    has_dates = terminal_index < len(sessions) and entry_index < len(sessions)
-    entry_date = sessions[entry_index] if has_dates else None
-    terminal_date = sessions[terminal_index] if has_dates else None
-    matured = bool(
-        has_dates
-        and terminal_date is not None
-        and label_data_snapshot_as_of <= label_available_cutoff
-        and label_data_snapshot_as_of.date() >= terminal_date
+    entry_date, terminal_date, matured = _label_window(
+        spec=spec,
+        sessions=sessions,
+        decision_date=decision_date,
+        snapshot_as_of=label_data_snapshot_as_of,
+        available_cutoff=label_available_cutoff,
     )
     selected_prices = (
         _canonical_visible_prices(
@@ -103,6 +85,7 @@ def build_core_forward_return_label_batch(
         "schema": "core-forward-return-label-batch-v1",
         "spec": spec,
         "decision_date": decision_date,
+        "common_calendar": calendar,
         "entry_date": entry_date,
         "horizon_close_date": terminal_date,
         "decision_universe_content_hash": universe_hash,
@@ -121,6 +104,29 @@ def build_core_forward_return_label_batch(
     return _freeze_label_batch(payload)
 
 
+def _label_window(
+    *,
+    spec: CoreForwardReturnLabelSpec,
+    sessions: tuple[date, ...],
+    decision_date: date,
+    snapshot_as_of: datetime,
+    available_cutoff: datetime,
+) -> tuple[date | None, date | None, bool]:
+    decision_index = sessions.index(decision_date)
+    terminal_index = decision_index + spec.horizon.sessions
+    entry_index = decision_index + spec.entry_offset_common_sessions
+    has_dates = terminal_index < len(sessions) and entry_index < len(sessions)
+    entry_date = sessions[entry_index] if has_dates else None
+    terminal_date = sessions[terminal_index] if has_dates else None
+    matured = bool(
+        has_dates
+        and terminal_date is not None
+        and snapshot_as_of <= available_cutoff
+        and snapshot_as_of.date() >= terminal_date
+    )
+    return entry_date, terminal_date, matured
+
+
 def _freeze_label_batch(
     payload: dict[str, object],
 ) -> CoreForwardReturnLabelBatch:
@@ -132,15 +138,6 @@ def _freeze_label_batch(
             **{key: value for key, value in payload.items() if key != "schema"},
         }
     )
-
-
-def _validate_sessions(common_sessions: Sequence[date], decision_date: date) -> tuple[date, ...]:
-    sessions = tuple(common_sessions)
-    if tuple(sorted(set(sessions))) != sessions:
-        raise ValueError("label common sessions must be unique and ordered")
-    if decision_date not in sessions:
-        raise ValueError("label decision date must be a common session")
-    return sessions
 
 
 def _validate_universe(

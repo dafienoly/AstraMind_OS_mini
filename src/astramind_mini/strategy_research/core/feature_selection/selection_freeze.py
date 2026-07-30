@@ -19,6 +19,7 @@ from .models import (
     CoreSelectionSpec,
 )
 from .plan import CoreSelectionFold
+from .priors import STAGE_P_TOKENIZER_RULES_HASH
 
 
 def _freeze_selection_manifest(
@@ -59,6 +60,7 @@ def _freeze_selection_manifest(
         "panel_manifest_id": panel.panel_manifest_id,
         "panel_content_hash": panel.content_hash,
         "prior_content_hash": prior_content_hash,
+        "prior_tokenizer_rules_hash": STAGE_P_TOKENIZER_RULES_HASH,
         "selection_spec": spec,
         "selection_spec_hash": research_hash(spec),
         "processed_days": processed_refs,

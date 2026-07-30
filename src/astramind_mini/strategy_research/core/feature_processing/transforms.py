@@ -23,6 +23,7 @@ def robust_cross_section(
     tuple[float, ...],
 ]:
     """Apply fixed MAD winsorization and z-scoring to finite observed values."""
+    spec = CoreProcessingSpec.model_validate(spec.model_dump())
     if any(not math.isfinite(item) for item in values):
         raise ValueError("non-finite observed input is rejected before processing")
     if not values:

@@ -3,60 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from itertools import pairwise
 from statistics import median
 
 from ..feature_processing import CoreProcessedFeatureEnvelope
-from ..feature_values import FeatureAvailabilityState
 from .models import CoreCorrelationStatus, CorePairCorrelationEvidence
-from .statistics import average_ranks, spearman_by_key
-
-
-def observed_feature_map(
-    envelope: CoreProcessedFeatureEnvelope,
-    feature_id: str,
-) -> dict[str, float]:
-    return {
-        item.instrument_id: float(item.value_standardized_observed)
-        for item in envelope.rows
-        if item.feature_id == feature_id
-        and item.availability_state == FeatureAvailabilityState.OBSERVED
-        and item.value_standardized_observed is not None
-    }
-
-
-def feature_turnover(
-    envelopes: Sequence[CoreProcessedFeatureEnvelope],
-    *,
-    feature_id: str,
-    minimum_common: int = 5,
-    minimum_transitions: int = 60,
-) -> tuple[float | None, int]:
-    daily_percentiles: list[dict[str, float]] = []
-    for envelope in sorted(envelopes, key=lambda item: item.decision_date):
-        values = observed_feature_map(envelope, feature_id)
-        ordered = sorted(values)
-        if len(ordered) < 2:
-            daily_percentiles.append({})
-            continue
-        ranks = average_ranks(tuple(values[item] for item in ordered))
-        daily_percentiles.append(
-            {
-                instrument: (rank - 1.0) / (len(ordered) - 1)
-                for instrument, rank in zip(ordered, ranks, strict=True)
-            }
-        )
-    transitions: list[float] = []
-    for previous, current in pairwise(daily_percentiles):
-        common = sorted(set(previous) & set(current))
-        if len(common) >= minimum_common:
-            transitions.append(
-                sum(abs(current[item] - previous[item]) for item in common) / len(common)
-            )
-    return (
-        (float(median(transitions)) if len(transitions) >= minimum_transitions else None),
-        len(transitions),
-    )
+from .observations import observed_feature_map
+from .statistics import spearman_by_key
 
 
 def pair_correlation_evidence(
@@ -112,7 +64,6 @@ def correlation_distance_map(
 
 __all__ = [
     "correlation_distance_map",
-    "feature_turnover",
     "observed_feature_map",
     "pair_correlation_evidence",
 ]

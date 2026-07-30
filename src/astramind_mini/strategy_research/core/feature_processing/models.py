@@ -51,16 +51,20 @@ class CoreProcessingSpec(ContractModel):
     @model_validator(mode="after")
     def validate_fixed_v1(self) -> CoreProcessingSpec:
         if (
-            self.mad_consistency_constant != 1.4826
+            self.spec_version != "core-feature-processing-v1"
+            or self.mad_consistency_constant != 1.4826
             or self.winsor_mad_multiple != 5.0
+            or self.industry_imputation_minimum_observed != 10
             or self.coverage_date_threshold != 0.8
             or self.coverage_passing_date_ratio != 0.9
+            or self.neutralization_minimum_n_per_parameter != 5
             or self.neutralization_controls
             != (
                 "intercept",
                 "log_float_market_cap",
                 "sw_l1_one_hot_lexical_baseline",
             )
+            or self.non_finite_policy != "protected_raw_envelope_rejects"
         ):
             raise ValueError("core-feature-processing-v1 constants are immutable")
         return self
@@ -195,6 +199,7 @@ class CoreProcessedFeatureEnvelope(ContractModel):
 
     @model_validator(mode="after")
     def validate_identity(self) -> CoreProcessedFeatureEnvelope:
+        CoreProcessingSpec.model_validate(self.processing_spec.model_dump())
         if len(set(self.feature_order)) != len(self.feature_order) or len(
             set(self.instrument_order)
         ) != len(self.instrument_order):

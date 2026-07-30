@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from datetime import date
+from typing import TYPE_CHECKING
 
 from pydantic import Field, model_validator
 
@@ -11,7 +13,15 @@ from astramind_mini.contracts.base import ContentHash, ContractModel, Identifier
 
 from ...application.identity import research_hash
 from .models import CoreProcessedFeatureEnvelope, CoreProcessedFeatureRow
-from .views import CoreFeatureViewManifest, CoreFeatureViewStatus
+from .panel import CoreProcessedFeaturePanelManifest
+from .views import (
+    CoreFeatureViewManifest,
+    CoreFeatureViewStatus,
+    validate_core_feature_view_parents,
+)
+
+if TYPE_CHECKING:
+    from ..feature_selection.models import CoreFeatureSelectionManifest
 
 
 class CoreFeatureMatrixProjection(ContractModel):
@@ -45,8 +55,20 @@ def project_core_feature_matrix(
     *,
     envelope: CoreProcessedFeatureEnvelope,
     view: CoreFeatureViewManifest,
+    panel_manifest: CoreProcessedFeaturePanelManifest,
+    processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
+    selection_manifest: CoreFeatureSelectionManifest,
 ) -> CoreFeatureMatrixProjection:
     """Materialize the exact finite matrix; downstream modeling performs no processing."""
+    validated_envelopes = validate_core_feature_view_parents(
+        view=view,
+        panel_manifest=panel_manifest,
+        processed_envelopes=processed_envelopes,
+        selection_manifest=selection_manifest,
+    )
+    envelope = CoreProcessedFeatureEnvelope.model_validate(envelope.model_dump())
+    if envelope not in validated_envelopes:
+        raise ValueError("projection envelope is not one of the validated view parents")
     binding = next(
         (item for item in view.daily_bindings if item.decision_date == envelope.decision_date),
         None,

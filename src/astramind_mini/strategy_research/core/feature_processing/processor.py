@@ -39,7 +39,7 @@ def process_core_raw_feature_envelope(
     spec: CoreProcessingSpec | None = None,
 ) -> CoreProcessedFeatureEnvelope:
     """Process one complete daily U0 cross-section without deleting rows."""
-    rules = spec or CoreProcessingSpec()
+    rules = CoreProcessingSpec.model_validate((spec or CoreProcessingSpec()).model_dump())
     audit_rows = tuple(sorted(universe_rows, key=lambda item: item.instrument_id))
     members = tuple(item for item in audit_rows if item.research_member)
     _validate_bindings(
