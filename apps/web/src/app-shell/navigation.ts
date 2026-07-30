@@ -3,6 +3,7 @@ import type {
   IndustryDestination,
   MarketDestination,
   PrimaryDestination,
+  SystemDestination,
 } from "./types";
 
 export const primaryNavigation: ReadonlyArray<{
@@ -38,6 +39,16 @@ export const industryNavigation: ReadonlyArray<{
   { id: "rotation", label: "相对轮动", href: "/market?tab=industries&view=rotation" },
 ];
 
+export const systemNavigation: ReadonlyArray<{
+  id: SystemDestination;
+  label: string;
+  href: string;
+}> = [
+  { id: "data-jobs", label: "数据与作业", href: "/system" },
+  { id: "method-status", label: "方法与状态", href: "/system/method-status" },
+  { id: "execution-recovery", label: "执行与恢复", href: "/system?focus=recovery" },
+];
+
 export function readLocation(): AppLocation {
   return {
     pathname: window.location.pathname,
@@ -51,7 +62,7 @@ export function primaryDestination(location: AppLocation): PrimaryDestination {
   if (location.pathname === "/portfolio" || location.pathname === "/execution") {
     return "portfolio";
   }
-  if (location.pathname === "/system") return "system";
+  if (location.pathname.startsWith("/system")) return "system";
   if (location.pathname === "/strategy-arena") return "strategy-arena";
   if (location.pathname.startsWith("/stocks/")) {
     const origin = new URLSearchParams(location.search).get("origin");
@@ -72,4 +83,10 @@ export function marketDestination(location: AppLocation): MarketDestination {
 export function industryDestination(location: AppLocation): IndustryDestination {
   const view = new URLSearchParams(location.search).get("view");
   return view === "lifecycle" || view === "rotation" ? view : "heatmap";
+}
+
+export function systemDestination(location: AppLocation): SystemDestination {
+  if (location.pathname === "/system/method-status") return "method-status";
+  const focus = new URLSearchParams(location.search).get("focus");
+  return focus === "recovery" ? "execution-recovery" : "data-jobs";
 }

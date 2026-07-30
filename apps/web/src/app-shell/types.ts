@@ -7,6 +7,7 @@ export type PrimaryDestination =
 
 export type MarketDestination = "overview" | "stocks" | "industries" | "etf";
 export type IndustryDestination = "heatmap" | "lifecycle" | "rotation";
+export type SystemDestination = "data-jobs" | "method-status" | "execution-recovery";
 
 export type RouteLoadPhase =
   | "navigating"

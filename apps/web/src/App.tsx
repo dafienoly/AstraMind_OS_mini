@@ -6,6 +6,7 @@ import { UiLab } from "./UiLab";
 import { MarketPage } from "./market-dashboard/MarketPage";
 import { OperationsShell } from "./operations/OperationsShell";
 import { StockWorkbenchPage } from "./stock-workbench/StockWorkbenchPage";
+import { MethodStatusPage } from "./system-method-status/MethodStatusPage";
 
 type ApiState =
   | { kind: "loading" }
@@ -30,6 +31,7 @@ function RouteContent({ pathname }: { pathname: string }) {
   if (pathname === "/today") return <OperationsShell destination="today" />;
   if (pathname === "/portfolio") return <OperationsShell destination="portfolio" />;
   if (pathname === "/execution") return <OperationsShell destination="execution" />;
+  if (pathname === "/system/method-status") return <MethodStatusPage />;
   if (pathname === "/system") return <OperationsShell destination="system" />;
   if (pathname === "/strategy-arena") {
     return <PlannedPage

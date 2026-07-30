@@ -1,7 +1,7 @@
 # WP-0063：系统“方法与状态”页面实施
 
-- 版本：1.0.0
-- 状态：已批准实施
+- 版本：1.0.1
+- 状态：已完成
 - 需求：REQ-2026-0003 v1.9.0、REQ-2026-0008 v2.2.1
 - 阶段：6I、7
 - UI 提案：UI-PROP-0013 v0.1（`approved`）
@@ -66,3 +66,41 @@
 行为、路由、响应式布局、Loading/Empty/Blocked/Error/Fallback/Active 状态、局部
 刷新恢复、文档、Vitest、浏览器流程和提案截图对照全部完成后，才能把本包标记完成。
 
+## 实施结果（2026-07-30）
+
+- 在唯一 AppShell 内增加稳定的 System 二级导航和 `/system/method-status` 路由；
+- 页面固定展示五类模型索引、V1/V2 定义、预测目标、五段方法谱系尺、准确业务原因、
+  已发布时间语义和默认折叠的技术详情；
+- 只消费既有 `/api/market/model-status`。接口未发布的数据日期、行情/接收时间、训练/
+  证据截止和输入版本准确显示“尚无已发布记录”，没有由本机时间或其他投影推断；
+- 覆盖 Loading、Empty、Disconnected、Blocked、Error、`fallback_v1`、
+  `unvalidated_v2`、`active_v2`、制品异常及刷新失败保留上次成功投影；
+- 状态族重复、未知枚举、无效时间或只读边界异常均失败关闭，不显示绿色健康状态；
+- 页面只有模型选择、刷新、查看数据与作业和展开技术详情，没有训练、激活、策略晋级、
+  MiniQMT、Paper、Live、组合或订单动作。
+
+聚焦验收：
+
+```text
+pnpm --filter @astramind/web test
+  27 files / 104 tests passed
+pnpm --filter @astramind/web lint
+  passed
+pnpm --filter @astramind/web typecheck
+  passed
+pnpm --filter @astramind/web build
+  passed
+ASTRAMIND_E2E_BASE_URL=http://127.0.0.1:5176 \
+  pnpm exec playwright test tests/e2e/method-status.spec.ts
+  1 passed
+```
+
+提案对照截图：
+
+- [桌面 1440px](../../ui/proposals/0013-method-status/actual-desktop-1440x1000.png)
+- [窄屏 390px](../../ui/proposals/0013-method-status/actual-mobile-390x844.png)
+
+实际页面保留批准提案的“五类索引 + 方法谱系尺 + 原因/时间 + 折叠技术详情”层级和
+蓝/赭/深红状态语义。有意差异只有两项：顶部沿用已批准且持续挂载的唯一 AppShell，
+不复制示意图中的独立深色壳层；示意图中的样例日期改为准确缺失文案，因为现有公共
+状态契约没有发布对应字段。窄屏索引和谱系尺使用局部横向滚动，页面本身没有横向溢出。

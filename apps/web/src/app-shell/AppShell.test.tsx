@@ -28,6 +28,28 @@ test("owns the only five first-level destinations on every market subpage", () =
   expect(screen.getAllByRole("navigation", { name: "一级导航" })).toHaveLength(1);
 });
 
+test("keeps the stable three-item System navigation on the method page", () => {
+  const location: AppLocation = {
+    pathname: "/system/method-status",
+    search: "",
+    key: "/system/method-status",
+  };
+  render(<AppShell location={location}><Ready /></AppShell>);
+
+  const primary = screen.getByRole("navigation", { name: "一级导航" });
+  expect(within(primary).getAllByRole("link")).toHaveLength(5);
+  expect(within(primary).getByRole("link", { name: "系统" }))
+    .toHaveAttribute("aria-current", "page");
+  const system = screen.getByRole("navigation", { name: "系统视图" });
+  expect(within(system).getAllByRole("link").map((link) => link.textContent)).toEqual([
+    "数据与作业",
+    "方法与状态",
+    "执行与恢复",
+  ]);
+  expect(within(system).getByRole("link", { name: "方法与状态" }))
+    .toHaveAttribute("aria-current", "page");
+});
+
 test("shows a progress bar immediately and a slow-route skeleton after 300ms", () => {
   vi.useFakeTimers();
   const location: AppLocation = {

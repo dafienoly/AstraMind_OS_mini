@@ -15,6 +15,8 @@ import {
   primaryDestination,
   primaryNavigation,
   readLocation,
+  systemDestination,
+  systemNavigation,
 } from "./navigation";
 import { RouteLoading } from "./RouteLoading";
 import { RouteProgressProvider, useSlowRoute } from "./routeProgress";
@@ -35,6 +37,7 @@ export function AppShell({
   const primary = primaryDestination(location);
   const market = marketDestination(location);
   const industry = industryDestination(location);
+  const system = systemDestination(location);
 
   useLayoutEffect(() => {
     setReport({ phase: "navigating", label: routeLabel(location) });
@@ -72,6 +75,17 @@ export function AppShell({
             key={item.id}
           >{item.label}</a>)}
         </> : null}
+      </nav> : null}
+      {primary === "system" ? <nav
+        className="app-market-nav app-system-nav"
+        aria-label="系统视图"
+      >
+        <span>系统</span>
+        {systemNavigation.map((item) => <a
+          aria-current={system === item.id ? "page" : undefined}
+          href={item.href}
+          key={item.id}
+        >{item.label}</a>)}
       </nav> : null}
       <RouteLoading report={report} slow={slow} />
       <div className="app-route-stage">{children}</div>
@@ -134,5 +148,7 @@ function routeLabel(location: AppLocation) {
     if (tab === "industries") return "正在进入行业工作面";
     return "正在进入大盘";
   }
+  if (location.pathname === "/system/method-status") return "正在读取方法与状态";
+  if (location.pathname.startsWith("/system")) return "正在进入系统工作面";
   return "正在切换工作面";
 }
