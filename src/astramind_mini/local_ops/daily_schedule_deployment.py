@@ -79,6 +79,9 @@ def task_xml(spec: DailyTaskSpec) -> bytes:
     _setting(settings, "AllowHardTerminate", "true")
     _setting(settings, "Enabled", "true")
     _setting(settings, "ExecutionTimeLimit", "PT35M")
+    restart = ET.SubElement(settings, _tag("RestartOnFailure"))
+    _setting(restart, "Interval", "PT1M")
+    _setting(restart, "Count", "5")
     actions = ET.SubElement(task, _tag("Actions"), {"Context": "LocalUser"})
     execute = ET.SubElement(actions, _tag("Exec"))
     ET.SubElement(execute, _tag("Command")).text = "wsl.exe"

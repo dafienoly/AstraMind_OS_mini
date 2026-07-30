@@ -64,13 +64,17 @@ class MiniQMTSourceAdapter:
                     filters["start_time"] = (request.start_date - timedelta(days=10)).strftime(
                         "%Y%m%d"
                     )
-        result = await self._bridge.request(
-            "fetch",
-            request={
-                **request.model_dump(mode="json"),
-                "filters": filters,
-            },
-        )
+        payload = {
+            **request.model_dump(mode="json"),
+            "filters": filters,
+        }
+        result = await self._bridge.request("fetch", request=payload)
+        canonical_rows = _canonical_rows(result, request)
+        missing = _missing_single_day_universe(canonical_rows, request)
+        cache_preparations = await self._prepare_single_day_cache(request, missing)
+        if cache_preparations:
+            result = await self._bridge.request("fetch", request=payload)
+            canonical_rows = _canonical_rows(result, request)
         rows = result.get("rows", [])
         if not isinstance(rows, list):
             raise MiniQMTBridgeError("bridge_rows_invalid")
@@ -80,20 +84,16 @@ class MiniQMTSourceAdapter:
             {
                 "request": request.model_dump(mode="json"),
                 "provider_version": result.get("provider_version"),
+                "cache_preparations": cache_preparations,
                 "raw": raw,
             }
         )
         latency = result.get("latency_breakdown_ms", {})
-        canonical_rows = tuple(
-            _canonical_market_row(row, request.dataset_name)
-            for row in rows
-            if isinstance(row, dict)
-        )
-        canonical_rows = _filter_requested_dates(canonical_rows, request)
         return ProviderBatch(
             provider_id=self.provider_id,
             provider_version=str(result.get("provider_version", self._bridge.provider_version)),
-            native_interface=str(result.get("native_interface", "unknown")),
+            native_interface=("download_history_data2+" if cache_preparations else "")
+            + str(result.get("native_interface", "unknown")),
             source_endpoint=("windows-xtdata-local-ndjson:" + self._bridge.client_fingerprint[:16]),
             request_identity=request_identity,
             retrieved_at=retrieved_at,
@@ -102,6 +102,44 @@ class MiniQMTSourceAdapter:
             completeness=1.0 if rows else 0.0,
             latency_breakdown_ms=latency if isinstance(latency, dict) else {},
         )
+
+    async def _prepare_single_day_cache(
+        self,
+        request: CanonicalDatasetRequest,
+        missing_universe: tuple[str, ...],
+    ) -> tuple[dict[str, object], ...]:
+        if (
+            request.dataset_name not in {"daily_market", "broad_index_daily"}
+            or request.start_date is None
+            or request.start_date != request.end_date
+            or not missing_universe
+        ):
+            return ()
+        target = request.start_date.strftime("%Y%m%d")
+        preparations: list[dict[str, object]] = []
+        cache_batch_size = 100
+        for offset in range(0, len(missing_universe), cache_batch_size):
+            universe = missing_universe[offset : offset + cache_batch_size]
+            result = await self._bridge.request(
+                "prepare_history_cache",
+                timeout_seconds=120,
+                universe=universe,
+                period="1d",
+                start_time=target,
+                end_time=target,
+            )
+            preparations.append(
+                {
+                    "native_interface": result.get(
+                        "native_interface",
+                        "download_history_data2",
+                    ),
+                    "instrument_count": len(universe),
+                    "started_at": result.get("started_at"),
+                    "ended_at": result.get("ended_at"),
+                }
+            )
+        return tuple(preparations)
 
     async def _fetch_market_chunks(
         self,
@@ -187,6 +225,40 @@ def _canonical_market_row(row: dict[str, object], dataset: str) -> dict[str, obj
             tz=ZoneInfo("Asia/Shanghai"),
         ).strftime("%Y%m%d")
     return result
+
+
+def _canonical_rows(
+    result: dict[str, object],
+    request: CanonicalDatasetRequest,
+) -> tuple[dict[str, object], ...]:
+    rows = result.get("rows", [])
+    if not isinstance(rows, list):
+        raise MiniQMTBridgeError("bridge_rows_invalid")
+    canonical = tuple(
+        _canonical_market_row(row, request.dataset_name)
+        for row in rows
+        if isinstance(row, dict)
+    )
+    return _filter_requested_dates(canonical, request)
+
+
+def _missing_single_day_universe(
+    rows: tuple[dict[str, object], ...],
+    request: CanonicalDatasetRequest,
+) -> tuple[str, ...]:
+    if (
+        request.dataset_name not in {"daily_market", "broad_index_daily"}
+        or request.start_date is None
+        or request.start_date != request.end_date
+        or not request.universe
+    ):
+        return ()
+    present = {
+        str(row.get("instrument_id"))
+        for row in rows
+        if row.get("instrument_id") not in (None, "")
+    }
+    return tuple(instrument for instrument in request.universe if instrument not in present)
 
 
 def _filter_requested_dates(

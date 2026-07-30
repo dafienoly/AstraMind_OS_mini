@@ -141,6 +141,8 @@ def test_windows_task_definition_is_reviewable_and_broker_free(tmp_path: Path) -
     assert payload.count("LogonTrigger") == 2
     assert "StartWhenAvailable" in payload
     assert "MultipleInstancesPolicy" in payload
+    assert "RestartOnFailure" in payload
+    assert "<Count>5</Count>" in payload
     assert "daily-schedule-trigger" in payload
     assert "/home/ly/work/AstraMind_OS_mini" in payload
     assert "/bin/bash" in payload

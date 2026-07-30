@@ -60,4 +60,5 @@ def test_default_routes_use_miniqmt_with_whole_batch_tushare_fallback() -> None:
         assert route.providers == ("miniqmt", "tushare")
         assert route.quality_gate_version == "user-cost-override-20260729"
         assert route.primary_key == ("instrument_id", "trade_date")
+        assert route.timeout_seconds == 600
         assert not route.allow_empty

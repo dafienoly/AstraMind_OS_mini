@@ -143,8 +143,8 @@ def _run_data(
     if completed.returncode != 0:
         return DailyDataOutcome(
             state="recovery_required",
-            blocker_codes=("daily_pipeline_process_failed",),
-            recovery_action="运行 make daily-data-status 后恢复",
+            blocker_codes=status.blocker_codes or ("daily_pipeline_process_failed",),
+            recovery_action=status.recovery_action or "运行 make daily-data-status 后恢复",
         )
     if status.state != "current":
         state: Literal["waiting_provider", "stale", "blocked", "recovery_required"]

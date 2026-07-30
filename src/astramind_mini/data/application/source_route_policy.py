@@ -128,7 +128,7 @@ def default_routes() -> tuple[DatasetSourceRoute, ...]:
             quality_gate_version="user-cost-override-20260729"
             if name in MINIQMT_COST_OVERRIDE_DATASETS
             else "not-promoted",
-            timeout_seconds=120,
+            timeout_seconds=600 if name in MINIQMT_COST_OVERRIDE_DATASETS else 120,
             required_fields=MARKET_REQUIRED_FIELDS
             if name in MINIQMT_COST_OVERRIDE_DATASETS
             else (),

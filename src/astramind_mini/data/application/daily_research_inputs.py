@@ -280,12 +280,18 @@ def _derive_research_inputs(
     tradability = derived_root / _year_artifact_name(
         manifests["daily_tradability"], target_date.year
     )
+    point_in_time_calendar = derived_root / "trade-calendar-through-target.parquet"
+    _clip_calendar_through_target(
+        source=calendar_path,
+        output=point_in_time_calendar,
+        target_date=target_date,
+    )
     DuckDBHistoricalStatusProjector().project_year(
         year=target_date.year,
         security_master=reference_paths.get(
             "security_master", _only_parquet(paths["security_master"])
         ),
-        trade_calendar=calendar_path,
+        trade_calendar=point_in_time_calendar,
         daily_files=(source_replacements["daily_market"],),
         price_limit_files=(source_replacements["price_limit"],),
         suspension_files=(source_replacements["suspension_event"],),
@@ -296,6 +302,30 @@ def _derive_research_inputs(
         imported_at=retrieved_at,
     )
     return {"adjusted_market": adjusted, "daily_tradability": tradability}
+
+
+def _clip_calendar_through_target(
+    *,
+    source: Path,
+    output: Path,
+    target_date: date,
+) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(".parquet.tmp")
+    temporary.unlink(missing_ok=True)
+    target = str(temporary).replace("'", "''")
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            f"""
+            COPY (
+              SELECT * FROM read_parquet(?)
+              WHERE calendar_date <= ?
+              ORDER BY calendar_date, exchange
+            ) TO '{target}' (FORMAT PARQUET, COMPRESSION ZSTD)
+            """,
+            [str(source), target_date],
+        )
+    temporary.replace(output)
 
 
 def _reversion_manifest(

@@ -56,6 +56,7 @@ from .daily_pipeline_support import (
 )
 from .daily_reference_inputs import DailyReferenceInputs
 from .identity import content_hash
+from .source_router import SourceRouteError
 from .state_files import load_state
 
 
@@ -205,6 +206,16 @@ class DailyIndustryPipeline:
                 updated_at=started_at,
                 blocker_codes=("concurrent_snapshot_advanced",),
                 recovery_action="从最新 DataSnapshot 重新启动日度运行，禁止恢复旧基线",
+            )
+            self._control.publish_status(blocked)
+            raise
+        except SourceRouteError as error:
+            blocked = replace_status(
+                status,
+                state="blocked",
+                updated_at=started_at,
+                blocker_codes=(f"source_route_{error.code}",),
+                recovery_action="更新对应提供方数据后，从最后完整检查点恢复",
             )
             self._control.publish_status(blocked)
             raise
