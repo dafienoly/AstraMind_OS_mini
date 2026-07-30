@@ -18,6 +18,12 @@ from astramind_mini.local_ops.realtime_service_deployment import (
     task_xml,
 )
 from astramind_mini.local_ops.realtime_service_runtime import RealtimeStatusStore
+from astramind_mini.local_ops.realtime_windows_wrapper import (
+    install_windows_wrapper as _install_windows_wrapper,
+)
+from astramind_mini.local_ops.realtime_windows_wrapper import (
+    windows_local_app_data as _windows_local_app_data,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,6 +52,10 @@ def run(args: argparse.Namespace) -> int:
     if args.action == "preview":
         return 0
     _require_exact_confirmation(args, spec)
+    wrapper_install = _install_windows_wrapper(spec)
+    if wrapper_install.returncode != 0:
+        _print_result("wrapper_install_failed", wrapper_install)
+        return wrapper_install.returncode
     completed = _task_command(["/Create", "/TN", TASK_NAME, "/XML", _windows_path(artifact), "/F"])
     if task_access_denied(completed.stdout, completed.stderr):
         completed = _elevated_install(artifact)
@@ -66,6 +76,7 @@ def _spec(args: argparse.Namespace) -> RealtimeMarketTaskSpec:
         distro=str(args.distro),
         repository_root=Path.cwd().resolve(),
         windows_user_sid=_windows_user_sid(),
+        windows_local_app_data=_windows_local_app_data(),
     )
 
 

@@ -66,15 +66,28 @@ def test_bridge_failure_code_and_windows_detail_are_sanitized() -> None:
         "k6": "acc" + "ount",
     }
     fixture = (
-        f"""{keys["k1"]}="abc" {keys["k2"]}: 'def' {keys["k3"]} ghi """
-        f"""{keys["k4"]} = xyz {keys["k5"]}=123 """
-        f"""{keys["k6"]} "broker-7" keep=visible"""
+        f"""{keys["k1"]}="alpha beta gamma", {keys["k2"]}: 'def'; """
+        f"""{keys["k3"]}='two word secret'\n{keys["k4"]} = xyz, """
+        f"""{keys["k5"]}=123; {keys["k6"]} "broker-7", keep=visible"""
     )
     _, sensitive = sanitize_bridge_failure("safe_code", fixture)
     assert sensitive is not None
-    for secret in ("abc", "def", "ghi", "xyz", "123", "broker-7"):
+    for secret in (
+        "alpha beta gamma",
+        "def",
+        "two word secret",
+        "xyz",
+        "123",
+        "broker-7",
+    ):
         assert secret not in sensitive
     assert "keep=visible" in sensitive
+    _, path_detail = sanitize_bridge_failure(
+        "safe_code",
+        "/secret/path is public routing context",
+    )
+    assert path_detail is not None
+    assert "/secret/path" in path_detail
 
 
 def test_bridge_stderr_redacts_local_user_paths() -> None:

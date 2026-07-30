@@ -357,8 +357,8 @@ def _redact_sensitive_values(value: str) -> str:
     key = r"(?:token|api[_ -]?key|secret|password|account(?:_id)?)"
     pattern = re.compile(
         rf"""(?ix)
-        (?<![\\/])(?P<prefix>["']?{key}["']?\s*(?::|=|\s)\s*)
-        ["']?[^"'\s,;]+["']?
+        (?<![a-z0-9_\\/])(?P<prefix>["']?{key}["']?\s*(?::|=|\s)\s*)
+        (?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^,;\r\n]*)
         """
     )
     return pattern.sub(lambda match: f"{match.group('prefix')}<redacted>", value)

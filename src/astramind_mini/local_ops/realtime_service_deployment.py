@@ -12,6 +12,7 @@ from typing import Literal, cast
 TASK_NAME = "AstraMind OS Mini - Realtime Market"
 TASK_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 TRIGGER_LABELS = ("Windows 登录后启动", "每日 08:55 恢复启动")
+WINDOWS_WRAPPER_FILENAME = "run_realtime_market_task-v1.ps1"
 type SchedulerQueryState = Literal["installed", "not_installed", "query_failed"]
 
 
@@ -20,6 +21,7 @@ class RealtimeMarketTaskSpec:
     distro: str
     repository_root: Path
     windows_user_sid: str
+    windows_local_app_data: str
     task_name: str = TASK_NAME
 
     @property
@@ -53,12 +55,8 @@ class RealtimeMarketTaskSpec:
 
     @property
     def wrapper_path(self) -> str:
-        relative = self.repository_root.as_posix().lstrip("/")
-        return (
-            rf"\\wsl.localhost\{self.distro}"
-            rf"\{relative.replace('/', chr(92))}"
-            r"\scripts\windows\run_realtime_market_task.ps1"
-        )
+        root = self.windows_local_app_data.rstrip("\\/")
+        return rf"{root}\AstraMindOSMini\{WINDOWS_WRAPPER_FILENAME}"
 
 
 def task_xml(spec: RealtimeMarketTaskSpec) -> bytes:
@@ -155,6 +153,7 @@ def scheduler_query_state(
 __all__ = [
     "TASK_NAME",
     "TRIGGER_LABELS",
+    "WINDOWS_WRAPPER_FILENAME",
     "RealtimeMarketTaskSpec",
     "SchedulerQueryState",
     "scheduler_query_state",
