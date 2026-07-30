@@ -417,3 +417,31 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
 - 聚焦测试、三包联合回归、Ruff、变更范围 strict mypy、仓库检查、架构检查和 diff
   检查均通过；Stage P 已作为主线提交 `74b4b08` 集成，Stage S 必须从包含该提交的
   最新主线新建单写者分支。
+
+## Stage S 实施结果
+
+- 已实现 D1/D3/D5 诊断标签原语和 H20/H60 可选择标签；入口固定使用 T+1 连续研究
+  开盘价、T+H 连续研究收盘价、成熟标签独立快照和逐日 U0，非成员只留审计行，不进入
+  百分位；
+- 已实现三包共用的三态外层处理、80%/90% 覆盖门、5 MAD 缩尾、稳健 z、行业恰满
+  10 个 observed 后的状态感知填补，以及仅作平行证据的行业/规模 OLS；非有限输入、
+  无 observed、控制缺失、样本不足和秩亏均失败关闭；
+- 已冻结单日 processed envelope、完整逐日 lineage 的 panel、H20/H60 独立 selection
+  manifest、单包 full/selected view，以及每周期三个 selected pair 和一个 selected
+  triple；selection 同时保存准确日 envelope/U0 父级，未来尾部或替换父级不能进入旧
+  折身份；
+- 已实现折内每日 RankIC、三个连续 60 日子折门、SplitMix64-v1 圆形区块 bootstrap、
+  BH 10%、逐日相关时间中位数、完全链接和代表选择；D1/D3/D5、旧 Stage P hash、
+  未冻结父级、相关证据不足和跨包 U0 不一致均有失败关闭检查；
+- 单包和联合 view 可直接按 manifest 物化已填补、有限、行列顺序固定的实际矩阵；
+  blocked/空 selected 仍发布准确身份，但不能投影模型矩阵，下游不得重做填补、选择或
+  列排序；
+- 受控 oracle 声明三个包、260 个固定真实沪深共同交易日、24 只证券和三个行业，
+  fixture 内容哈希为
+  `sha256:ff2030ad7ece6cb2f04bec0742dc285462406f2d19ffa38db927e8c8d64f0747`；
+  手算 MAD/平均秩/BH/完全链接和独立 10,000 次 bootstrap 参考均未调用生产 evaluator
+  生成期望值；
+- Stage P 的 283 项先验文件保持零差异，冻结内容哈希继续为
+  `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
+  本阶段未读取生产 `var/`、历史胜负或模型结果，也未触碰 MiniQMT、账户、Paper、
+  Live、组合或订单。
