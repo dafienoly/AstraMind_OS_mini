@@ -1,6 +1,6 @@
 # 分阶段实施计划
 
-- 计划版本：2.7.1
+- 计划版本：2.7.2
 - 初始日期：2026-07-26
 - 更新日期：2026-07-30
 - 状态：REQ-2026-0001 规划基线已收口；首份受限 Paper StandingMandate 已批准并
@@ -64,7 +64,7 @@ REQ-2026-0001 已由 WP-0007 完成规划收口并退出开发队列，继续作
 | REQ-2026-0004 | MiniQMT 行情、账户与交易接入路线 | v2.9.0；WP-0047 已获只读服务恢复、分钟暖启动/留存和多周期收口授权，当前运行失败，写入受保护 |
 | REQ-2026-0005 | 短线事件数据、封存证据和手动晋级 | v1.4.0；历史研究已实现，两阶段日内验证与 Research Shadow 未实施 |
 | REQ-2026-0006 | OrderPlan、组合风险、Research Shadow 与 Local Replay | v2.1.0；分层方向已批准，迁移未实施 |
-| REQ-2026-0007 | 周度核心因子研究与组合 | v2.3.0；首期离线功能获持续实施授权，WP-0070/0071A/B/C 已完成，WP-0072 Stage P 已实现并通过复核、等待集成，Paper 未授权 |
+| REQ-2026-0007 | 周度核心因子研究与组合 | v2.3.0；首期离线功能获持续实施授权，WP-0070/0071A/B/C 与 WP-0072 Stage P 已集成，Stage S 已释放，Paper 未授权 |
 | REQ-2026-0008 | 市场状态、行业生命周期与 ETF 研究 | v2.2.1；v1 与热力/相对轮动第一阶段生产代码已实现，真实训练未运行，其余受数据门阻断 |
 | REQ-2026-0009 | 本地日常运行、恢复和加固 | v1.5.0；Daily Ops 已实现，WP-0047 实时运行/封存恢复已授权实施 |
 | REQ-2026-0010 | MiniQMT 模拟盘执行与恢复 | v2.1.0；单账户分仓方向已批准，迁移与首次写入待独立批准 |
@@ -88,7 +88,7 @@ WP-0064 是交付治理基线；下表是后续顺序和授权状态的唯一计
 | 实时数据闭环 | 服务诊断恢复、当日一分钟暖启动、跨重启留存、1/5/15/30/60/120 分钟、收盘封存和真实长稳证据 | 代码与 Windows 任务定义已更新；WSL interop/vsock 仍阻断启动，真实一分钟制品、15 分钟/P95 未验收 | WP-0047 已授权；只读行情单所有者，不涉及账户或交易 |
 | 短线两阶段 | Top20 → 20 日 1 分钟/3 日 Tick、三态结论和 A/B 比较 | 未实施 | REQ-0005 功能实施与 MiniQMT 候选请求授权 |
 | Research Shadow | 独立候选账本、恢复、比较和在位政策选择 | 未实施 | REQ-0006/0014 实施授权；先合同后策略接入 |
-| 周度核心 | U0、F0/Alpha158/Alpha101、selected、H20/H60、O0/CorePolicy | WP-0070/0071A/B/C 已完成，WP-0072 Stage P 已实现并通过复核、等待集成 | 首期离线功能持续授权；UI 与 Paper 继续后置 |
+| 周度核心 | U0、F0/Alpha158/Alpha101、selected、H20/H60、O0/CorePolicy | WP-0070/0071A/B/C 与 WP-0072 Stage P 已集成，Stage S 已释放 | 首期离线功能持续授权；UI 与 Paper 继续后置 |
 | Paper 双分仓 | tactical/core 虚拟预算、managed 批次和冲突仲裁 | 未实施 | REQ-0010/0014 迁移授权；券商写入仍单独批准 |
 | 市场模型 V2 | 热力/轮动生产链，再到生命周期、排序和 ETF | 第一阶段代码已完成，真实训练未运行 | 后续严格服从点时成员和 ETF 数据门 |
 | 方法与状态页 | 五类 V1/V2、谱系门、时间语义和回退解释 | 已完成 | UI-PROP-0013 v0.1 / WP-0063 |
@@ -105,7 +105,7 @@ WP-0064 是交付治理基线；下表是后续顺序和授权状态的唯一计
 | WP-0069 | 实时封存、候选长任务和 Shadow 故障恢复验收 | A | 待运行实施授权；依赖 WP-0065/0067 |
 | WP-0070 | 核心 U0、点时数据语义、唯一共同日历和公共特征合同 | C | 1.1.1 已完成并通过独立复核 |
 | WP-0071A/B/C | F0、Qlib Alpha158、论文 Alpha101 三个独立保真计算包 | A/B/C 临时并行 | 三包均已独立复核并集成；持续授权已释放，依赖 WP-0070 |
-| [WP-0072](./work-packages/WP-0072-core-feature-processing-selection.md) | 公共标签/多日 panel、full/selected、三态处理、冻结选择与中性化诊断 | Worker B 单写者 | 1.3.0 Stage P 已实现并通过独立复核，提交待主线集成；Stage S 只能从其集成提交启动 |
+| [WP-0072](./work-packages/WP-0072-core-feature-processing-selection.md) | 公共标签/多日 panel、full/selected、三态处理、冻结选择与中性化诊断 | Worker B 单写者 | 1.3.0 Stage P 已独立复核并集成；Stage S 已从最新主线释放 |
 | [WP-0073A](./work-packages/WP-0073A-core-h20-h60-ridge-calibration.md) | H20/H60 B0/Ridge、滚动预测与校准 | 后续核心模型通道 | 1.2.0 已固化并授权；只消费 WP-0072 联合 manifest，等待其集成 |
 | [WP-0073B](./work-packages/WP-0073B-core-lightgbm-challenge.md) | 最多四槽 LightGBM 有预算挑战 | 非线性模型通道 | 已固化并授权；等待 WP-0074A 槽位 manifest |
 | [WP-0074A](./work-packages/WP-0074A-core-ridge-o0-evidence-slots.md) | Ridge O0/C2 回放、联合资格与 LightGBM 槽位 | 组合证据通道 | 已固化并授权；等待 WP-0073A |
@@ -698,7 +698,7 @@ Paper 和经授权的 Live；候选账本相互隔离，Paper 分仓可归因且
 
 **状态：REQ-2026-0007 v2.3.0 需求基线与首期离线链持续实施均已批准；WP-0070
 1.1.1 已完成共同日历、计算语义身份与行业半开区间补强，WP-0071A/B/C 均已集成；
-WP-0072 v1.3.0 Stage P 已实现并通过独立复核，等待主线集成后进入 Stage S。新 UI、生产
+WP-0072 v1.3.0 Stage P 已独立复核并集成，Stage S 已释放。新 UI、生产
 补采、MiniQMT、Paper/Live、StandingMandate、账户和订单继续使用各自保护门。**
 
 ### 目标
