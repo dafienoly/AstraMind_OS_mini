@@ -37,6 +37,7 @@ from astramind_mini.strategy_research.core.packages import (
 REPOSITORY = Path(__file__).parents[2]
 FIXTURE = REPOSITORY / "tests" / "fixtures" / "core" / "processing" / "stage_s_oracle_v1.json"
 GENERATOR = REPOSITORY / "tests" / "fixtures" / "core" / "processing" / "generate_stage_s_oracle.py"
+SELECTION_GENERATOR = GENERATOR.with_name("generate_stage_s_selection_oracle.py")
 
 
 def _load_fixture() -> dict[str, Any]:
@@ -62,10 +63,13 @@ def _canonical_fixture_hash(fixture: dict[str, Any]) -> str:
 def test_oracle_provenance_hashes_and_actual_dimensions_are_auditable() -> None:
     fixture = _load_fixture()
     provenance = fixture["provenance"]
-    assert fixture["schema"] == "core-feature-processing-selection-oracle-v2"
-    assert provenance["generator_version"] == "2.0.0"
+    assert fixture["schema"] == "core-feature-processing-selection-oracle-v3"
+    assert provenance["generator_version"] == "3.0.0"
     assert provenance["authoritative_source_commit"] == ("9e0c57fef5f916c3af4bd5fc8060c0a8ee1532a7")
     assert provenance["generator_sha256"] == hashlib.sha256(GENERATOR.read_bytes()).hexdigest()
+    assert provenance["selection_generator_sha256"] == hashlib.sha256(
+        SELECTION_GENERATOR.read_bytes()
+    ).hexdigest()
     assert provenance["fixture_content_hash"] == _canonical_fixture_hash(fixture)
     assert fixture["dimensions"] == {
         "sessions": 260,
@@ -212,36 +216,30 @@ def _assert_imputation(
         assert source.value == day["outputs"]["imputation_sources"][index]
 
 
-def test_two_folds_four_selection_replays_and_three_seed_vectors_are_frozen() -> None:
+def test_two_folds_two_production_selection_replays_and_three_seed_vectors_are_frozen() -> None:
     fixture = _load_fixture()
     replays = fixture["selection_replays"]
-    assert len(replays) == 4
-    assert {(item["fold_id"], item["horizon"]) for item in replays} == {
-        ("fold-001", "H20"),
-        ("fold-001", "H60"),
-        ("fold-002", "H20"),
-        ("fold-002", "H60"),
-    }
+    assert len(replays) == 2
+    assert [(item["fold_offset"], item["horizon"]) for item in replays] == [
+        (0, "H20"),
+        (20, "H60"),
+    ]
     for replay in replays:
         assert len(replay["decision_sessions"]) == 180
-        assert len(replay["package_evidence"]) == 3
-        assert all(
-            len(item["daily_signed_rankic"]) == 180
-            and item["signed_mean_rankic"] > 0.0
-            and item["selected"]
-            for item in replay["package_evidence"]
-        )
+        assert len(replay["feature_evidence"]) == 4
+        assert replay["selected_feature_keys"]
+        assert any(item["bh_passed"] for item in replay["feature_evidence"])
+        assert any(not item["bh_passed"] for item in replay["feature_evidence"])
         payload = {
             key: value
             for key, value in replay.items()
-            if key not in {"selection_manifest_hash", "frozen_replay_identity"}
+            if key not in {"replay_content_hash", "frozen_replay_identity"}
         }
-        assert replay["selection_manifest_hash"] == _canonical_hash(payload)
+        assert replay["replay_content_hash"] == _canonical_hash(payload)
         assert replay["frozen_replay_identity"] == _canonical_hash(
             {
-                "selection_manifest_hash": replay["selection_manifest_hash"],
-                "fold_id": replay["fold_id"],
-                "horizon": replay["horizon"],
+                "schema": "core-stage-s-production-selection-replay-v1",
+                "replay_content_hash": replay["replay_content_hash"],
             }
         )
     assert fixture["provenance"]["selection_replays_hash"] == _canonical_hash(replays)

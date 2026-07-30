@@ -8,6 +8,8 @@ import math
 from pathlib import Path
 from statistics import median
 
+from generate_stage_s_selection_oracle import build_selection_replays
+
 REPOSITORY = Path(__file__).parents[4]
 OUTPUT = Path(__file__).with_name("stage_s_oracle_v1.json")
 CALENDAR = REPOSITORY / "tests" / "fixtures" / "core" / "f0" / "golden_case.json"
@@ -87,11 +89,9 @@ def _raw_value(day: int, instrument: int, package: int) -> float:
 
 
 def _industry(instrument: int) -> str:
-    if instrument < 10:
+    if instrument < 11:
         return "IND-A"
-    if instrument < 20:
-        return "IND-B"
-    return "IND-C"
+    return "IND-B" if instrument < 22 else "IND-C"
 
 
 def _day_record(package: int, day: int, session: str) -> dict[str, object]:
@@ -197,37 +197,6 @@ def _output_row(
     }
 
 
-def _average_ranks(values: list[float]) -> list[float]:
-    ordered = sorted(enumerate(values), key=lambda item: (item[1], item[0]))
-    ranks = [0.0] * len(values)
-    start = 0
-    while start < len(ordered):
-        end = start + 1
-        while end < len(ordered) and ordered[end][1] == ordered[start][1]:
-            end += 1
-        rank = (start + 1 + end) / 2.0
-        for original, _ in ordered[start:end]:
-            ranks[original] = rank
-        start = end
-    return ranks
-
-
-def _spearman(left: list[float], right: list[float]) -> float:
-    left_rank = _average_ranks(left)
-    right_rank = _average_ranks(right)
-    left_mean = sum(left_rank) / len(left_rank)
-    right_mean = sum(right_rank) / len(right_rank)
-    numerator = sum(
-        (left_value - left_mean) * (right_value - right_mean)
-        for left_value, right_value in zip(left_rank, right_rank, strict=True)
-    )
-    denominator = math.sqrt(
-        sum((value - left_mean) ** 2 for value in left_rank)
-        * sum((value - right_mean) ** 2 for value in right_rank)
-    )
-    return _round(numerator / denominator)
-
-
 def _seed(feature_key: str, horizon: str, fold: str) -> int:
     payload = f"{feature_key}|{horizon}|{fold}".encode()
     return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
@@ -257,64 +226,6 @@ def _bootstrap_vector(feature_key: str, horizon: str, fold: str) -> dict[str, ob
         "first_ten_starts": starts,
         "first_sample_indices": first_indices,
     }
-
-
-def _selection_replays(
-    panels: list[dict[str, object]],
-    sessions: list[str],
-    feature_keys: dict[str, str],
-) -> list[dict[str, object]]:
-    replays: list[dict[str, object]] = []
-    for fold_id, start in (("fold-001", 0), ("fold-002", 80)):
-        fold_sessions = sessions[start : start + 180]
-        for horizon in ("H20", "H60"):
-            evidence = []
-            for panel in panels:
-                days = panel["days"][start : start + 180]
-                daily = [
-                    _spearman(
-                        [float(item) for item in day["outputs"]["model_values"]],
-                        [
-                            float(index)
-                            + (0.01 if horizon == "H20" else 0.02) * math.sin(day_index)
-                            for index in range(24)
-                        ],
-                    )
-                    for day_index, day in enumerate(days)
-                ]
-                package = str(panel["package_id"])
-                evidence.append(
-                    {
-                        "package_id": package,
-                        "feature_key": feature_keys[package],
-                        "daily_signed_rankic": daily,
-                        "signed_mean_rankic": _round(sum(daily) / len(daily)),
-                        "bootstrap_seed": _seed(feature_keys[package], horizon, fold_id),
-                        "selected": True,
-                    }
-                )
-            payload = {
-                "fold_id": fold_id,
-                "horizon": horizon,
-                "decision_sessions": fold_sessions,
-                "package_evidence": evidence,
-                "selected_feature_keys": [item["feature_key"] for item in evidence],
-            }
-            selection_hash = _canonical_hash(payload)
-            replays.append(
-                {
-                    **payload,
-                    "selection_manifest_hash": selection_hash,
-                    "frozen_replay_identity": _canonical_hash(
-                        {
-                            "selection_manifest_hash": selection_hash,
-                            "fold_id": fold_id,
-                            "horizon": horizon,
-                        }
-                    ),
-                }
-            )
-    return replays
 
 
 def _feature_keys(prior: dict[str, object]) -> dict[str, str]:
@@ -382,12 +293,17 @@ def _provenance(
     ]
     return {
         "generator_identity": "tests/fixtures/core/processing/generate_stage_s_oracle.py",
-        "generator_version": "2.0.0",
+        "generator_version": "3.0.0",
         "generation_policy": (
             "stdlib-only independent oracle; production evaluators are never imported"
         ),
         "authoritative_source_commit": "9e0c57fef5f916c3af4bd5fc8060c0a8ee1532a7",
         "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "selection_generator_sha256": hashlib.sha256(
+            Path(__file__).with_name(
+                "generate_stage_s_selection_oracle.py"
+            ).read_bytes()
+        ).hexdigest(),
         "input_records_hash": _canonical_hash(input_records),
         "processed_outputs_hash": _canonical_hash(processed_outputs),
         "selection_replays_hash": _canonical_hash(replays),
@@ -443,7 +359,7 @@ def _build_document(
     bootstrap_vectors: list[dict[str, object]],
 ) -> dict[str, object]:
     return {
-        "schema": "core-feature-processing-selection-oracle-v2",
+        "schema": "core-feature-processing-selection-oracle-v3",
         "provenance": _provenance(panels, replays),
         "dimensions": {
             "sessions": 260,
@@ -474,7 +390,7 @@ def main() -> None:
     prior = json.loads(PRIORS.read_text(encoding="utf-8"))
     feature_keys = _feature_keys(prior)
     panels = _package_panels(sessions, feature_keys)
-    replays = _selection_replays(panels, sessions, feature_keys)
+    replays = build_selection_replays(sessions, prior)
     bootstrap_vectors = [
         _bootstrap_vector("F@1.0.0", "H20", "fold-001"),
         _bootstrap_vector(feature_keys[PACKAGES[1]], "H20", "fold-001"),

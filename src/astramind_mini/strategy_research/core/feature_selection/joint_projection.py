@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from datetime import date
 
 from pydantic import Field, model_validator
@@ -14,12 +14,15 @@ from ...application.identity import research_hash
 from ..feature_processing import (
     CoreFeatureViewManifest,
     CoreProcessedFeatureEnvelope,
-    CoreProcessedFeaturePanelManifest,
     CoreProcessedFeatureRow,
 )
 from .joint import build_core_joint_selected_view_manifests
 from .joint_models import CoreJointSelectedViewManifest, CoreJointViewStatus
 from .models import CoreFeatureSelectionManifest
+from .parent_validation import (
+    CoreFeatureSelectionParents,
+    ValidatedCoreFeatureSelection,
+)
 
 
 class CoreJointMatrixProjection(ContractModel):
@@ -51,9 +54,11 @@ def project_core_joint_selected_matrix(
     *,
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
     view: CoreJointSelectedViewManifest,
-    selections: Mapping[str, CoreFeatureSelectionManifest],
-    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
-    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    selections: Mapping[
+        str,
+        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    ],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None = None,
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> CoreJointMatrixProjection:
     """Project exact view columns; downstream modeling performs no feature work."""
@@ -61,8 +66,7 @@ def project_core_joint_selected_matrix(
         envelopes=envelopes,
         view=view,
         selections=selections,
-        processed_envelopes=processed_envelopes,
-        panel_manifests=panel_manifests,
+        selection_parents=selection_parents,
         single_views=single_views,
     )
     values = _projection_values(envelopes, view, row_order)
@@ -89,9 +93,11 @@ def _validate_projection_parents(
     *,
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
     view: CoreJointSelectedViewManifest,
-    selections: Mapping[str, CoreFeatureSelectionManifest],
-    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
-    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    selections: Mapping[
+        str,
+        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    ],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None,
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[
     CoreJointSelectedViewManifest,
@@ -102,8 +108,7 @@ def _validate_projection_parents(
     rebuilt = build_core_joint_selected_view_manifests(
         horizon=view.horizon,
         selections=selections,
-        processed_envelopes=processed_envelopes,
-        panel_manifests=panel_manifests,
+        selection_parents=selection_parents,
         single_views=single_views,
     )
     expected = next(
@@ -114,9 +119,9 @@ def _validate_projection_parents(
     if expected is None or view != expected:
         raise ValueError("joint view differs from its validated parent objects")
     validated_daily_envelopes = {
-        package: tuple(
-            CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
-            for item in processed_envelopes[package]
+        package: _selection_parent_envelopes(
+            selections[package],
+            selection_parents[package] if selection_parents is not None else None,
         )
         for package in view.package_ids
     }
@@ -158,6 +163,15 @@ def _validate_projection_parents(
         raise ValueError("joint parent U0 row order must exactly match")
     row_order = next(iter(row_orders))
     return view, envelopes, decision_date, row_order
+
+
+def _selection_parent_envelopes(
+    selection: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    parents: CoreFeatureSelectionParents | None,
+) -> tuple[CoreProcessedFeatureEnvelope, ...]:
+    from .parent_validation import resolve_validated_core_feature_selection
+
+    return resolve_validated_core_feature_selection(selection, parents).parents.processed_envelopes
 
 
 def _projection_values(

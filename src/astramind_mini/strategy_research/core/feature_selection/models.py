@@ -167,6 +167,8 @@ class CoreFeatureSelectionManifest(ContractModel):
     content_hash: ContentHash
     package_id: Identifier
     horizon: CoreLabelHorizon
+    selection_plan_id: Identifier
+    selection_plan_content_hash: ContentHash
     fold: CoreSelectionFold
     panel_manifest_id: Identifier
     panel_content_hash: ContentHash

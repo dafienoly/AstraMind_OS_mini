@@ -3,10 +3,9 @@ from __future__ import annotations
 import math
 
 import pytest
-from test_core_feature_selection_support import (
-    frozen_envelopes,
-    frozen_panel,
-    frozen_selection,
+from test_core_feature_selection_production_support import (
+    INSTRUMENTS,
+    production_validated_selection_case,
 )
 
 from astramind_mini.strategy_research.application.identity import research_hash
@@ -14,8 +13,6 @@ from astramind_mini.strategy_research.core.feature_processing import (
     CoreFeatureViewKind,
     CoreFeatureViewManifest,
     CoreFeatureViewStatus,
-    CoreProcessedFeatureEnvelope,
-    CoreProcessedFeaturePanelManifest,
     CoreProcessedFeatureRow,
     build_core_feature_view_manifest,
     project_core_feature_matrix,
@@ -27,144 +24,141 @@ from astramind_mini.strategy_research.core.feature_values import (
     CoreImputationSource,
     FeatureAvailabilityState,
 )
+from astramind_mini.strategy_research.core.labels import CoreLabelHorizon
+from astramind_mini.strategy_research.core.packages import ASTRAMIND_F0
 
-PACKAGE = "fixture-package"
-FEATURES = ("F1", "F2")
-INSTRUMENTS = ("A", "B", "C", "D", "E")
+PACKAGE = ASTRAMIND_F0.package_id
 
 
-def _parents(
-    *,
-    p_values: tuple[float | None, float | None] = (0.01, 0.20),
-    coverage_passed: tuple[bool, bool] = (True, True),
-) -> tuple[
-    tuple[CoreProcessedFeatureEnvelope, ...],
-    CoreProcessedFeaturePanelManifest,
-    CoreFeatureSelectionManifest,
-]:
-    envelopes = frozen_envelopes(
-        package_id=PACKAGE,
-        feature_ids=FEATURES,
-        instruments=INSTRUMENTS,
+def test_full_and_selected_views_bind_real_selection_and_project_fixed_columns() -> None:
+    parents, validated = production_validated_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
     )
-    panel = frozen_panel(envelopes)
-    selection = frozen_selection(
-        panel=panel,
-        envelopes=envelopes,
-        p_values=p_values,
-        coverage_passed=coverage_passed,
-    )
-    return envelopes, panel, selection
-
-
-def test_full_and_selected_views_project_exact_finite_fixed_columns() -> None:
-    envelopes, panel, selection = _parents()
+    selection = validated.manifest
     full = build_core_feature_view_manifest(
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=selection,
+        selection_manifest=validated,
         view_kind=CoreFeatureViewKind.FULL,
     )
     selected = build_core_feature_view_manifest(
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=selection,
+        selection_manifest=validated,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
-    assert full.feature_ids == FEATURES
-    assert selected.feature_ids == ("F1",)
-    assert full.view_id != selected.view_id
+    assert full.feature_ids == parents.panel_manifest.feature_order
+    assert selected.feature_ids == selection.selected_feature_ids
+    assert full.status == CoreFeatureViewStatus.BLOCKED
     projection = project_core_feature_matrix(
-        envelope=envelopes[0],
+        envelope=parents.processed_envelopes[0],
         view=selected,
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=selection,
+        selection_manifest=validated,
     )
+    feature_id = selection.selected_feature_ids[0]
     assert projection.row_order == INSTRUMENTS
     assert projection.column_order == (
-        "F1__value",
-        "F1__is_missing",
-        "F1__is_not_applicable",
+        f"{feature_id}__value",
+        f"{feature_id}__is_missing",
+        f"{feature_id}__is_not_applicable",
     )
     assert projection.values[0] == (0.0, 0.0, 0.0)
 
 
-def test_views_require_real_panel_selection_and_daily_lineage_parents() -> None:
-    envelopes, panel, selection = _parents(coverage_passed=(False, True))
-    blocked_full = build_core_feature_view_manifest(
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=selection,
-        view_kind=CoreFeatureViewKind.FULL,
+def test_empty_selection_and_rehashed_view_fail_closed() -> None:
+    empty_parents, empty_validated = production_validated_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
+        profile="empty",
     )
-    _, _, empty_selection = _parents(p_values=(0.20, 0.20))
-    empty_selected = build_core_feature_view_manifest(
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=empty_selection,
+    empty_view = build_core_feature_view_manifest(
+        selection_manifest=empty_validated,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
-    assert blocked_full.status == CoreFeatureViewStatus.BLOCKED
-    assert empty_selected.status == CoreFeatureViewStatus.BLOCKED
-    assert empty_selected.blocker_codes == ("selection_empty",)
+    assert empty_view.status == CoreFeatureViewStatus.BLOCKED
+    assert empty_view.blocker_codes == ("selection_empty",)
     with pytest.raises(ValueError, match="blocked"):
         project_core_feature_matrix(
-            envelope=envelopes[0],
-            view=empty_selected,
-            panel_manifest=panel,
-            processed_envelopes=envelopes,
-            selection_manifest=empty_selection,
+            envelope=empty_parents.processed_envelopes[0],
+            view=empty_view,
+            selection_manifest=empty_validated,
         )
 
-    attack = empty_selected.model_dump()
-    attack["feature_ids"] = ("F2",)
-    attack["feature_keys"] = ("F2@1.0.0",)
-    attack["model_columns"] = (
-        "F2__value",
-        "F2__is_missing",
-        "F2__is_not_applicable",
+    parents, validated = production_validated_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
     )
-    attack["model_input_dimension"] = 3
-    attack["blocker_codes"] = ()
-    attack["status"] = CoreFeatureViewStatus.READY
-    body = {key: value for key, value in attack.items() if key not in {"view_id", "content_hash"}}
-    attack_hash = research_hash({"schema": "core-feature-view-manifest-v1", **body})
-    attack["view_id"] = f"core-feature-view:{attack_hash.removeprefix('sha256:')}"
-    attack["content_hash"] = attack_hash
-    rehashed_view = CoreFeatureViewManifest.model_validate(attack)
-    with pytest.raises(ValueError, match="validated parent"):
-        project_core_feature_matrix(
-            envelope=envelopes[0],
-            view=rehashed_view,
-            panel_manifest=panel,
-            processed_envelopes=envelopes,
-            selection_manifest=empty_selection,
-        )
-
-    alternate_selection = frozen_selection(
-        panel=panel,
-        envelopes=envelopes,
-        p_values=(0.20, 0.01),
-    )
-    original_selected = build_core_feature_view_manifest(
-        panel_manifest=panel,
-        processed_envelopes=envelopes,
-        selection_manifest=frozen_selection(
-            panel=panel,
-            envelopes=envelopes,
-            p_values=(0.01, 0.20),
-        ),
+    selected = build_core_feature_view_manifest(
+        selection_manifest=validated,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
+    attack = selected.model_dump()
+    attack["selection_manifest_id"] = "forged-selection"
+    forged_view = CoreFeatureViewManifest.model_validate(_rehash_view(attack))
     with pytest.raises(ValueError, match="validated parent"):
         project_core_feature_matrix(
-            envelope=envelopes[0],
-            view=original_selected,
-            panel_manifest=panel,
-            processed_envelopes=envelopes,
-            selection_manifest=alternate_selection,
+            envelope=parents.processed_envelopes[0],
+            view=forged_view,
+            selection_manifest=validated,
         )
+
+
+def test_forged_selection_is_rejected_at_single_view_and_projection_entries() -> None:
+    parents, validated = production_validated_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
+    )
+    selection = validated.manifest
+    selected = build_core_feature_view_manifest(
+        selection_manifest=validated,
+        view_kind=CoreFeatureViewKind.SELECTED,
+    )
+    forged = _selection_with_rehashed_p_value(selection, 0.01)
+    with pytest.raises(ValueError, match="reconstructed true parents"):
+        build_core_feature_view_manifest(
+            selection_manifest=forged,
+            selection_parents=parents,
+            view_kind=CoreFeatureViewKind.SELECTED,
+        )
+    with pytest.raises(ValueError, match="reconstructed true parents"):
+        project_core_feature_matrix(
+            envelope=parents.processed_envelopes[0],
+            view=selected,
+            selection_manifest=forged,
+            selection_parents=parents,
+        )
+
+
+def _selection_with_rehashed_p_value(
+    selection: CoreFeatureSelectionManifest,
+    p_value: float,
+) -> CoreFeatureSelectionManifest:
+    data = selection.model_dump()
+    evidence = list(data["feature_evidence"])
+    selected_index = next(
+        index for index, item in enumerate(evidence) if item["bootstrap_p_value"] is not None
+    )
+    evidence[selected_index] = {
+        **evidence[selected_index],
+        "bootstrap_p_value": p_value,
+    }
+    data["feature_evidence"] = tuple(evidence)
+    body = {
+        key: value for key, value in data.items() if key not in {"manifest_id", "content_hash"}
+    }
+    content_hash = research_hash(
+        {"schema": "core-feature-selection-manifest-v1", **body}
+    )
+    data["manifest_id"] = f"core-selection:{content_hash.removeprefix('sha256:')}"
+    data["content_hash"] = content_hash
+    return CoreFeatureSelectionManifest.model_validate(data)
+
+
+def _rehash_view(data: dict[str, object]) -> dict[str, object]:
+    body = {
+        key: value for key, value in data.items() if key not in {"view_id", "content_hash"}
+    }
+    content_hash = research_hash({"schema": "core-feature-view-manifest-v1", **body})
+    data["view_id"] = f"core-feature-view:{content_hash.removeprefix('sha256:')}"
+    data["content_hash"] = content_hash
+    return data
 
 
 def test_rehashed_processed_row_still_rejects_non_finite_observed_value() -> None:

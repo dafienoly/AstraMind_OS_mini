@@ -18,7 +18,7 @@ from .models import (
     CoreSelectionReason,
     CoreSelectionSpec,
 )
-from .plan import CoreSelectionFold
+from .plan import CoreSelectionFold, CoreSelectionPlan
 from .priors import STAGE_P_TOKENIZER_RULES_HASH
 
 
@@ -26,6 +26,7 @@ def _freeze_selection_manifest(
     *,
     panel: CoreProcessedFeaturePanelManifest,
     labels: Sequence[CoreForwardReturnLabelBatch],
+    selection_plan: CoreSelectionPlan,
     fold: CoreSelectionFold,
     horizon: CoreLabelHorizon,
     prior_content_hash: str,
@@ -56,6 +57,8 @@ def _freeze_selection_manifest(
     payload = {
         "package_id": panel.package_id,
         "horizon": horizon,
+        "selection_plan_id": selection_plan.plan_id,
+        "selection_plan_content_hash": selection_plan.content_hash,
         "fold": fold,
         "panel_manifest_id": panel.panel_manifest_id,
         "panel_content_hash": panel.content_hash,

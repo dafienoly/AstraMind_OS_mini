@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from ..feature_processing import (
     CoreProcessedFeatureEnvelope,
@@ -10,7 +11,7 @@ from ..feature_processing import (
 )
 from ..labels import CoreForwardReturnLabelBatch, CoreLabelHorizon
 from .models import CoreSelectionSpec
-from .plan import CoreSelectionFold
+from .plan import CoreSelectionFold, CoreSelectionPlan
 from .priors import (
     STAGE_P_PRIORS_CONTENT_HASH,
     STAGE_P_TOKENIZER_RULES_HASH,
@@ -20,30 +21,87 @@ from .priors import (
 )
 
 
+@dataclass(frozen=True)
+class ValidatedSelectionInputs:
+    panel: CoreProcessedFeaturePanelManifest
+    envelopes: tuple[CoreProcessedFeatureEnvelope, ...]
+    labels: tuple[CoreForwardReturnLabelBatch, ...]
+    plan: CoreSelectionPlan
+    fold: CoreSelectionFold
+    horizon: CoreLabelHorizon
+    prior_entries: tuple[CoreSelectionPriorEntry, ...]
+    prior: CoreSelectionPriorManifest
+    spec: CoreSelectionSpec
+
+
 def validate_selection_inputs(
     *,
     panel_manifest: CoreProcessedFeaturePanelManifest,
     processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
     label_batches: Sequence[CoreForwardReturnLabelBatch],
+    selection_plan: CoreSelectionPlan,
     fold: CoreSelectionFold,
     horizon: CoreLabelHorizon,
     prior_manifest: CoreSelectionPriorManifest | None,
     spec: CoreSelectionSpec,
-) -> tuple[
-    tuple[CoreProcessedFeatureEnvelope, ...],
-    tuple[CoreForwardReturnLabelBatch, ...],
-    tuple[CoreSelectionPriorEntry, ...],
-    CoreSelectionPriorManifest,
-]:
+) -> ValidatedSelectionInputs:
+    panel_manifest = CoreProcessedFeaturePanelManifest.model_validate(
+        panel_manifest.model_dump()
+    )
+    envelopes = tuple(
+        CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
+        for item in processed_envelopes
+    )
+    labels = tuple(
+        CoreForwardReturnLabelBatch.model_validate(item.model_dump())
+        for item in label_batches
+    )
+    selection_plan = CoreSelectionPlan.model_validate(selection_plan.model_dump())
+    fold = CoreSelectionFold.model_validate(fold.model_dump())
+    spec = CoreSelectionSpec.model_validate(spec.model_dump())
     if horizon not in spec.allowed_horizons:
         raise ValueError("D1/D3/D5 diagnostics cannot influence H20/H60 selection")
-    prior = prior_manifest or load_core_selection_prior_manifest()
-    if prior.priors_content_hash != STAGE_P_PRIORS_CONTENT_HASH:
-        raise ValueError("selection requires the integrated immutable Stage P prior")
-    if prior.tokenizer.get("rules_hash") != STAGE_P_TOKENIZER_RULES_HASH:
-        raise ValueError("selection requires the integrated Stage P tokenizer identity")
-    envelopes = tuple(sorted(processed_envelopes, key=lambda item: item.decision_date))
-    labels = tuple(sorted(label_batches, key=lambda item: item.decision_date))
+    canonical_prior = load_core_selection_prior_manifest()
+    prior = CoreSelectionPriorManifest.model_validate(
+        (prior_manifest or canonical_prior).model_dump(by_alias=True)
+    )
+    if (
+        prior != canonical_prior
+        or prior.priors_content_hash != STAGE_P_PRIORS_CONTENT_HASH
+        or prior.tokenizer.get("rules_hash") != STAGE_P_TOKENIZER_RULES_HASH
+    ):
+        raise ValueError("selection requires the exact integrated Stage P prior manifest")
+    matching_folds = tuple(item for item in selection_plan.folds if item.fold_id == fold.fold_id)
+    if len(matching_folds) != 1 or matching_folds[0] != fold:
+        raise ValueError("selection fold must be an exact unique member of the selection plan")
+    _validate_daily_alignment(
+        panel_manifest,
+        envelopes,
+        labels,
+        fold,
+        horizon,
+    )
+    prior_entries = _validate_prior_binding(prior, panel_manifest, envelopes)
+    return ValidatedSelectionInputs(
+        panel=panel_manifest,
+        envelopes=envelopes,
+        labels=labels,
+        plan=selection_plan,
+        fold=fold,
+        horizon=horizon,
+        prior_entries=prior_entries,
+        prior=prior,
+        spec=spec,
+    )
+
+
+def _validate_daily_alignment(
+    panel_manifest: CoreProcessedFeaturePanelManifest,
+    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
+    labels: tuple[CoreForwardReturnLabelBatch, ...],
+    fold: CoreSelectionFold,
+    horizon: CoreLabelHorizon,
+) -> None:
     if (
         panel_manifest.decision_dates != fold.decision_dates
         or tuple(item.decision_date for item in envelopes) != fold.decision_dates
@@ -77,6 +135,13 @@ def validate_selection_inputs(
             or label.research_member_ids != envelope.instrument_order
         ):
             raise ValueError("label, processed panel and control U0 must exactly match")
+
+
+def _validate_prior_binding(
+    prior: CoreSelectionPriorManifest,
+    panel_manifest: CoreProcessedFeaturePanelManifest,
+    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
+) -> tuple[CoreSelectionPriorEntry, ...]:
     prior_entries = prior.package_entries(panel_manifest.package_id)
     if tuple(item.feature_id for item in prior_entries) != panel_manifest.feature_order:
         raise ValueError("frozen prior does not match package canonical order")
@@ -92,7 +157,7 @@ def validate_selection_inputs(
     versions = {(row.feature_id, row.feature_definition_version) for row in envelopes[0].rows}
     if any((item.feature_id, item.definition_version) not in versions for item in prior_entries):
         raise ValueError("processed definition versions differ from frozen prior")
-    return envelopes, labels, prior_entries, prior
+    return prior_entries
 
 
-__all__ = ["validate_selection_inputs"]
+__all__ = ["ValidatedSelectionInputs", "validate_selection_inputs"]

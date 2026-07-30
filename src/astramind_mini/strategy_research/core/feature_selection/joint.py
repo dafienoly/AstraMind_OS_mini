@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from datetime import date
 
 from ...application.identity import research_hash
 from ..feature_processing import (
     CoreFeatureViewManifest,
     CoreProcessedFeatureEnvelope,
-    CoreProcessedFeaturePanelManifest,
 )
 from ..labels import CoreLabelHorizon
 from .clustering import complete_linkage_clusters
@@ -29,15 +28,21 @@ from .models import (
     CorePairCorrelationEvidence,
     CoreSelectionCluster,
 )
+from .parent_validation import (
+    CoreFeatureSelectionParents,
+    ValidatedCoreFeatureSelection,
+)
 from .representative import representative_sort_key
 
 
 def build_core_joint_selected_view_manifests(
     *,
     horizon: CoreLabelHorizon,
-    selections: Mapping[str, CoreFeatureSelectionManifest],
-    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
-    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
+    selections: Mapping[
+        str,
+        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    ],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None = None,
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[CoreJointSelectedViewManifest, ...]:
     """Publish three pairs and one triple for one horizon."""
@@ -47,19 +52,24 @@ def build_core_joint_selected_view_manifests(
     ):
         raise ValueError("joint publication requires exactly all three canonical packages")
     expected_packages = set(CANONICAL_JOINT_PACKAGE_ORDER)
-    if any(
-        set(inputs) != expected_packages
-        for inputs in (selections, processed_envelopes, panel_manifests, single_views)
+    required_inputs = (selections, single_views)
+    if any(set(inputs) != expected_packages for inputs in required_inputs) or (
+        selection_parents is not None
+        and set(selection_parents) != expected_packages
     ):
         raise ValueError("joint publication cannot omit or add packages")
+    validated_inputs = collect_joint_inputs(
+        package_ids=CANONICAL_JOINT_PACKAGE_ORDER,
+        horizon=horizon,
+        selections=selections,
+        selection_parents=selection_parents,
+        single_views=single_views,
+    )
     results = [
         _build_joint(
             package_ids=package_ids,
             horizon=horizon,
-            selections=selections,
-            processed_envelopes=processed_envelopes,
-            panel_manifests=panel_manifests,
-            single_views=single_views,
+            joint_inputs=validated_inputs.subset(package_ids),
         )
         for width in (2, 3)
         for package_ids in itertools.combinations(CANONICAL_JOINT_PACKAGE_ORDER, width)
@@ -73,19 +83,8 @@ def _build_joint(
     *,
     package_ids: tuple[str, ...],
     horizon: CoreLabelHorizon,
-    selections: Mapping[str, CoreFeatureSelectionManifest],
-    processed_envelopes: Mapping[str, Sequence[CoreProcessedFeatureEnvelope]],
-    panel_manifests: Mapping[str, CoreProcessedFeaturePanelManifest],
-    single_views: Mapping[str, CoreFeatureViewManifest],
+    joint_inputs: JointInputs,
 ) -> CoreJointSelectedViewManifest:
-    joint_inputs = collect_joint_inputs(
-        package_ids=package_ids,
-        horizon=horizon,
-        selections=selections,
-        processed_envelopes=processed_envelopes,
-        panel_manifests=panel_manifests,
-        single_views=single_views,
-    )
     correlations, frozen_clusters, selected_parents = _joint_clusters(joint_inputs)
     selected_manifests = joint_inputs.manifests
     envelopes_by_package = joint_inputs.envelopes_by_package

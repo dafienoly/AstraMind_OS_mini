@@ -43,6 +43,14 @@ from .models import (
     CoreSelectionSpec,
     CoreSubfoldRankICEvidence,
 )
+from .parent_validation import (
+    CoreFeatureSelectionParents,
+    ValidatedCoreFeatureSelection,
+    rebuild_core_feature_selection,
+    rebuild_validated_core_feature_selection,
+    resolve_validated_core_feature_selection,
+    validate_core_feature_selection,
+)
 from .plan import (
     CoreSelectionFold,
     CoreSelectionPlan,
@@ -75,6 +83,7 @@ __all__ = [
     "CoreDailyRankICEvidence",
     "CoreFeatureSelectionEvidence",
     "CoreFeatureSelectionManifest",
+    "CoreFeatureSelectionParents",
     "CoreFoldCoverageEvidence",
     "CoreJointDailyBinding",
     "CoreJointFeatureParent",
@@ -96,6 +105,7 @@ __all__ = [
     "CoreSubfoldRankICEvidence",
     "CoreTurnoverReason",
     "CoreTurnoverTransitionEvidence",
+    "ValidatedCoreFeatureSelection",
     "average_ranks",
     "benjamini_hochberg",
     "build_core_joint_selected_view_manifests",
@@ -108,6 +118,9 @@ __all__ = [
     "load_core_selection_prior_manifest",
     "pair_correlation_evidence",
     "project_core_joint_selected_matrix",
+    "rebuild_core_feature_selection",
+    "rebuild_validated_core_feature_selection",
+    "resolve_validated_core_feature_selection",
     "select_core_features",
     "selection_seed",
     "spearman",
@@ -115,4 +128,5 @@ __all__ = [
     "splitmix64_next",
     "subfold_direction_consistent",
     "summarize_subfold_rankic",
+    "validate_core_feature_selection",
 ]

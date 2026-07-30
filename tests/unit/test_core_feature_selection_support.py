@@ -1,5 +1,3 @@
-"""Auditable Stage S parent fixtures shared by view and joint contract tests."""
-
 from __future__ import annotations
 
 import itertools
@@ -36,6 +34,7 @@ from astramind_mini.strategy_research.core.feature_selection import (
     CoreTurnoverTransitionEvidence,
     benjamini_hochberg,
     freeze_core_selection_fold,
+    freeze_core_selection_plan,
     selection_seed,
 )
 from astramind_mini.strategy_research.core.feature_selection.coverage import (
@@ -134,10 +133,13 @@ def _freeze_selection_fixture(
 ) -> CoreFeatureSelectionManifest:
     pairs, clusters, selected = _selection_relationships(evidence)
     spec = CoreSelectionSpec()
+    plan = freeze_core_selection_plan((fold,))
     payload = {
         "schema": "core-feature-selection-manifest-v1",
         "package_id": panel.package_id,
         "horizon": horizon,
+        "selection_plan_id": plan.plan_id,
+        "selection_plan_content_hash": plan.content_hash,
         "fold": fold,
         "panel_manifest_id": panel.panel_manifest_id,
         "panel_content_hash": panel.content_hash,

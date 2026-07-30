@@ -19,6 +19,10 @@ from .view_lineage import validate_view_panel_envelopes
 
 if TYPE_CHECKING:
     from ..feature_selection.models import CoreFeatureSelectionManifest
+    from ..feature_selection.parent_validation import (
+        CoreFeatureSelectionParents,
+        ValidatedCoreFeatureSelection,
+    )
 
 
 class CoreFeatureViewKind(StrEnum):
@@ -102,28 +106,28 @@ class CoreFeatureViewManifest(ContractModel):
 
 def build_core_feature_view_manifest(
     *,
-    panel_manifest: CoreProcessedFeaturePanelManifest,
-    processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
-    selection_manifest: CoreFeatureSelectionManifest,
+    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    selection_parents: CoreFeatureSelectionParents | None = None,
     view_kind: CoreFeatureViewKind,
 ) -> CoreFeatureViewManifest:
-    """Freeze a view; selection evidence remains the sole owner of chosen parents."""
-    from ..feature_selection.models import CoreFeatureSelectionManifest
+    """Freeze a view only after reconstructing selection from every true parent."""
+    from ..feature_selection.parent_validation import (
+        resolve_validated_core_feature_selection,
+    )
 
-    panel_manifest = CoreProcessedFeaturePanelManifest.model_validate(panel_manifest.model_dump())
-    selection_manifest = CoreFeatureSelectionManifest.model_validate(
-        selection_manifest.model_dump()
+    validated = resolve_validated_core_feature_selection(
+        selection_manifest,
+        selection_parents,
     )
+    selection_manifest = validated.manifest
+    selection_parents = validated.parents
+    panel_manifest = selection_parents.panel_manifest
     _validate_selection_panel(selection_manifest, panel_manifest)
-    envelopes = tuple(
-        sorted(
-            (
-                CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
-                for item in processed_envelopes
-            ),
-            key=lambda item: item.decision_date,
-        )
-    )
+    envelopes = selection_parents.processed_envelopes
+    if tuple(item.decision_date for item in envelopes) != tuple(
+        sorted(item.decision_date for item in envelopes)
+    ):
+        raise ValueError("feature view envelopes must preserve parent order")
     validate_view_panel_envelopes(panel_manifest, envelopes)
     feature_keys, feature_ids, blockers = _view_feature_identity(
         panel_manifest,
@@ -247,21 +251,26 @@ def _freeze_view(
 def validate_core_feature_view_parents(
     *,
     view: CoreFeatureViewManifest,
-    panel_manifest: CoreProcessedFeaturePanelManifest,
-    processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
-    selection_manifest: CoreFeatureSelectionManifest,
+    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    selection_parents: CoreFeatureSelectionParents | None = None,
 ) -> tuple[CoreProcessedFeatureEnvelope, ...]:
     """Rebuild a view from validated parents and reject a self-rehashed substitute."""
+    from ..feature_selection.parent_validation import (
+        resolve_validated_core_feature_selection,
+    )
+
+    validated = resolve_validated_core_feature_selection(
+        selection_manifest,
+        selection_parents,
+    )
     view = CoreFeatureViewManifest.model_validate(view.model_dump())
     expected = build_core_feature_view_manifest(
-        panel_manifest=panel_manifest,
-        processed_envelopes=processed_envelopes,
-        selection_manifest=selection_manifest,
+        selection_manifest=validated,
         view_kind=view.view_kind,
     )
     if view != expected:
         raise ValueError("feature view differs from its validated parent objects")
-    return tuple(sorted(processed_envelopes, key=lambda item: item.decision_date))
+    return validated.parents.processed_envelopes
 
 
 def _excluded_dates(

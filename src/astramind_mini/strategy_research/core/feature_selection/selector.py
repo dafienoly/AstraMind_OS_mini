@@ -24,11 +24,11 @@ from .models import (
     CoreSelectionReason,
     CoreSelectionSpec,
 )
-from .plan import CoreSelectionFold
+from .plan import CoreSelectionFold, CoreSelectionPlan
 from .priors import CoreSelectionPriorEntry, CoreSelectionPriorManifest
 from .representative import representative_sort_key
 from .selection_freeze import _freeze_selection_manifest
-from .validation import validate_selection_inputs
+from .validation import ValidatedSelectionInputs, validate_selection_inputs
 
 
 def select_core_features(
@@ -36,6 +36,7 @@ def select_core_features(
     panel_manifest: CoreProcessedFeaturePanelManifest,
     processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
     label_batches: Sequence[CoreForwardReturnLabelBatch],
+    selection_plan: CoreSelectionPlan,
     fold: CoreSelectionFold,
     horizon: CoreLabelHorizon,
     prior_manifest: CoreSelectionPriorManifest | None = None,
@@ -43,29 +44,36 @@ def select_core_features(
 ) -> CoreFeatureSelectionManifest:
     """Freeze one package/horizon selection using only exact fold inputs."""
     rules = CoreSelectionSpec.model_validate((spec or CoreSelectionSpec()).model_dump())
-    envelopes, labels, prior_entries, prior = validate_selection_inputs(
+    inputs = validate_selection_inputs(
         panel_manifest=panel_manifest,
         processed_envelopes=processed_envelopes,
         label_batches=label_batches,
+        selection_plan=selection_plan,
         fold=fold,
         horizon=horizon,
         prior_manifest=prior_manifest,
         spec=rules,
     )
+    return _select_validated(inputs)
+
+
+def _select_validated(
+    inputs: ValidatedSelectionInputs,
+) -> CoreFeatureSelectionManifest:
     evidence = _initial_evidence(
-        prior_entries=prior_entries,
-        envelopes=envelopes,
-        labels=labels,
-        fold=fold,
-        horizon=horizon,
-        spec=rules,
+        prior_entries=inputs.prior_entries,
+        envelopes=inputs.envelopes,
+        labels=inputs.labels,
+        fold=inputs.fold,
+        horizon=inputs.horizon,
+        spec=inputs.spec,
     )
     bh_results = benjamini_hochberg(
         {
             item.feature_key: (item.bootstrap_p_value if item.selection_eligible else None)
             for item in evidence
         },
-        fdr=rules.bh_fdr,
+        fdr=inputs.spec.bh_fdr,
     )
     evidence = tuple(_apply_bh(item, bh_results.get(item.feature_key)) for item in evidence)
     passed = tuple(item for item in evidence if item.bh_passed)
@@ -75,17 +83,17 @@ def select_core_features(
             right_feature_key=right.feature_key,
             left_feature_id=left.feature_id,
             right_feature_id=right.feature_id,
-            left_envelopes=envelopes,
-            right_envelopes=envelopes,
-            minimum_pairs=rules.correlation_minimum_daily_pairs,
-            minimum_dates=rules.correlation_minimum_valid_dates,
+            left_envelopes=inputs.envelopes,
+            right_envelopes=inputs.envelopes,
+            minimum_pairs=inputs.spec.correlation_minimum_daily_pairs,
+            minimum_dates=inputs.spec.correlation_minimum_valid_dates,
         )
         for left, right in itertools.combinations(passed, 2)
     )
     clusters = complete_linkage_clusters(
         tuple(item.feature_key for item in passed),
         correlation_distance_map(correlations),
-        maximum_distance=rules.complete_linkage_maximum_distance,
+        maximum_distance=inputs.spec.complete_linkage_maximum_distance,
     )
     evidence_by_key = {item.feature_key: item for item in evidence}
     frozen_clusters = tuple(
@@ -101,12 +109,13 @@ def select_core_features(
     selected_set = {item.representative for item in frozen_clusters}
     evidence = tuple(_apply_cluster_result(item, selected_set) for item in evidence)
     return _freeze_selection_manifest(
-        panel=panel_manifest,
-        labels=labels,
-        fold=fold,
-        horizon=horizon,
-        prior_content_hash=prior.priors_content_hash,
-        spec=rules,
+        panel=inputs.panel,
+        labels=inputs.labels,
+        selection_plan=inputs.plan,
+        fold=inputs.fold,
+        horizon=inputs.horizon,
+        prior_content_hash=inputs.prior.priors_content_hash,
+        spec=inputs.spec,
         evidence=evidence,
         correlations=correlations,
         clusters=frozen_clusters,

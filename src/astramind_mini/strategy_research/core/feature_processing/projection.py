@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
 from datetime import date
 from typing import TYPE_CHECKING
 
@@ -13,7 +12,6 @@ from astramind_mini.contracts.base import ContentHash, ContractModel, Identifier
 
 from ...application.identity import research_hash
 from .models import CoreProcessedFeatureEnvelope, CoreProcessedFeatureRow
-from .panel import CoreProcessedFeaturePanelManifest
 from .views import (
     CoreFeatureViewManifest,
     CoreFeatureViewStatus,
@@ -22,6 +20,10 @@ from .views import (
 
 if TYPE_CHECKING:
     from ..feature_selection.models import CoreFeatureSelectionManifest
+    from ..feature_selection.parent_validation import (
+        CoreFeatureSelectionParents,
+        ValidatedCoreFeatureSelection,
+    )
 
 
 class CoreFeatureMatrixProjection(ContractModel):
@@ -55,16 +57,14 @@ def project_core_feature_matrix(
     *,
     envelope: CoreProcessedFeatureEnvelope,
     view: CoreFeatureViewManifest,
-    panel_manifest: CoreProcessedFeaturePanelManifest,
-    processed_envelopes: Sequence[CoreProcessedFeatureEnvelope],
-    selection_manifest: CoreFeatureSelectionManifest,
+    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
+    selection_parents: CoreFeatureSelectionParents | None = None,
 ) -> CoreFeatureMatrixProjection:
     """Materialize the exact finite matrix; downstream modeling performs no processing."""
     validated_envelopes = validate_core_feature_view_parents(
         view=view,
-        panel_manifest=panel_manifest,
-        processed_envelopes=processed_envelopes,
         selection_manifest=selection_manifest,
+        selection_parents=selection_parents,
     )
     envelope = CoreProcessedFeatureEnvelope.model_validate(envelope.model_dump())
     if envelope not in validated_envelopes:
