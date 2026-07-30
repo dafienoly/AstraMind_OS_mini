@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MarketDashboard } from "./MarketDashboard";
 import { fallbackModelStatus } from "./model-evidence/testSupport";
+import { DashboardBlocked } from "./OverviewView";
 import { FakeEventSource, realtimeProjection } from "./realtimeTestSupport";
 import type {
   IndustryLifecycleProjection,
@@ -155,6 +156,20 @@ describe("MarketDashboard", () => {
     expect(FakeEventSource.instances[0]?.closed).toBe(true);
   });
 
+});
+
+describe("DashboardBlocked business language", () => {
+  afterEach(() => cleanup());
+
+  it("fails closed when a new internal gap code has no registered explanation", () => {
+    const rawCode = "brand_new_internal_code";
+    render(<DashboardBlocked gaps={[rawCode]} />);
+
+    expect(screen.getByText("暂无法解释的系统状态")).toBeVisible();
+    expect(screen.getByText(rawCode)).not.toBeVisible();
+    expect(screen.getByLabelText("技术详情")).not.toHaveAttribute("open");
+    expect(screen.queryByText("数据可用")).not.toBeInTheDocument();
+  });
 });
 
 function projection(): MarketDashboardProjection {

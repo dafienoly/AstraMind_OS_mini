@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useRouteLoadPhase } from "../../app-shell/routeProgress";
+import { marketBusinessText } from "../../business-language/marketBusinessText";
 import { stockWorkbenchHref } from "../../stock-workbench/focus";
 import {
   fetchMarketWatchlist,
@@ -55,6 +56,9 @@ export function StockRealtimePage() {
     watchlistLoaded ? "ready" : "loading_content",
     watchlistLoaded ? "个股观察已就绪" : "正在读取本地自选",
   );
+  const realtimeSummary = message ?? (projection
+    ? `${marketBusinessText(projection.state)} · ${projection.quotes.length} 只`
+    : "等待行情");
   return <div className="rotation-app market-dashboard-app">
     <main className="rotation-main realtime-stock-main">
       <header className="realtime-stock-heading">
@@ -76,8 +80,11 @@ export function StockRealtimePage() {
           <input onChange={(event) => setIndustryCode(event.target.value.trim())}
             placeholder="例如 801080.SI" value={industryCode} />
         </label>}
-        <span data-state={projection?.state ?? "disconnected"}>
-          {message ?? (projection ? `${projection.state} · ${projection.quotes.length} 只` : "等待行情")}
+        <span
+          aria-label={`实时行情状态：${realtimeSummary}`}
+          data-state={projection?.state ?? "disconnected"}
+        >
+          {realtimeSummary}
         </span>
       </div>
       <div className="realtime-stock-workspace">
