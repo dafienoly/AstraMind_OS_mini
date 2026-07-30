@@ -5,7 +5,10 @@
 - 创建：2026-07-30
 - 对应需求：REQ-2026-0003 v1.8.0、REQ-2026-0008 v2.2.0
 - 对应工作包：WP-0061
-- 实现状态：已批准由 WP-0063 实施；尚未完成 React、CSS、路由和浏览器验收
+- 实现状态：已由 [WP-0063](../../../planning/work-packages/WP-0063-method-status-page-implementation.md)
+  完成 React、CSS、路由和浏览器验收；实际对照截图见
+  [桌面 1440px](./actual-desktop-1440x1000.png) 与
+  [窄屏 390px](./actual-mobile-390x844.png)。
 
 ## 页面与唯一任务
 
