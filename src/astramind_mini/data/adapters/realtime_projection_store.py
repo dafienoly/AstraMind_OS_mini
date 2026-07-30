@@ -22,6 +22,7 @@ from ..contracts.realtime_projection import (
     RealtimeMarketProjection,
     RealtimeMinuteBar,
 )
+from .realtime_aggregation_evidence import expected_minute_keys, verified_observations
 
 
 class RealtimeProjectionStore:
@@ -84,6 +85,13 @@ class RealtimeProjectionStore:
                     gzip.decompress(path.read_bytes())
                 )
                 rows.extend(row for row in payload if row.instrument_id == instrument_id)
+        parts = self._root / "session-parts" / "1m" / market_date.isoformat()
+        if parts.is_dir():
+            for path in sorted(parts.glob("*.json.gz")):
+                payload = TypeAdapter(tuple[RealtimeMinuteBar, ...]).validate_json(
+                    gzip.decompress(path.read_bytes())
+                )
+                rows.extend(row for row in payload if row.instrument_id == instrument_id)
         try:
             with_current = self.current_instruments()
         except FileNotFoundError:
@@ -141,6 +149,20 @@ class RealtimeProjectionStore:
         _write_once(raw_path, gzip.compress(canonical_json(raw_payload), mtime=0))
         aggregate = self.append_aggregate(kind="1m", market_date=market_date, rows=rows)
         return raw_path, aggregate
+
+    def persist_session_parts(
+        self,
+        *,
+        market_date: date,
+        rows: Sequence[RealtimeMinuteBar],
+    ) -> Path | None:
+        if not rows:
+            return None
+        payload = [row.model_dump(mode="json") for row in rows]
+        digest = content_hash(payload).rsplit(":", 1)[-1]
+        path = self._root / "session-parts" / "1m" / market_date.isoformat() / f"{digest}.json.gz"
+        _write_once(path, gzip.compress(canonical_json(payload), mtime=0))
+        return path
 
     def append_aggregate(
         self,
@@ -206,6 +228,14 @@ class RealtimeProjectionStore:
             or tuple(session_manifest.get("microbatch_ids", ())) != microbatch_ids
         ):
             raise ValueError("实时会话微批身份与会话清单不一致")
+        observations = verified_observations(directory, microbatch_paths)
+        expected_keys = expected_minute_keys(
+            observations,
+            ended_at=datetime.fromisoformat(str(session_manifest["ended_at"])),
+        )
+        aggregate_keys = {(row.instrument_id, row.minute) for row in aggregate_rows}
+        if not expected_keys.issubset(aggregate_keys):
+            raise ValueError("实时会话分钟聚合遗漏应聚合的证券或市场分钟")
         payload = {
             "session_id": session_id,
             "verified_at": datetime.now().astimezone().isoformat(),
@@ -214,6 +244,9 @@ class RealtimeProjectionStore:
             "microbatch_hashes": microbatch_hashes,
             "row_count": len(aggregate_rows),
             "primary_key_hash": content_hash(sorted(keys)),
+            "expected_coverage_hash": content_hash(
+                sorted((instrument, minute.isoformat()) for instrument, minute in expected_keys)
+            ),
             "evidence_hash": content_hash(
                 {
                     "session_id": session_id,
@@ -221,6 +254,11 @@ class RealtimeProjectionStore:
                     "microbatch_hashes": microbatch_hashes,
                     "row_count": len(aggregate_rows),
                     "primary_key_hash": content_hash(sorted(keys)),
+                    "expected_coverage_hash": content_hash(
+                        sorted(
+                            (instrument, minute.isoformat()) for instrument, minute in expected_keys
+                        )
+                    ),
                 }
             ),
         }
@@ -265,9 +303,13 @@ class RealtimeProjectionStore:
                 removed.append(target)
         return tuple(removed)
 
-    def prune_minute_history(self, *, retained_dates: frozenset[date]) -> tuple[Path, ...]:
+    def prune_transient_minute_payloads(
+        self,
+        *,
+        retained_dates: frozenset[date],
+    ) -> tuple[Path, ...]:
         removed = []
-        for relative in (Path("aggregates/1m"), Path("warm-start")):
+        for relative in (Path("warm-start"), Path("session-parts/1m")):
             root = self._root / relative
             if not root.is_dir():
                 continue
@@ -347,14 +389,32 @@ class RealtimeProjectionStore:
                 or tuple(str(value) for value in session_microbatch_ids) != microbatch_ids
             ):
                 return False
+            directory = path.parent
+            manifest_paths = tuple(
+                self._root / str(relative) for relative in sorted(microbatch_hashes)
+            )
+            observations = verified_observations(directory, manifest_paths)
+            expected_keys = expected_minute_keys(
+                observations,
+                ended_at=datetime.fromisoformat(str(session["ended_at"])),
+            )
+            if not expected_keys.issubset({(row.instrument_id, row.minute) for row in rows}):
+                return False
             identity = {
                 "session_id": evidence["session_id"],
                 "aggregate_hashes": hashes,
                 "microbatch_hashes": microbatch_hashes,
                 "row_count": evidence["row_count"],
                 "primary_key_hash": evidence["primary_key_hash"],
+                "expected_coverage_hash": evidence["expected_coverage_hash"],
             }
-            return bool(evidence.get("evidence_hash") == content_hash(identity))
+            expected_hash = content_hash(
+                sorted((instrument, minute.isoformat()) for instrument, minute in expected_keys)
+            )
+            return bool(
+                evidence.get("expected_coverage_hash") == expected_hash
+                and evidence.get("evidence_hash") == content_hash(identity)
+            )
         except (FileNotFoundError, KeyError, OSError, TypeError, ValueError):
             return False
 

@@ -84,13 +84,11 @@ def _reconcile_group(parts: list[RealtimeMinuteBar]) -> RealtimeMinuteBar:
         conflict = any(_market_values(row) != _market_values(chosen) for row in l1)
         if not conflict:
             return chosen
-        return chosen.model_copy(
-            update={
-                "is_complete": False,
-                "lifecycle": "forming",
-                "coverage_minutes": 0,
-                "known_gaps": ("warm_l1_content_conflict",),
-            }
+        return chosen.rebuild(
+            is_complete=False,
+            lifecycle="forming",
+            coverage_minutes=0,
+            known_gaps=("warm_l1_content_conflict",),
         )
     ordered = sorted(
         unique.values(),
@@ -111,6 +109,7 @@ def _reconcile_group(parts: list[RealtimeMinuteBar]) -> RealtimeMinuteBar:
     gaps = {gap for row in ordered for gap in row.known_gaps}
     if overlap:
         gaps.add("overlapping_session_parts")
+    complete = all(row.is_complete for row in ordered) and not overlap and not gaps
     identity = content_hash(
         {"parts": [row.source_identity or row.model_dump(mode="json") for row in ordered]}
     )
@@ -130,11 +129,10 @@ def _reconcile_group(parts: list[RealtimeMinuteBar]) -> RealtimeMinuteBar:
         source_identity=identity,
         first_observed_at=ordered[0].first_observed_at,
         last_observed_at=ordered[-1].last_observed_at,
-        is_complete=all(row.is_complete for row in ordered) and not overlap,
+        is_complete=complete,
         known_gaps=tuple(sorted(gaps)),
-        lifecycle="sealed" if not overlap else "forming",
-        coverage_minutes=1 if not overlap else 0,
-        content_identity=identity,
+        lifecycle="sealed" if complete else "forming",
+        coverage_minutes=1 if complete else 0,
         counter_epoch=max(row.counter_epoch for row in ordered),
     )
 
@@ -195,7 +193,6 @@ def _aggregate_complete(
         is_complete=True,
         lifecycle="sealed",
         coverage_minutes=frequency,
-        content_identity=identity,
         counter_epoch=max(row.counter_epoch for row in ordered),
     )
 

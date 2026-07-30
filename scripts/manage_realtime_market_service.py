@@ -131,6 +131,11 @@ def _status() -> int:
     if installed or state == "query_failed":
         _print_scheduler_message(completed)
     print(f"scheduler_exit_code={completed.returncode}")
+    last_result = _scheduler_field(completed.stdout, "上次结果", "Last Result")
+    if last_result is not None:
+        print(f"scheduler_last_result={last_result}")
+        if last_result not in {"0", "0x0"}:
+            print("scheduler_recovery_action=检查 wsl.exe 启动、发行版与任务工作目录")
     runtime = RealtimeStatusStore(control_root).read()
     if runtime is None:
         print("wsl_process_state=not_running")
@@ -220,7 +225,10 @@ def _mutate_existing(action: str) -> int:
         completed = _task_command(["/Run", "/TN", TASK_NAME])
         state = "running" if completed.returncode == 0 else "error"
     else:
-        _task_command(["/End", "/TN", TASK_NAME])
+        ended = _task_command(["/End", "/TN", TASK_NAME])
+        if action == "pause" and ended.returncode != 0:
+            _print_result("error", ended)
+            return ended.returncode
         command = (
             ["/Change", "/TN", TASK_NAME, "/Disable"]
             if action == "pause"
@@ -244,11 +252,26 @@ def _run_task(make_target: str) -> int:
     log_root = Path("var/control/realtime-market-service")
     log_root.mkdir(parents=True, exist_ok=True)
     log_path = log_root / "service.log"
-    process = subprocess.Popen(
-        ["/usr/bin/make", make_target],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    log_path.touch(exist_ok=True)
+    try:
+        process = subprocess.Popen(
+            ["/usr/bin/make", make_target],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+    except OSError as error:
+        _append_bounded_log(log_path, f"service_start_failed:{type(error).__name__}\n".encode())
+        RealtimeStatusStore(log_root).publish(
+            "blocked",
+            process_state="exited",
+            feed_state="blocked",
+            projection_state="blocked",
+            exit_code=127,
+            last_error="service_process_start_failed",
+            recovery_action="检查 /usr/bin/make 与任务工作目录后重试",
+            successful_heartbeat=False,
+        )
+        return 127
     assert process.stdout is not None
     while chunk := process.stdout.read(64 * 1024):
         _append_bounded_log(log_path, chunk)
@@ -256,16 +279,38 @@ def _run_task(make_target: str) -> int:
     status_store = RealtimeStatusStore(log_root)
     current = status_store.read()
     terminal_state = (
-        current.state if current is not None else ("stopped" if returncode == 0 else "blocked")
+        current.state
+        if returncode == 0 and current is not None
+        else "stopped"
+        if returncode == 0
+        else "blocked"
     )
     status_store.publish(
         terminal_state,
         process_state="exited",
-        feed_state=current.feed_state if current is not None else "not_started",
-        projection_state=current.projection_state if current is not None else "unknown",
+        feed_state=(
+            current.feed_state
+            if returncode == 0 and current is not None
+            else "not_started"
+            if returncode == 0
+            else "blocked"
+        ),
+        projection_state=(
+            current.projection_state
+            if returncode == 0 and current is not None
+            else "unknown"
+            if returncode == 0
+            else "blocked"
+        ),
         completed_day_state=current.completed_day_state if current is not None else "unknown",
         exit_code=returncode,
-        last_error=current.last_error if current is not None else None,
+        last_error=(
+            current.last_error
+            if current is not None and current.last_error
+            else "service_process_failed"
+            if returncode != 0
+            else None
+        ),
         retry_failures=current.retry_failures if current is not None else (),
         recovery_action=current.recovery_action if current is not None else None,
         successful_heartbeat=False,
@@ -304,14 +349,30 @@ def _append_bounded_log(path: Path, payload: bytes, *, max_bytes: int = 2_000_00
 
 
 def _task_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["schtasks.exe", *arguments],
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="gbk",
-        errors="replace",
-    )
+    try:
+        return subprocess.run(
+            ["schtasks.exe", *arguments],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="gbk",
+            errors="replace",
+        )
+    except OSError as error:
+        return subprocess.CompletedProcess(
+            ["schtasks.exe", *arguments],
+            127,
+            "",
+            f"scheduler_query_start_failed:{type(error).__name__}",
+        )
+
+
+def _scheduler_field(payload: str, *labels: str) -> str | None:
+    for line in payload.splitlines():
+        name, separator, value = line.partition(":")
+        if separator and name.strip().casefold() in {label.casefold() for label in labels}:
+            return value.strip()
+    return None
 
 
 def _elevated_install(artifact: Path) -> subprocess.CompletedProcess[str]:

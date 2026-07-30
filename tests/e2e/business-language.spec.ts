@@ -101,6 +101,7 @@ test("approved stock inspector exposes deterministic minute scales and five-day 
   await page.goto(
     "/stocks/000001.SZ?origin=watchlist&mode=completed&return_target=market_stocks",
   );
+  await expect(page.locator(".route-loading-overlay")).toHaveCount(0);
   await page.getByRole("button", { name: "分钟", exact: true }).click();
 
   await expect(page.getByLabel("分钟周期与窗口")).toBeVisible();

@@ -10,6 +10,7 @@ from astramind_mini.data.adapters.miniqmt_bridge import (
     MiniQMTBridgeClient,
     MiniQMTBridgeError,
     _redact_stderr,
+    sanitize_bridge_failure,
 )
 
 
@@ -45,6 +46,16 @@ def test_request_timeout_force_stops_bridge(monkeypatch: pytest.MonkeyPatch) -> 
 
     asyncio.run(request())
     assert forced
+
+
+def test_bridge_failure_code_and_windows_detail_are_sanitized() -> None:
+    code, detail = sanitize_bridge_failure(
+        "WindowsError: C:\\Users\\alice\\secret",
+        "C:\\Users\\alice\\AppData\\secret /home/alice/private",
+    )
+
+    assert code == "bridge_external_error"
+    assert detail == r"C:\Users\<redacted>\AppData\secret /home/<redacted>/private"
 
 
 def test_bridge_stderr_redacts_local_user_paths() -> None:

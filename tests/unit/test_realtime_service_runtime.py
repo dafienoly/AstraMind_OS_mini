@@ -9,6 +9,7 @@ from astramind_mini.local_ops.realtime_service_runtime import (
     RealtimeServiceLock,
     RealtimeStatusStore,
     active_capture_deadline,
+    realtime_ingestion_open,
     realtime_session_state,
     retained_open_dates,
 )
@@ -41,6 +42,8 @@ def test_runtime_names_preopen_lunch_capture_and_sealing_phases() -> None:
     assert realtime_session_state(datetime(2026, 7, 30, 3, 0, tzinfo=UTC)) == "capturing"
     assert realtime_session_state(datetime(2026, 7, 30, 4, 0, tzinfo=UTC)) == "lunch_break"
     assert realtime_session_state(datetime(2026, 7, 30, 7, 1, tzinfo=UTC)) == "sealing"
+    assert realtime_ingestion_open(datetime(2026, 7, 30, 6, 59, 59, tzinfo=UTC))
+    assert not realtime_ingestion_open(datetime(2026, 7, 30, 7, 0, tzinfo=UTC))
 
 
 def test_retention_keeps_last_five_open_dates_only() -> None:
@@ -108,3 +111,28 @@ def test_runtime_status_retains_bounded_retry_root_causes(tmp_path: Path) -> Non
     ]
     assert status.exit_code == 2
     assert status.recovery_action == "检查 bridge stderr"
+
+
+def test_recovering_status_inherits_last_feed_times_and_heartbeat(tmp_path: Path) -> None:
+    store = RealtimeStatusStore(tmp_path)
+    message_at = datetime(2026, 7, 30, 2, 0, tzinfo=UTC)
+    microbatch_at = datetime(2026, 7, 30, 2, 0, 1, tzinfo=UTC)
+    store.publish(
+        "capturing",
+        last_message_at=message_at,
+        last_microbatch_at=microbatch_at,
+    )
+    before = store.read()
+
+    store.publish(
+        "recovering",
+        feed_state="retrying",
+        projection_state="blocked",
+        successful_heartbeat=False,
+    )
+
+    after = store.read()
+    assert before is not None and after is not None
+    assert after.last_message_at == message_at.isoformat()
+    assert after.last_microbatch_at == microbatch_at.isoformat()
+    assert after.last_successful_heartbeat_at == before.last_successful_heartbeat_at

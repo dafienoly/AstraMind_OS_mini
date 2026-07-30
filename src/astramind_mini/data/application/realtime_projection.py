@@ -229,6 +229,19 @@ class RealtimeQuoteProjector:
             )
         return self.drain_closed_minutes()
 
+    def snapshot_open_minutes(self, gap: str) -> tuple[RealtimeMinuteBar, ...]:
+        return tuple(
+            _minute_bar(
+                session_id=self._session_id,
+                instrument_id=instrument_id,
+                current=current,
+                is_complete=False,
+                known_gaps=tuple(sorted({gap, *self._minute_gaps.get(instrument_id, ())})),
+                counter_epoch=self._reset_epochs.get(instrument_id, 0),
+            )
+            for instrument_id, current in sorted(self._minutes.items())
+        )
+
     def _update_minute(self, row: RealtimeQuoteObservation) -> None:
         if row.last_price is None:
             return
@@ -364,7 +377,6 @@ def _minute_bar(
         lifecycle="closed" if is_complete else "forming",
         known_gaps=known_gaps,
         coverage_minutes=1 if is_complete else 0,
-        content_identity=identity,
         counter_epoch=counter_epoch,
     )
 

@@ -31,7 +31,7 @@ def append_minute_rows(
         grouped.setdefault(row.minute.astimezone(SHANGHAI).date(), []).append(row)
     paths = []
     for market_date, dated_rows in sorted(grouped.items()):
-        sealed_rows = [row.model_copy(update={"lifecycle": "sealed"}) for row in dated_rows]
+        sealed_rows = [row.rebuild(lifecycle="sealed") for row in dated_rows]
         path = store.append_aggregate(
             kind="1m",
             market_date=market_date,
@@ -59,7 +59,7 @@ def prune_retained_payloads(
     with contextlib.suppress(FileNotFoundError, ValueError):
         retained = retained_open_dates(current_open_dates(settings.data_dir), today)
         store.prune_raw_payloads(retained_dates=retained)
-        store.prune_minute_history(retained_dates=retained)
+        store.prune_transient_minute_payloads(retained_dates=retained)
 
 
 def publish_starting_status(

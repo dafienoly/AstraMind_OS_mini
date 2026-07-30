@@ -256,7 +256,16 @@ def test_realtime_bar_window_aggregates_complete_session_buckets(tmp_path: Path)
     RealtimeProjectionStore(settings.data_dir).append_aggregate(
         kind="1m",
         market_date=market_date,
-        rows=rows,
+        rows=(
+            *rows,
+            rows[-1].rebuild(
+                minute=start + timedelta(minutes=15),
+                is_complete=False,
+                lifecycle="forming",
+                known_gaps=("cumulative_counter_reset",),
+                coverage_minutes=0,
+            ),
+        ),
     )
 
     response = TestClient(create_app(settings)).get(
@@ -270,4 +279,14 @@ def test_realtime_bar_window_aggregates_complete_session_buckets(tmp_path: Path)
     assert response.json()["bars"][0]["open"] == 10
     assert response.json()["bars"][0]["close"] == 24
     assert response.json()["indicator_state"] == "insufficient_seed"
-    assert response.json()["known_gaps"] == []
+    assert any("incomplete_bucket" in gap for gap in response.json()["known_gaps"])
+    one_minute = (
+        TestClient(create_app(settings))
+        .get(
+            "/api/market/realtime/instruments/600000.SH/bars",
+            params={"frequency": 1, "recent_sessions": 1},
+        )
+        .json()
+    )
+    assert len(one_minute["bars"]) == 15
+    assert any("incomplete_minute" in gap for gap in one_minute["known_gaps"])

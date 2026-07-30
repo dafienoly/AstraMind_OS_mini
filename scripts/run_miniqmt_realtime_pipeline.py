@@ -5,32 +5,30 @@ from __future__ import annotations
 import argparse
 import asyncio
 import contextlib
-from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from pathlib import Path
 from time import monotonic
 
 from astramind_mini.config import Settings
 from astramind_mini.data.adapters import (
-    MiniQMTBridgeClient,
     MiniQMTBridgeError,
     RealtimeProjectionStore,
-    StreamingRealtimeStore,
 )
+from astramind_mini.data.adapters.miniqmt_bridge import sanitize_bridge_failure
 from astramind_mini.data.adapters.miniqmt_l1 import normalize_l1_messages
-from astramind_mini.data.adapters.realtime_session import start_realtime_session
-from astramind_mini.data.application.realtime_projection import RealtimeQuoteProjector
+from astramind_mini.data.adapters.realtime_session import (
+    RealtimeSessionComponents,
+    start_realtime_session,
+)
 from astramind_mini.data.application.realtime_recovery import (
     recover_current_realtime_projection,
 )
 from astramind_mini.data.contracts import (
-    FeedSessionReport,
-    FeedSessionState,
     RealtimeQuoteObservation,
 )
-from astramind_mini.data.etf_model_evidence.spread import (
-    EtfSpreadMinuteProjector,
-    EtfSpreadMinuteStore,
+from astramind_mini.local_ops.realtime_market_finalization import (
+    SessionOutcome,
+    finalize_realtime_session,
 )
 from astramind_mini.local_ops.realtime_market_storage import (
     append_minute_rows,
@@ -43,23 +41,13 @@ from astramind_mini.local_ops.realtime_service_runtime import (
     RealtimeServiceLock,
     RealtimeStatusStore,
     active_capture_deadline,
+    realtime_ingestion_open,
     realtime_session_state,
 )
 from astramind_mini.local_ops.trading_calendar import current_open_dates
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL_ROOT = ROOT / "var/control/realtime-market-service"
-
-
-@dataclass(frozen=True, slots=True)
-class SessionOutcome:
-    session_id: str
-    session_path: Path
-    messages: int
-    microbatches: int
-    disconnected: bool
-    failure_code: str | None = None
-    failure_detail: str | None = None
 
 
 async def _run_session(
@@ -99,6 +87,8 @@ async def _run_session(
         while monotonic() < deadline:
             event = await bridge.next_quote_event(timeout_seconds=1)
             now = datetime.now(UTC)
+            if not realtime_ingestion_open(now):
+                break
             if event is None:
                 publish_projections(components.projection_store, projector, now)
                 components.spread_store.append(components.spread_projector.drain_closed(now))
@@ -128,23 +118,16 @@ async def _run_session(
             messages += 1
             duplicates += duplicate_count
             if (received_at - batch_started).total_seconds() >= 1:
-                components.raw_store.append(
-                    session_id=session_id,
-                    sequence=sequence,
-                    started_at=batch_started,
-                    ended_at=received_at,
-                    raw_messages=raw_messages,
-                    observations=tuple(observations),
-                )
-                publish_projections(components.projection_store, projector, received_at)
                 minute_paths.extend(
-                    append_minute_rows(
-                        components.projection_store,
-                        projector.drain_closed_minutes(),
+                    _flush_microbatch(
+                        components,
+                        session_id,
+                        sequence,
+                        batch_started,
+                        received_at,
+                        raw_messages,
+                        observations,
                     )
-                )
-                components.spread_store.append(
-                    components.spread_projector.drain_closed(received_at)
                 )
                 sequence += 1
                 last_microbatch_at = received_at
@@ -152,9 +135,11 @@ async def _run_session(
                 raw_messages, observations = [], []
     except MiniQMTBridgeError as error:
         disconnected = True
-        disconnect_code = error.code
-        disconnect_detail = error.detail or "\n".join(bridge.stderr_tail) or None
-    return await _finalize_session(
+        disconnect_code, disconnect_detail = sanitize_bridge_failure(
+            error.code,
+            error.detail or "\n".join(bridge.stderr_tail) or None,
+        )
+    return await finalize_realtime_session(
         settings=settings,
         bridge=bridge,
         session_id=session_id,
@@ -181,124 +166,30 @@ async def _run_session(
     )
 
 
-async def _finalize_session(
-    *,
-    settings: Settings,
-    bridge: MiniQMTBridgeClient,
+def _flush_microbatch(
+    components: RealtimeSessionComponents,
     session_id: str,
-    market_date: date,
+    sequence: int,
     started_at: datetime,
-    batch_started: datetime,
+    ended_at: datetime,
     raw_messages: list[object],
     observations: list[RealtimeQuoteObservation],
-    raw_store: StreamingRealtimeStore,
-    projection_store: RealtimeProjectionStore,
-    projector: RealtimeQuoteProjector,
-    spread_projector: EtfSpreadMinuteProjector,
-    spread_store: EtfSpreadMinuteStore,
-    minute_paths: list[Path],
-    sequence: int,
-    messages: int,
-    duplicates: int,
-    disconnected: bool,
-    disconnect_code: str | None,
-    disconnect_detail: str | None,
-    last_message_at: datetime | None,
-    last_microbatch_at: datetime | None,
-    status: RealtimeStatusStore,
-) -> SessionOutcome:
-    ended_at = datetime.now(UTC)
-    status.publish(
-        "sealing",
-        market_date=market_date,
+) -> tuple[Path, ...]:
+    components.raw_store.append(
         session_id=session_id,
-        messages=messages,
-        microbatches=sequence,
-        feed_state="disconnected" if disconnected else "connected",
-        projection_state="forming",
-        last_message_at=last_message_at,
-        last_microbatch_at=last_microbatch_at,
-    )
-    if raw_messages:
-        raw_store.append(
-            session_id=session_id,
-            sequence=sequence,
-            started_at=batch_started,
-            ended_at=ended_at,
-            raw_messages=raw_messages,
-            observations=tuple(observations),
-        )
-        sequence += 1
-    projection_store.publish_current(
-        projector.project(ended_at).model_copy(
-            update={"state": "disconnected" if disconnected else "stale", "as_of": ended_at}
-        )
-    )
-    projection_store.publish_instruments(
-        projector.instrument_projection(ended_at).model_copy(
-            update={"state": "disconnected" if disconnected else "stale", "as_of": ended_at}
-        )
-    )
-    if not disconnected:
-        completed_minutes = projector.close_completed_minutes(ended_at)
-        minute_paths.extend(append_minute_rows(projection_store, completed_minutes))
-    spread_store.append(spread_projector.close_open(ended_at))
-    with contextlib.suppress(MiniQMTBridgeError, TimeoutError):
-        await bridge.stop()
-    report = FeedSessionReport(
-        session_id=session_id,
-        provider="miniqmt",
-        client_version=bridge.provider_version,
-        state=(
-            FeedSessionState.DISCONNECTED
-            if disconnected
-            else (FeedSessionState.COMPLETE if messages else FeedSessionState.EMPTY)
-        ),
-        markets=("SH", "SZ", "BJ"),
-        market_date=market_date,
-        subscribed_at=started_at,
+        sequence=sequence,
+        started_at=started_at,
         ended_at=ended_at,
-        microbatch_ids=(),
-        received_messages=messages,
-        duplicate_messages=duplicates,
-        disconnects=int(disconnected),
-        known_gaps=(
-            (f"bridge_disconnected:{disconnect_code}",)
-            if disconnected
-            else (() if messages else ("session_without_messages",))
-        ),
+        raw_messages=raw_messages,
+        observations=tuple(observations),
     )
-    session_path = raw_store.finalize(report)
-    if minute_paths:
-        projection_store.verify_session_aggregation(
-            session_id=session_id,
-            aggregate_paths=minute_paths,
-        )
-    prune_retained_payloads(settings, projection_store, market_date)
-    status.publish(
-        "blocked" if disconnected else "reconciled",
-        market_date=market_date,
-        session_id=session_id,
-        messages=messages,
-        microbatches=sequence,
-        feed_state="disconnected" if disconnected else "reconciled",
-        projection_state="blocked" if disconnected else "sealed",
-        last_message_at=last_message_at,
-        last_microbatch_at=last_microbatch_at,
-        last_error=disconnect_code,
-        recovery_action=(
-            "检查 MiniQMT 只读行情端口与 bridge stderr 后重试" if disconnected else None
-        ),
+    publish_projections(components.projection_store, components.projector, ended_at)
+    paths = append_minute_rows(
+        components.projection_store,
+        components.projector.drain_closed_minutes(),
     )
-    return SessionOutcome(
-        session_id=session_id,
-        session_path=session_path,
-        messages=messages,
-        microbatches=sequence,
-        disconnected=disconnected,
-        failure_code=disconnect_code,
-        failure_detail=disconnect_detail,
-    )
+    components.spread_store.append(components.spread_projector.drain_closed(ended_at))
+    return paths
 
 
 async def _run_with_retries(
@@ -324,13 +215,14 @@ async def _run_with_retries(
                 status=status,
             )
         except MiniQMTBridgeError as error:
-            last_error = error
+            code, detail = sanitize_bridge_failure(error.code, error.detail)
+            last_error = MiniQMTBridgeError(code, detail)
             failures.append(
                 {
                     "attempt": attempt + 1,
                     "error_type": type(error).__name__,
-                    "error_code": error.code,
-                    "detail": error.detail,
+                    "error_code": code,
+                    "detail": detail,
                     "failed_at": datetime.now(UTC).isoformat(),
                 }
             )
@@ -339,7 +231,7 @@ async def _run_with_retries(
                 market_date=market_date,
                 feed_state="retrying",
                 projection_state="blocked",
-                last_error=error.code,
+                last_error=code,
                 retry_failures=tuple(failures),
                 recovery_action="检查最后一次具体 bridge 错误后重试",
             )
@@ -347,13 +239,16 @@ async def _run_with_retries(
                 raise
         else:
             outcomes.append(outcome)
-            if not outcome.disconnected:
+            if not outcome.disconnected and outcome.reconciled:
                 break
+            failure_code = outcome.failure_code or (
+                "session_not_reconciled" if not outcome.reconciled else "bridge_disconnected"
+            )
             failures.append(
                 {
                     "attempt": attempt + 1,
                     "error_type": "MiniQMTBridgeError",
-                    "error_code": outcome.failure_code or "bridge_disconnected",
+                    "error_code": failure_code,
                     "detail": outcome.failure_detail,
                     "failed_at": datetime.now(UTC).isoformat(),
                 }
@@ -363,13 +258,13 @@ async def _run_with_retries(
                 market_date=market_date,
                 feed_state="retrying",
                 projection_state="blocked",
-                last_error=outcome.failure_code or "bridge_disconnected",
+                last_error=failure_code,
                 retry_failures=tuple(failures),
                 recovery_action="检查 bridge stderr 与只读行情端口后重连",
             )
             if attempt == 3:
                 raise MiniQMTBridgeError(
-                    outcome.failure_code or "bridge_disconnected",
+                    failure_code,
                     outcome.failure_detail or "reconnect_limit_exhausted",
                 )
         await asyncio.sleep(min(2**attempt, 8))
@@ -388,8 +283,17 @@ async def _run_continuously(
         open_dates = current_open_dates(settings.data_dir)
         active = active_capture_deadline(now, open_dates)
         today = now.astimezone(SHANGHAI).date()
+        local_time = now.astimezone(SHANGHAI).time().replace(tzinfo=None)
+        if today in frozenset(open_dates) and time(15) <= local_time < time(16, 5):
+            status.publish(
+                "sealing",
+                market_date=today,
+                feed_state="stopped",
+                projection_state="sealed",
+            )
+            await asyncio.sleep(30)
+            continue
         if active is None:
-            local_time = now.astimezone(SHANGHAI).time().replace(tzinfo=None)
             state = "preopen" if time(8, 55) <= local_time < time(9, 30) else "waiting"
             status.publish(
                 state,

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from astramind_mini.contracts.base import (
     AwareDatetime,
@@ -106,6 +108,20 @@ class RealtimeMinuteBar(ContractModel):
     content_identity: ContentHash | None = None
     counter_epoch: int = Field(default=0, ge=0)
 
+    @model_validator(mode="after")
+    def validate_content_identity(self) -> RealtimeMinuteBar:
+        expected = _minute_bar_identity(self.model_dump(mode="json"))
+        if self.content_identity is not None and self.content_identity != expected:
+            raise ValueError("realtime_minute_bar_content_identity_mismatch")
+        object.__setattr__(self, "content_identity", expected)
+        return self
+
+    def rebuild(self, **changes: object) -> RealtimeMinuteBar:
+        payload = self.model_dump(mode="python")
+        payload.update(changes)
+        payload["content_identity"] = None
+        return RealtimeMinuteBar.model_validate(payload)
+
 
 class RealtimeBookLevel(ContractModel):
     level: int = Field(ge=1, le=5)
@@ -146,6 +162,17 @@ class RealtimeInstrumentProjection(ContractModel):
     quotes: tuple[RealtimeInstrumentQuote, ...] = ()
     open_minutes: tuple[RealtimeMinuteBar, ...] = ()
     known_gaps: tuple[str, ...] = ()
+
+
+def _minute_bar_identity(payload: dict[str, object]) -> str:
+    semantics = {key: value for key, value in payload.items() if key != "content_identity"}
+    body = json.dumps(
+        semantics,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return "sha256:" + hashlib.sha256(body).hexdigest()
 
 
 __all__ = [

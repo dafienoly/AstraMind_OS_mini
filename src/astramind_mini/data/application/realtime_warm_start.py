@@ -64,7 +64,6 @@ def normalize_warm_start_minutes(
                 retrieved_at=batch.retrieved_at,
                 is_complete=True,
                 lifecycle="sealed",
-                content_identity=identity,
             )
         )
     return tuple(sorted(rows, key=lambda row: (row.instrument_id, row.minute)))

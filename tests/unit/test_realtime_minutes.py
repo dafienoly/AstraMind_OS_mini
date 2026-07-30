@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from astramind_mini.data.adapters.realtime_projection_store import RealtimeProjectionStore
 from astramind_mini.data.application.identity import content_hash
 from astramind_mini.data.application.realtime_minutes import (
     aggregate_session_bars,
@@ -100,7 +102,8 @@ def test_warm_start_excludes_current_forming_minute_and_has_content_identity() -
     assert rows[0].minute.minute == 0
     assert rows[0].source_kind == "warm_start"
     assert rows[0].lifecycle == "sealed"
-    assert rows[0].content_identity == rows[0].source_identity
+    assert rows[0].content_identity is not None
+    assert rows[0].content_identity != rows[0].source_identity
     restarted = normalize_warm_start_minutes(
         batch.model_copy(update={"request_identity": content_hash({"request": "restart"})}),
         completed_before=datetime(2026, 7, 30, 10, 1, tzinfo=SHANGHAI),
@@ -132,6 +135,43 @@ def test_warm_start_wins_exact_l1_overlap_and_conflict_fails_closed() -> None:
     assert blocked.known_gaps == ("warm_l1_content_conflict",)
 
 
+def test_disconnected_forming_part_survives_and_reconciles_after_restart(
+    tmp_path: Path,
+) -> None:
+    minute = datetime(2026, 7, 30, 10, 0, tzinfo=SHANGHAI)
+    first = _bar(minute, 10).rebuild(
+        session_id=content_hash({"session": "before-disconnect"}),
+        source_kind="l1",
+        volume=3,
+        amount=30,
+        is_complete=False,
+        lifecycle="forming",
+        known_gaps=("bridge_disconnected",),
+        first_observed_at=minute,
+        last_observed_at=minute + timedelta(seconds=20),
+    )
+    second = _bar(minute, 11).rebuild(
+        session_id=content_hash({"session": "after-restart"}),
+        source_kind="l1",
+        volume=4,
+        amount=44,
+        first_observed_at=minute + timedelta(seconds=21),
+        last_observed_at=minute + timedelta(seconds=50),
+    )
+    store = RealtimeProjectionStore(tmp_path)
+    store.persist_session_parts(market_date=minute.date(), rows=(first,))
+    store.append_aggregate(kind="1m", market_date=minute.date(), rows=(second,))
+
+    reconciled = store.minute_bars(
+        instrument_id="600000.SH",
+        market_date=minute.date(),
+    )[0]
+
+    assert reconciled.volume == 7
+    assert reconciled.amount == 74
+    assert "bridge_disconnected" in reconciled.known_gaps
+
+
 def _bar(minute: datetime, price: float) -> RealtimeMinuteBar:
     identity = content_hash({"minute": minute, "price": price})
     return RealtimeMinuteBar(
@@ -147,7 +187,6 @@ def _bar(minute: datetime, price: float) -> RealtimeMinuteBar:
         amount=price,
         observation_count=1,
         source_identity=identity,
-        content_identity=identity,
         lifecycle="sealed",
     )
 

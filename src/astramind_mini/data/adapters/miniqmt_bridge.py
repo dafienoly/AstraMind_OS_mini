@@ -347,4 +347,10 @@ def _redact_stderr(value: str) -> str:
     return re.sub(r"/home/[^/\s]+", "/home/<redacted>", value)
 
 
-__all__ = ["MiniQMTBridgeClient", "MiniQMTBridgeError"]
+def sanitize_bridge_failure(code: str, detail: str | None) -> tuple[str, str | None]:
+    safe_code = code if re.fullmatch(r"[a-z][a-z0-9_]{2,63}", code) else "bridge_external_error"
+    safe_detail = _redact_stderr(detail[-4000:]) if detail else None
+    return safe_code, safe_detail
+
+
+__all__ = ["MiniQMTBridgeClient", "MiniQMTBridgeError", "sanitize_bridge_failure"]

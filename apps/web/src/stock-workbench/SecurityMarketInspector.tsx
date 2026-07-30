@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect, useMemo, useState,
+  type Dispatch, type SetStateAction,
+} from "react";
 
 import { fetchRealtimeBarWindow } from "../market-dashboard/marketDashboardClient";
 import { RealtimeMinuteChart } from "../market-dashboard/realtime/RealtimeMinuteChart";
@@ -53,35 +56,9 @@ export function SecurityMarketInspector({
   const [historyWindow, setHistoryWindow] = useState<PriceHistoryWindow>("one_year");
   const [minuteFrequency, setMinuteFrequency] = useState(1);
   const [minuteSessions, setMinuteSessions] = useState(1);
-  const [minuteBars, setMinuteBars] = useState(realtime?.minutes ?? []);
-  const [indicatorState, setIndicatorState] = useState<"ready" | "insufficient_seed">(
-    "insufficient_seed",
+  const minute = useMinuteWindow(
+    instrumentId, period, minuteFrequency, minuteSessions, realtime?.minutes ?? [],
   );
-  const [minuteGaps, setMinuteGaps] = useState<string[]>([]);
-  const [minuteIndicators, setMinuteIndicators] = useState<RealtimeIndicatorPoint[]>([]);
-  const [minuteLoad, setMinuteLoad] = useState<"loading" | "ready" | "error">("ready");
-  useEffect(() => {
-    if (period !== "minute") return;
-    const controller = new AbortController();
-    setMinuteLoad("loading");
-    void fetchRealtimeBarWindow(
-      instrumentId,
-      minuteFrequency,
-      minuteSessions,
-      controller.signal,
-    ).then((page) => {
-      setMinuteBars(page.bars ?? []);
-      setIndicatorState(page.indicator_state ?? "insufficient_seed");
-      setMinuteGaps(page.known_gaps ?? []);
-      setMinuteIndicators(page.indicators ?? []);
-      setMinuteLoad("ready");
-    }).catch(() => {
-      setMinuteBars(realtime?.minutes ?? []);
-      setIndicatorState("insufficient_seed");
-      if (!controller.signal.aborted) setMinuteLoad("error");
-    });
-    return () => controller.abort();
-  }, [instrumentId, minuteFrequency, minuteSessions, period, realtime?.minutes]);
   useEffect(() => setHistoryWindow("one_year"), [instrumentId]);
   const history = usePriceHistory({
     instrumentType,
@@ -115,61 +92,28 @@ export function SecurityMarketInspector({
     period,
   ]);
   return <section className="security-market-inspector" aria-label="证券行情检查器">
-    <header>
-      <div>
-        <p className="eyebrow">统一证券行情内核</p>
-        <h2>{instrumentName}</h2>
-        <code>{instrumentId}</code>
-      </div>
-      <nav aria-label="行情周期">
-        <button aria-pressed={period === "minute"}
-          onClick={() => setPeriod("minute")} type="button">分钟</button>
-        <button aria-pressed={period === "day"} onClick={() => setPeriod("day")}
-          type="button">日 K</button>
-        <button aria-pressed={period === "week"} onClick={() => setPeriod("week")}
-          type="button">周 K</button>
-        <button aria-pressed={period === "month"} onClick={() => setPeriod("month")}
-          type="button">月 K</button>
-        <button aria-pressed={period === "year"} onClick={() => setPeriod("year")}
-          type="button">年 K</button>
-      </nav>
-      {period === "minute" ? <div aria-label="分钟周期与窗口">
-        {minuteFrequencies.map((value) => <button
-          aria-pressed={minuteFrequency === value}
-          key={value}
-          onClick={() => setMinuteFrequency(value)}
-          type="button"
-        >{value} 分钟</button>)}
-        <button aria-pressed={minuteSessions === 5}
-          onClick={() => setMinuteSessions((value) => value === 5 ? 1 : 5)}
-          type="button">5 日</button>
-      </div> : null}
-      <HistoryWindowSelector
-        onChange={(next) => {
-          setHistoryWindow(next);
-          if (period === "minute") setPeriod("day");
-        }}
-        state={history.kind}
-        value={historyWindow}
-      />
-    </header>
+    <InspectorHeader instrumentId={instrumentId} instrumentName={instrumentName}
+      period={period} setPeriod={setPeriod} minuteFrequency={minuteFrequency}
+      setMinuteFrequency={setMinuteFrequency} minuteSessions={minuteSessions}
+      setMinuteSessions={setMinuteSessions} history={history}
+      historyWindow={historyWindow} setHistoryWindow={setHistoryWindow} />
     <HistoryCoverageNote history={history} />
     <div className="security-market-layout">
       <div className="security-price-pane">
-        {period === "minute" && minuteLoad === "loading" ? (
+        {period === "minute" && minute.load === "loading" ? (
           <div className="security-market-empty">正在加载所选分钟窗口…</div>
-        ) : period === "minute" && minuteBars.length ? (
+        ) : period === "minute" && minute.bars.length ? (
           <>
-          <RealtimeMinuteChart bars={minuteBars} indicators={minuteIndicators}
-            indicatorState={indicatorState} instrumentId={instrumentId} />
-          {minuteGaps.length ? <p className="history-coverage-note">
-            分钟缺口 {minuteGaps.length} 个；不完整桶已失败关闭。
+          <RealtimeMinuteChart bars={minute.bars} indicators={minute.indicators}
+            indicatorState={minute.indicatorState} instrumentId={instrumentId} />
+          {minute.gaps.length ? <p className="history-coverage-note">
+            分钟缺口 {minute.gaps.length} 个；不完整桶已失败关闭。
           </p> : <p className="history-coverage-note">
-            {minuteBars.some((bar) => bar.lifecycle === "forming")
+            {minute.bars.some((bar) => bar.lifecycle === "forming")
               ? "含形成中 Bar；闭合指标不使用该 Bar。"
               : "当前窗口仅含闭合或封存 Bar。"}
           </p>}
-          {minuteLoad === "error" ? <p className="history-coverage-note">
+          {minute.load === "error" ? <p className="history-coverage-note">
             分钟历史加载失败；当前仅显示已有实时形成中数据。
           </p> : null}
           </>
@@ -198,6 +142,90 @@ export function SecurityMarketInspector({
       <RealtimeOrderBook quote={realtime?.quote ?? null} />
     </div>
   </section>;
+}
+
+function useMinuteWindow(
+  instrumentId: string,
+  period: Period,
+  frequency: number,
+  sessions: number,
+  current: RealtimeMinuteBar[],
+) {
+  const [bars, setBars] = useState(current);
+  const [indicatorState, setIndicatorState] = useState<"ready" | "insufficient_seed">(
+    "insufficient_seed",
+  );
+  const [gaps, setGaps] = useState<string[]>([]);
+  const [indicators, setIndicators] = useState<RealtimeIndicatorPoint[]>([]);
+  const [load, setLoad] = useState<"loading" | "ready" | "error">("ready");
+  useEffect(() => {
+    if (period !== "minute") return;
+    const controller = new AbortController();
+    setLoad("loading");
+    void fetchRealtimeBarWindow(instrumentId, frequency, sessions, controller.signal)
+      .then((page) => {
+        setBars(page.bars ?? []);
+        setIndicatorState(page.indicator_state ?? "insufficient_seed");
+        setGaps(page.known_gaps ?? []);
+        setIndicators(page.indicators ?? []);
+        setLoad("ready");
+      }).catch(() => {
+        setIndicatorState("insufficient_seed");
+        if (!controller.signal.aborted) setLoad("error");
+      });
+    return () => controller.abort();
+  }, [frequency, instrumentId, period, sessions]);
+  useEffect(() => {
+    if (!current.length) return;
+    setBars((history) => {
+      const values = new Map(history.map((row) => [row.minute, row]));
+      for (const row of current) values.set(row.minute, row);
+      return [...values.values()].sort((left, right) => left.minute.localeCompare(right.minute));
+    });
+  }, [current]);
+  return { bars, gaps, indicators, indicatorState, load };
+}
+
+function InspectorHeader({
+  instrumentId, instrumentName, period, setPeriod, minuteFrequency,
+  setMinuteFrequency, minuteSessions, setMinuteSessions, history,
+  historyWindow, setHistoryWindow,
+}: {
+  instrumentId: string;
+  instrumentName: string;
+  period: Period;
+  setPeriod: Dispatch<SetStateAction<Period>>;
+  minuteFrequency: number;
+  setMinuteFrequency: Dispatch<SetStateAction<number>>;
+  minuteSessions: number;
+  setMinuteSessions: Dispatch<SetStateAction<number>>;
+  history: ReturnType<typeof usePriceHistory>;
+  historyWindow: PriceHistoryWindow;
+  setHistoryWindow: Dispatch<SetStateAction<PriceHistoryWindow>>;
+}) {
+  return <header>
+    <div><p className="eyebrow">统一证券行情内核</p><h2>{instrumentName}</h2>
+      <code>{instrumentId}</code></div>
+    <nav aria-label="行情周期">
+      {([["minute", "分钟"], ["day", "日 K"], ["week", "周 K"],
+        ["month", "月 K"], ["year", "年 K"]] as const).map(([value, label]) => (
+        <button aria-pressed={period === value} key={value}
+          onClick={() => setPeriod(value)} type="button">{label}</button>
+      ))}
+    </nav>
+    {period === "minute" ? <div aria-label="分钟周期与窗口">
+      {minuteFrequencies.map((value) => <button aria-pressed={minuteFrequency === value}
+        key={value} onClick={() => setMinuteFrequency(value)}
+        type="button">{value} 分钟</button>)}
+      <button aria-pressed={minuteSessions === 5}
+        onClick={() => setMinuteSessions((value) => value === 5 ? 1 : 5)}
+        type="button">5 日</button>
+    </div> : null}
+    <HistoryWindowSelector onChange={(next) => {
+      setHistoryWindow(next);
+      if (period === "minute") setPeriod("day");
+    }} state={history.kind} value={historyWindow} />
+  </header>;
 }
 
 function HistoryCoverageNote({

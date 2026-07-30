@@ -1,4 +1,8 @@
+import subprocess
+from io import BytesIO
 from pathlib import Path
+
+import pytest
 
 from astramind_mini.local_ops.realtime_service_deployment import (
     TASK_NAME,
@@ -8,7 +12,13 @@ from astramind_mini.local_ops.realtime_service_deployment import (
     task_is_present,
     task_xml,
 )
-from scripts.manage_realtime_market_service import _append_bounded_log
+from scripts.manage_realtime_market_service import (
+    _append_bounded_log,
+    _mutate_existing,
+    _run_task,
+    _status,
+    _task_command,
+)
 
 
 def test_realtime_task_is_persistent_restartable_and_broker_free() -> None:
@@ -71,3 +81,73 @@ def test_task_log_is_rotated_and_bounded_while_process_is_running(tmp_path: Path
 
     assert path.read_bytes() == b"abcdefgh"
     assert path.with_name("service.log.1").read_bytes() == b"12345678"
+
+
+def test_scheduler_spawn_failure_is_query_failed_and_preserves_last_fact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    fact = tmp_path / "var/control/realtime-market-service/scheduler-fact.json"
+    fact.parent.mkdir(parents=True)
+    fact.write_text(
+        '{"state":"installed","checked_at":"2026-07-30T01:00:00+00:00"}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("private windows detail")),
+    )
+
+    assert _task_command(["/Query"]).returncode == 127
+    assert _status() == 0
+    output = capsys.readouterr().out
+    assert "state=query_failed" in output
+    assert "last_known_installed=true" in output
+    assert "private windows detail" not in output
+
+
+def test_runner_start_and_nonzero_exit_are_blocked_with_log(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        subprocess,
+        "Popen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("cannot execute")),
+    )
+
+    assert _run_task("realtime-market-service-run") == 127
+    assert (tmp_path / "var/control/realtime-market-service/service.log").is_file()
+    status = (tmp_path / "var/control/realtime-market-service/status.json").read_text()
+    assert '"state": "blocked"' in status
+    assert "cannot execute" not in status
+
+    class FailedProcess:
+        stdout = BytesIO(b"")
+
+        @staticmethod
+        def wait() -> int:
+            return 9
+
+    monkeypatch.setattr(subprocess, "Popen", lambda *args, **kwargs: FailedProcess())
+    assert _run_task("realtime-market-service-run") == 9
+    status = (tmp_path / "var/control/realtime-market-service/status.json").read_text()
+    assert '"state": "blocked"' in status
+    assert '"exit_code": 9' in status
+
+
+def test_pause_fails_when_end_did_not_succeed(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+        calls.append(arguments)
+        return subprocess.CompletedProcess(arguments, 5, "", "end failed")
+
+    monkeypatch.setattr("scripts.manage_realtime_market_service._task_command", command)
+
+    assert _mutate_existing("pause") == 5
+    assert calls == [["/End", "/TN", TASK_NAME]]

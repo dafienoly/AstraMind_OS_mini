@@ -223,7 +223,11 @@ def _register_instrument_routes(
             state=projection.state,
             as_of=projection.as_of,
             quote=quote,
-            minutes=minutes,
+            minutes=tuple(
+                row
+                for row in minutes
+                if row.is_complete and not row.known_gaps and row.lifecycle in {"closed", "sealed"}
+            ),
             known_gaps=projection.known_gaps,
         )
 
@@ -265,11 +269,16 @@ def _register_bar_routes(app: FastAPI, store: RealtimeProjectionStore) -> None:
             start_date=selected[0],
             end_date=selected[-1],
         )
-        bars = store.history_bars(
+        calculated_bars = store.history_bars(
             instrument_id=instrument_id.upper(),
             frequency=frequency,
             start_date=selected[0],
             end_date=selected[-1],
+        )
+        bars = tuple(
+            row
+            for row in calculated_bars
+            if row.is_complete and not row.known_gaps and row.lifecycle in {"closed", "sealed"}
         )
         seed_sessions = eligible[-5:]
         calculation_bars = store.history_bars(

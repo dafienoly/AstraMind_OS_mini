@@ -3,11 +3,18 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+import pytest
+
+from astramind_mini.data.adapters.realtime_aggregation_evidence import expected_minute_keys
 from astramind_mini.data.adapters.realtime_projection_store import RealtimeProjectionStore
+from astramind_mini.data.adapters.streaming_realtime_store import StreamingRealtimeStore
 from astramind_mini.data.application.identity import canonical_json, content_hash
 from astramind_mini.data.application.realtime_projection import RealtimeQuoteProjector
 from astramind_mini.data.contracts import (
+    FeedSessionReport,
+    FeedSessionState,
     RealtimeInstrumentProjection,
+    RealtimeMinuteBar,
     RealtimeQuoteObservation,
 )
 
@@ -317,3 +324,137 @@ def test_retention_requires_minute_aggregation_evidence(tmp_path: Path) -> None:
         assert "只能使用 1 分钟聚合证据" in str(error)
     else:
         raise AssertionError("一秒聚合不得作为细粒度留存清理证据")
+
+
+def test_aggregation_verification_rejects_missing_whole_instrument(tmp_path: Path) -> None:
+    started = datetime(2026, 7, 30, 1, 30, 10, tzinfo=UTC)
+    ended = started.replace(minute=31, second=30)
+    session_id = content_hash({"session": "coverage"})
+    observations = (
+        quote("600000.SH", started, price=10, volume=100, amount=1000),
+        quote("000001.SZ", started, price=11, volume=100, amount=1100),
+        quote("600000.SH", started.replace(second=20), price=10.1, volume=110, amount=1101),
+        quote("000001.SZ", started.replace(second=20), price=11.1, volume=110, amount=1221),
+        quote(
+            "600000.SH", started.replace(minute=31, second=5), price=10.2, volume=120, amount=1223
+        ),
+        quote(
+            "000001.SZ", started.replace(minute=31, second=5), price=11.2, volume=120, amount=1343
+        ),
+    )
+    raw_store = StreamingRealtimeStore(tmp_path)
+    raw_store.append(
+        session_id=session_id,
+        sequence=0,
+        started_at=started,
+        ended_at=ended,
+        raw_messages={"fixture": True},
+        observations=observations,
+    )
+    raw_store.finalize(
+        FeedSessionReport(
+            session_id=session_id,
+            provider="miniqmt",
+            client_version="test",
+            state=FeedSessionState.COMPLETE,
+            markets=("SH", "SZ"),
+            market_date=started.date(),
+            subscribed_at=started,
+            ended_at=ended,
+            microbatch_ids=(),
+            received_messages=len(observations),
+            duplicate_messages=0,
+            disconnects=0,
+        )
+    )
+    projector = RealtimeQuoteProjector(session_id=session_id)
+    projector.ingest(observations)
+    rows = projector.drain_closed_minutes()
+    store = RealtimeProjectionStore(tmp_path)
+    aggregate = store.append_aggregate(
+        kind="1m",
+        market_date=started.date(),
+        rows=tuple(row for row in rows if row.instrument_id == "600000.SH"),
+    )
+    assert aggregate is not None
+
+    with pytest.raises(ValueError, match="遗漏应聚合"):
+        store.verify_session_aggregation(
+            session_id=session_id,
+            aggregate_paths=(aggregate,),
+        )
+
+
+def test_first_cumulative_baseline_and_no_trade_tick_do_not_require_bar() -> None:
+    started = datetime(2026, 7, 30, 1, 30, 10, tzinfo=UTC)
+    baseline = quote("600000.SH", started, price=10, volume=100, amount=1000)
+    no_trade = quote(
+        "600000.SH",
+        started.replace(second=20),
+        price=10,
+        volume=100,
+        amount=1000,
+    )
+
+    assert (
+        expected_minute_keys(
+            (baseline, no_trade),
+            ended_at=started.replace(minute=31),
+        )
+        == set()
+    )
+
+
+def test_minute_identity_rejects_tampering_and_sealed_rebuild_changes_identity() -> None:
+    minute = datetime(2026, 7, 30, 1, 30, tzinfo=UTC)
+    row = RealtimeMinuteBar(
+        provider="miniqmt",
+        session_id=content_hash({"session": "identity"}),
+        instrument_id="600000.SH",
+        minute=minute,
+        open=10,
+        high=10.1,
+        low=9.9,
+        close=10,
+        volume=1,
+        amount=10,
+        observation_count=1,
+        lifecycle="closed",
+    )
+    sealed = row.rebuild(lifecycle="sealed")
+
+    assert sealed.content_identity != row.content_identity
+    payload = sealed.model_dump(mode="python")
+    payload["amount"] = 11
+    with pytest.raises(ValueError, match="content_identity_mismatch"):
+        RealtimeMinuteBar.model_validate(payload)
+
+
+def test_transient_retention_never_deletes_long_term_minute_aggregate(tmp_path: Path) -> None:
+    store = RealtimeProjectionStore(tmp_path)
+    market_date = date(2026, 7, 20)
+    row = RealtimeMinuteBar(
+        provider="miniqmt",
+        session_id=content_hash({"session": "retained"}),
+        instrument_id="600000.SH",
+        minute=datetime(2026, 7, 20, 1, 30, tzinfo=UTC),
+        open=10,
+        high=10,
+        low=10,
+        close=10,
+        volume=1,
+        amount=10,
+        observation_count=1,
+        lifecycle="sealed",
+    )
+    aggregate = store.append_aggregate(kind="1m", market_date=market_date, rows=(row,))
+    store.persist_warm_start(
+        market_date=market_date,
+        request_identity=content_hash({"request": "old"}),
+        raw_payload={"old": True},
+        rows=(),
+    )
+
+    store.prune_transient_minute_payloads(retained_dates=frozenset())
+
+    assert aggregate is not None and aggregate.is_file()

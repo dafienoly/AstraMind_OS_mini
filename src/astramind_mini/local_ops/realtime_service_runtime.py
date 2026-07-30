@@ -119,8 +119,20 @@ class RealtimeStatusStore:
             messages=messages,
             microbatches=microbatches,
             last_successful_heartbeat_at=last_heartbeat,
-            last_message_at=last_message_at.isoformat() if last_message_at else None,
-            last_microbatch_at=(last_microbatch_at.isoformat() if last_microbatch_at else None),
+            last_message_at=(
+                last_message_at.isoformat()
+                if last_message_at
+                else previous.last_message_at
+                if previous
+                else None
+            ),
+            last_microbatch_at=(
+                last_microbatch_at.isoformat()
+                if last_microbatch_at
+                else previous.last_microbatch_at
+                if previous
+                else None
+            ),
             exit_code=exit_code,
             last_error=last_error,
             retry_failures=retry_failures[-4:],
@@ -174,6 +186,11 @@ def realtime_session_state(now: datetime) -> str:
     return "capturing"
 
 
+def realtime_ingestion_open(now: datetime) -> bool:
+    local = now.astimezone(SHANGHAI).time().replace(tzinfo=None)
+    return time(8, 55) <= local < time(15)
+
+
 def _atomic_write(path: Path, payload: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -196,6 +213,7 @@ __all__ = [
     "RealtimeServiceLock",
     "RealtimeStatusStore",
     "active_capture_deadline",
+    "realtime_ingestion_open",
     "realtime_session_state",
     "retained_open_dates",
 ]
