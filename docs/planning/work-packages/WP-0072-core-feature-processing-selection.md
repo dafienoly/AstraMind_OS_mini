@@ -1,6 +1,6 @@
 # WP-0072：核心特征处理、冻结选择与平行中性化诊断
 
-- 版本：1.1.0
+- 版本：1.2.0
 - 状态：已授权，依赖门等待 WP-0071A/B/C 全部集成
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5B
@@ -73,9 +73,11 @@ Strategy Research 的三个内聚子包分别拥有：
 - `CoreProcessingSpec`：身份固定为 `core-feature-processing-v1`；
 - `CoreProcessedFeatureEnvelope`：绑定准确 raw envelope、U0、单个决策日、处理规格、
   每行处理结果、覆盖证据和内容哈希；
-- `CoreProcessedFeaturePanelManifest`：按日期升序绑定多个日级 processed/raw
-  envelope、准确 `CoreInputSnapshot`、U0、控制面板和内容哈希；跨日统计只能消费
-  该 manifest，不能把 T+H 数据塞回 T 日快照；
+- `CoreProcessedFeaturePanelManifest`：按日期升序绑定
+  `(decision_date, CoreInputSnapshot id/hash, raw envelope id/hash,
+  processed envelope id/hash, U0 hash, control panel hash)` 日级条目；每个条目独立验证
+  单一快照血缘，panel 内容哈希覆盖完整有序 tuple。跨日统计只能消费该 manifest，
+  不存在或伪造一个覆盖多日的 `CoreInputSnapshot`，也不能把 T+H 数据塞回 T 日快照；
 - `CoreForwardReturnLabelSpec` / `CoreForwardReturnLabelBatch`：绑定 H20/H60、
   T+1 开盘、T+H 收盘、标签数据快照、可用截止、成熟状态、绝对收益和截面百分位；
 - `CoreSelectionPriorManifest`：在打开 RankIC 前冻结每个定义的
@@ -87,6 +89,9 @@ Strategy Research 的三个内聚子包分别拥有：
   选择证据、选中列有序清单和内容哈希；
 - `CoreFeatureViewManifest`：声明 `full` 或准确 `selected` 视图、规范列顺序、数值列、
   指示列、实际 `model_input_dimension` 和上游身份。
+- `CoreJointSelectedViewManifest`：按 H20/H60 分别冻结三个 selected 两两联合和一个
+  selected 三包联合的准确父级、跨包相关、完全链接簇、代表选择、最终列顺序和内容
+  哈希；它拥有跨包去重，模型训练器只能消费，不能重新选择或改列。
 
 以上制品全部使用规范 JSON 序列化和 SHA-256 内容身份。重复运行必须幂等；上游 raw
 身份、U0、决策日、处理规格、标签、折边界、方向、种子、选择结果或列顺序变化必须
@@ -94,9 +99,11 @@ Strategy Research 的三个内聚子包分别拥有：
 
 ## 输入和点时边界
 
-- 每次请求只消费一个不可变 `CoreInputSnapshot` 血缘，不混合数据版本；
+- 每个日级处理请求只消费一个不可变 `CoreInputSnapshot` 血缘，不混合数据版本；
 - 每个处理 envelope 只对应一个决策日；跨日期处理和选择由
-  `CoreProcessedFeaturePanelManifest` 有序聚合，不能伪造一个“多日 CoreInputSnapshot”；
+  `CoreProcessedFeaturePanelManifest` 以上述日级 tuple 有序聚合；每个条目分别校验
+  decision date、快照、raw、processed、U0 和控制面身份，不能伪造一个
+  “多日 CoreInputSnapshot”或用一个日期的快照替代其他日期；
 - 处理截面必须是该决策日完整 U0 研究成员，不因状态或值缺失删除证券；
 - 只处理三包公共 raw builder 已验证的有限 `observed` 数值和显式非观测状态；
 - 标签由本包 `labels` 子包按 WP-0070 共同交易日历和 REQ-2026-0007 第 4 节构造，
@@ -115,12 +122,17 @@ Strategy Research 的三个内聚子包分别拥有：
 不能删除证券。
 
 每个 `CoreForwardReturnLabelBatch` 还必须逐 T 绑定当日完整
-`CoreUniverseDecision` 有序行集和 `universe_content_hash`。batch 保留完整 U0
-行集，但百分位只在其中具有合法、成熟绝对收益的行上计算，`n` 为这些合法行数；
-其他行 percentile 为空并保留原因，`n < 2` 时整个标签截面无效。每个预期证券必须有合法标签或明确
+`CoreUniverseDecision` 有序审计行集和 `universe_content_hash`。batch 可以保留
+`research_member=false` 的非成员审计行，但百分位分母严格限于当日
+`research_member=true` 且具有合法、成熟绝对收益的行。制品同时保存
+`n_universe_rows`、`n_research_members`、`n_valid_returns` 和
+`label_coverage=n_valid_returns/n_research_members`；百分位公式的 `n` 等于
+`n_valid_returns`。其他行 percentile 为空并保留原因，`n < 2` 时整个标签截面无效。
+每个预期证券必须有合法标签或明确
 `not_matured / entry_missing / horizon_close_missing / not_research_member` 原因。
-选择入口逐日验证 label U0、processed panel U0 和控制面 U0 完全相等，不能只比较
-日期或证券交集。
+选择入口逐日只在 `research_member=true` 的有序子集上验证 label U0、processed
+panel U0 和控制面 U0 的证券与 hash 完全相等；非成员审计行不参与 rank、模型或三方
+相等比较，不能只比较日期或证券交集。
 
 ## 三态覆盖门
 
@@ -197,12 +209,16 @@ observed 行两个指示均为 0；非观测行只有与其准确状态对应的
 ## full 与 selected
 
 - `full` 永久保持包的规范公式顺序；处理失败或覆盖失败的因子仍存在于 full manifest，
-  并保存状态，不能悄悄删列；
+  并保存状态，不能悄悄删列；任一父因子在准确训练折未通过覆盖门时，包含它的
+  `full` model view/candidate 必须标记 `blocked/coverage_gate_failed`，不能让低覆盖
+  因子穿透到 B0 或 Ridge；
 - `selected` 只能在准确训练折内生成，列顺序沿用 full 的规范顺序，不按统计量重排；
 - H20 与 H60 分别选择并允许不同；二者不得强制取交集；
 - 2023～2025 回放只能使用 2022-12-31 前已冻结的选择清单；
-- 联合包由 WP-0073 只拼接各包 selected，按 F0、Alpha158、Alpha101 包顺序和各包
-  规范列顺序形成，不允许 full 联合；
+- 本包为每个周期发布三个 selected 两两联合和一个 selected 三包联合
+  `CoreJointSelectedViewManifest`，先按 F0、Alpha158、Alpha101 包顺序和各包规范
+  列顺序拼接，再按本包冻结的跨包完全链接与代表规则去重；不允许 full 联合。
+  WP-0073A 只消费该准确 manifest，不能重新计算相关、去重或改变列；
 - 每个非 observed 指示列跟随其父因子；父因子未选中时对应指示列也不进入模型；
 - `model_input_dimension` 等于选中数值列加其准确两类状态指示列的实际总数，不能仍称
   24、158 或 101 维。
@@ -215,9 +231,16 @@ observed 行两个指示均为 0；非观测行只有与其准确状态对应的
 
 阻断粒度固定如下：单因子单日无 observed 只阻断该日整个模型 view，不删除证券；
 训练计划可带稳定原因码排除该完整日期，但不能重算覆盖或选择证据，且排除日期和原因
-进入模型 lineage。某因子在整个 fold 无 observed、排除后达不到下游最小样本，或当前
-推理日任一必需父因子阻断时，整个对应 full/selected 候选阻断。不得删除父因子、
-以其他日期填充或只删除缺失证券来挽救候选。
+进入模型 lineage。某因子在整个 fold 无 observed、未通过折内 coverage 门、排除后
+达不到下游最小样本，或当前推理日任一必需父因子阻断时，整个对应 full 候选阻断；
+selected 只允许排除 coverage fail 或 selection-ineligible 的父因子，并必须引用准确
+选择证据。不得临时删除其他父因子、以其他日期填充或只删除缺失证券来挽救候选。
+
+联合 manifest 对各单包已经冻结的 selected 父因子使用本节同一逐日相关样本、未知距离、
+`abs(median_corr) >= 0.85`、完全链接和代表 tie-break；相关与代表证据必须写入联合
+manifest，而不是只保存最终列。每个 H20/H60 各发布 F0+Alpha158、F0+Alpha101、
+Alpha158+Alpha101 三个 pair 和一个 triple，共八个身份独立制品。后续 C2 只决定
+triple 是否具备生产候选资格，不得回写、重算或改变该 triple 的冻结列。
 
 ## H20/H60 折内选择算法
 
@@ -249,8 +272,11 @@ RankIC、标签收益、2023～2025 回放或选择输出。Stage S 只能消费
 2. RankIC 乘因子注册表预登记方向，得到序列并计算 `mu`；
 3. 对 `IC - mu` 使用 20 个决策截面的圆形移动区块 bootstrap，固定 10,000 次；
 4. 单侧 `p = (1 + count(centered_bootstrap_mean >= mu)) / 10001`；
-5. 在同一包、同一周期、同一折的全部覆盖合格因子上执行 Benjamini–Hochberg，
-   `FDR <= 0.10`；保存原始 p、排序、阈值和通过状态；
+5. 因子只有在 coverage 合格、三个连续子折各至少 60 个有效每日 RankIC，且能形成
+   有限 p 值时才是 `selection_eligible`；任一条件不足以稳定原因码持久化且不得入选。
+   在同一包、同一周期、同一折的准确有序 `selection_eligible` 集合上执行
+   Benjamini–Hochberg，`m` 就是该集合大小；保存被排除定义及原因、准确检验族、原始
+   p、排序、阈值和通过状态，不能把无 p 项计入 `m` 或当作 p=1；
 6. 对 BH 通过项计算逐日截面 Spearman 因子相关，再取跨日中位数；
 7. `abs(median_corr) >= 0.85` 进入同一候选簇，使用完全链接；不得用单链接造成链式
    合并；
@@ -260,9 +286,12 @@ RankIC、标签收益、2023～2025 回放或选择输出。Stage S 只能消费
 因子相关只使用两个父因子在当日都为原始 `observed` 的处理后主 z 值，平均秩处理
 并列；配对证券少于 5 的日期无效，每对因子至少需要 60 个有效相关日，否则距离为
 `correlation_evidence_insufficient`，不得把未知距离当作 0、1 或可合并。特征换手也
-只使用相邻两日都为原始 `observed`、且属于两日 U0 交集的证券；先在各自日期转成
-截面百分位，再计算共同证券绝对变化均值，至少 5 只共同证券和 60 个有效日期转移，
-否则为 `not_comparable`。填补值和 N/A 占位不得进入相关或换手。
+只使用相邻两日都为原始 `observed`、且属于两日 U0 交集的证券。先在每一日完整
+original-observed U0 截面上按平均秩
+`(average_rank - 1) / (n_day - 1)` 独立计算百分位，`n_day < 2` 时该日无效；再取
+相邻日 observed 交集计算绝对变化均值。证据保存两日各自 `n_day` 和交集 `n_common`；
+至少 5 只共同证券和 60 个有效日期转移，否则为 `not_comparable`。不得先缩成两日
+交集后重排百分位，填补值和 N/A 占位也不得进入相关或换手。
 
 BH 将候选按 `(p_value, feature_id@version)` 升序排列，取最大
 `k: p_k <= (k/m)*0.10`，前 k 项通过；p 值相同也不得依赖输入顺序。相关距离固定为
@@ -270,7 +299,11 @@ BH 将候选按 `(p_value, feature_id@version)` 升序排列，取最大
 `<= 0.15` 的簇；任一两两距离未知则该合并不合法。候选合并并列时按两个有序成员
 ID 元组的字典序决定。
 
-方向跨折一致固定为三个连续子折的有符号平均 RankIC 均严格大于 0；覆盖比较量为折内
+三个连续子折各自至少 60 个有效每日 RankIC 是前述 `selection_eligible` 的样本充分性
+门。样本充分后，只有三个子折的有符号平均 RankIC 均严格大于 0 才记录
+`direction_consistent=true`，否则为 `false`；该布尔只作为第 8 步簇内代表的第一
+tie-break，`false` 的孤立簇不因此被淘汰，也不改变 BH 的 `m`。任一子折不足仍是
+`selection_ineligible`。覆盖比较量为折内
 合格日期 `coverage_d` 的算术均值；特征换手为相邻有效日期、共同证券上截面百分位
 绝对变化均值的时间中位数，越低越优；稳定性为
 `1 / (1 + MAD(signed_daily_RankIC))`，越高越优。任一比较量不可构造时使用明确
@@ -311,7 +344,9 @@ golden fixture 至少包含：
 - 两个训练折及一个 2023～2025 冻结回放身份；
 - 追加未来行情、标签、行业或市值后，历史截止前制品和选择身份不变。
 - 标签未成熟、标签快照晚于选择截止、U0/控制面板缺行/多行、旧 raw coverage 被误用、
-  全 N/A full 视图、D1/D3/D5 注入及旧先验 hash 攻击均有失败关闭反例。
+  非成员审计行进入 rank、coverage fail 穿透 full、无 p 项污染 BH 的 `m`、先缩成交集
+  再算换手百分位、把 `direction_consistent=false` 错当硬淘汰或改变 BH `m`、训练器
+  重算联合去重、全 N/A full 视图、D1/D3/D5 注入及旧先验 hash 攻击均有失败关闭反例。
 
 处理 oracle 使用手算小截面；Spearman、OLS、BH 和 bootstrap 至少各有独立参考实现，
 不得调用生产入口生成期望值。处理数值使用 `atol=rtol=1e-12`，OLS 和相关归约使用
@@ -329,9 +364,10 @@ golden fixture 至少包含：
 8. 同一输入重复运行身份一致；任何语义输入变化重标识；默认检查在 90 秒内。
 9. 导入图不包含 Data 内部模块、MiniQMT、Portfolio & Risk、Trading Execution、
    LightGBM、前端或网络。
-10. 单日 processed envelope 与多日 panel 身份分离；标签使用独立成熟数据快照；
-    U0/控制面板精确行集、每日选择日历、先验方向/机制/复杂度、BH/linkage 并列和
-    固定视图列顺序均有篡改负测。
+10. 单日 processed envelope 与绑定完整日级 tuple 的多日 panel 身份分离；标签使用
+    独立成熟数据快照；research-member U0/控制面板精确行集、每日选择日历、先验
+    方向/机制/复杂度、BH 准确检验族、linkage 并列、跨包联合 manifest 和固定视图
+    列顺序均有篡改负测。
 
 ## 检查
 
