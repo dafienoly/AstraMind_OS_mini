@@ -45,10 +45,7 @@ from .models import (
 )
 from .parent_validation import (
     CoreFeatureSelectionParents,
-    ValidatedCoreFeatureSelection,
     rebuild_core_feature_selection,
-    rebuild_validated_core_feature_selection,
-    resolve_validated_core_feature_selection,
     validate_core_feature_selection,
 )
 from .plan import (
@@ -105,7 +102,6 @@ __all__ = [
     "CoreSubfoldRankICEvidence",
     "CoreTurnoverReason",
     "CoreTurnoverTransitionEvidence",
-    "ValidatedCoreFeatureSelection",
     "average_ranks",
     "benjamini_hochberg",
     "build_core_joint_selected_view_manifests",
@@ -119,8 +115,6 @@ __all__ = [
     "pair_correlation_evidence",
     "project_core_joint_selected_matrix",
     "rebuild_core_feature_selection",
-    "rebuild_validated_core_feature_selection",
-    "resolve_validated_core_feature_selection",
     "select_core_features",
     "selection_seed",
     "spearman",

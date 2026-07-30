@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from ..feature_selection.models import CoreFeatureSelectionManifest
     from ..feature_selection.parent_validation import (
         CoreFeatureSelectionParents,
-        ValidatedCoreFeatureSelection,
     )
 
 
@@ -57,8 +56,8 @@ def project_core_feature_matrix(
     *,
     envelope: CoreProcessedFeatureEnvelope,
     view: CoreFeatureViewManifest,
-    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    selection_parents: CoreFeatureSelectionParents | None = None,
+    selection_manifest: CoreFeatureSelectionManifest,
+    selection_parents: CoreFeatureSelectionParents,
 ) -> CoreFeatureMatrixProjection:
     """Materialize the exact finite matrix; downstream modeling performs no processing."""
     validated_envelopes = validate_core_feature_view_parents(

@@ -5,13 +5,10 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-from ..feature_processing import CoreProcessedFeatureEnvelope
-from ..labels import CoreForwardReturnLabelBatch, CoreLabelHorizon
+from ..labels import CoreLabelHorizon
 from .bootstrap import centered_circular_block_bootstrap, selection_seed
-from .coverage import calculate_fold_coverage
-from .metrics import observed_feature_map
+from .evidence_panel import SelectionEvidencePanel
 from .models import (
-    CoreDailyRankICEvidence,
     CoreFeatureSelectionEvidence,
     CoreSelectionReason,
     CoreSelectionSpec,
@@ -19,28 +16,25 @@ from .models import (
 )
 from .plan import CoreSelectionFold
 from .priors import CoreSelectionPriorEntry
-from .statistics import finite_mean, median_absolute_deviation, spearman_by_key
-from .turnover import CoreTurnoverTransitionEvidence, feature_turnover
+from .statistics import finite_mean, median_absolute_deviation
+from .turnover import CoreTurnoverTransitionEvidence
 
 
 def build_initial_feature_evidence(
     *,
     prior: CoreSelectionPriorEntry,
-    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
-    labels: tuple[CoreForwardReturnLabelBatch, ...],
+    evidence_panel: SelectionEvidencePanel,
     fold: CoreSelectionFold,
     horizon: CoreLabelHorizon,
     spec: CoreSelectionSpec,
 ) -> CoreFeatureSelectionEvidence:
-    coverage = calculate_fold_coverage(feature_id=prior.feature_id, envelopes=envelopes)
-    daily = tuple(
-        _daily_rank_ic(
-            envelope=envelope,
-            label=label,
-            feature_id=prior.feature_id,
-            direction=prior.expected_direction,
-        )
-        for envelope, label in zip(envelopes, labels, strict=True)
+    coverage = evidence_panel.coverage(
+        feature_id=prior.feature_id,
+        definition_version=prior.definition_version,
+    )
+    daily = evidence_panel.daily_rank_ic(
+        feature_id=prior.feature_id,
+        direction=prior.expected_direction,
     )
     by_date = {item.decision_date: item.signed_rank_ic for item in daily}
     subfolds = tuple(
@@ -75,7 +69,7 @@ def build_initial_feature_evidence(
         eligible = math.isfinite(p_value)
     turnover, transition_count, transitions, stability = _quality_metrics(
         prior.feature_id,
-        envelopes,
+        evidence_panel,
         signed_values,
         spec,
     )
@@ -107,7 +101,7 @@ def build_initial_feature_evidence(
 
 def _quality_metrics(
     feature_id: str,
-    envelopes: tuple[CoreProcessedFeatureEnvelope, ...],
+    evidence_panel: SelectionEvidencePanel,
     signed_values: tuple[float, ...],
     spec: CoreSelectionSpec,
 ) -> tuple[
@@ -116,8 +110,7 @@ def _quality_metrics(
     tuple[CoreTurnoverTransitionEvidence, ...],
     float | None,
 ]:
-    turnover, transition_count, transitions = feature_turnover(
-        envelopes,
+    turnover, transition_count, transitions = evidence_panel.turnover(
         feature_id=feature_id,
         minimum_common=spec.turnover_minimum_common_instruments,
         minimum_transitions=spec.turnover_minimum_valid_transitions,
@@ -128,29 +121,6 @@ def _quality_metrics(
         transition_count,
         transitions,
         1.0 / (1.0 + mad) if mad is not None else None,
-    )
-
-
-def _daily_rank_ic(
-    *,
-    envelope: CoreProcessedFeatureEnvelope,
-    label: CoreForwardReturnLabelBatch,
-    feature_id: str,
-    direction: int,
-) -> CoreDailyRankICEvidence:
-    feature_values = observed_feature_map(envelope, feature_id)
-    label_values = {
-        item.instrument_id: float(item.percentile)
-        for item in label.rows
-        if item.research_member and item.percentile is not None
-    }
-    pair_count = len(set(feature_values) & set(label_values))
-    rank_ic = spearman_by_key(feature_values, label_values, minimum_pairs=2)
-    return CoreDailyRankICEvidence(
-        decision_date=envelope.decision_date,
-        pair_count=pair_count,
-        rank_ic=rank_ic,
-        signed_rank_ic=(rank_ic * direction if rank_ic is not None else None),
     )
 
 

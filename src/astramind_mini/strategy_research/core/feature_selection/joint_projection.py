@@ -21,7 +21,6 @@ from .joint_models import CoreJointSelectedViewManifest, CoreJointViewStatus
 from .models import CoreFeatureSelectionManifest
 from .parent_validation import (
     CoreFeatureSelectionParents,
-    ValidatedCoreFeatureSelection,
 )
 
 
@@ -54,11 +53,8 @@ def project_core_joint_selected_matrix(
     *,
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
     view: CoreJointSelectedViewManifest,
-    selections: Mapping[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ],
-    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None = None,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents],
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> CoreJointMatrixProjection:
     """Project exact view columns; downstream modeling performs no feature work."""
@@ -93,11 +89,8 @@ def _validate_projection_parents(
     *,
     envelopes: Mapping[str, CoreProcessedFeatureEnvelope],
     view: CoreJointSelectedViewManifest,
-    selections: Mapping[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ],
-    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents],
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[
     CoreJointSelectedViewManifest,
@@ -119,11 +112,7 @@ def _validate_projection_parents(
     if expected is None or view != expected:
         raise ValueError("joint view differs from its validated parent objects")
     validated_daily_envelopes = {
-        package: _selection_parent_envelopes(
-            selections[package],
-            selection_parents[package] if selection_parents is not None else None,
-        )
-        for package in view.package_ids
+        package: selection_parents[package].processed_envelopes for package in view.package_ids
     }
     envelopes = {
         package: CoreProcessedFeatureEnvelope.model_validate(envelope.model_dump())
@@ -163,15 +152,6 @@ def _validate_projection_parents(
         raise ValueError("joint parent U0 row order must exactly match")
     row_order = next(iter(row_orders))
     return view, envelopes, decision_date, row_order
-
-
-def _selection_parent_envelopes(
-    selection: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    parents: CoreFeatureSelectionParents | None,
-) -> tuple[CoreProcessedFeatureEnvelope, ...]:
-    from .parent_validation import resolve_validated_core_feature_selection
-
-    return resolve_validated_core_feature_selection(selection, parents).parents.processed_envelopes
 
 
 def _projection_values(

@@ -14,7 +14,6 @@ from astramind_mini.strategy_research.core.feature_values import (
     CoreImputationSource,
     FeatureAvailabilityState,
 )
-from astramind_mini.strategy_research.core.labels import CoreLabelHorizon
 
 INSTRUMENTS = ("A", "B", "C", "D", "E", "F")
 
@@ -27,9 +26,8 @@ def feature_rows(
     feature_index: int,
     day_index: int,
     profile: str,
-    horizon: CoreLabelHorizon,
 ) -> tuple[CoreProcessedFeatureRow, ...]:
-    ranks = profile_ranks(profile, feature_index, day_index, horizon)
+    ranks = profile_ranks(profile, feature_index, day_index)
     return tuple(
         _observed_row(instrument, feature_id, version, rank * direction)
         if rank is not None
@@ -57,7 +55,6 @@ def profile_ranks(
     profile: str,
     feature_index: int,
     day_index: int,
-    horizon: CoreLabelHorizon,
 ) -> tuple[float | None, ...]:
     ascending = (0.0, 1.0, 2.0, 3.0, 4.0, 5.0)
     if profile == "single":
@@ -70,7 +67,7 @@ def profile_ranks(
         )
         return profiles[feature_index] if feature_index < len(profiles) else (None,) * 6
     if profile == "golden":
-        return _golden_ranks(ascending, feature_index, day_index, horizon)
+        return _golden_ranks(ascending, feature_index, day_index)
     return (None,) * 6
 
 
@@ -78,23 +75,17 @@ def _golden_ranks(
     ascending: tuple[float, ...],
     feature_index: int,
     day_index: int,
-    horizon: CoreLabelHorizon,
 ) -> tuple[float | None, ...]:
-    forward = ascending if horizon == CoreLabelHorizon.H20 else tuple(reversed(ascending))
     if feature_index == 0:
-        return (*forward[:5], None) if day_index == 30 else forward
+        return (*ascending[:5], None) if day_index == 30 else ascending
     if feature_index == 1:
-        return tuple(reversed(forward))
+        return tuple(reversed(ascending))
     if feature_index == 2:
         if day_index == 30:
-            return (*forward[:5], None)
-        return (
-            (0.0, 1.0, 2.0, 4.0, 3.0, 5.0)
-            if day_index == 90
-            else forward
-        )
+            return (*ascending[:5], None)
+        return (0.0, 1.0, 2.0, 4.0, 3.0, 5.0) if day_index == 90 else ascending
     if feature_index == 3:
-        return (0.0, None, None, None, None, None) if day_index == 60 else forward
+        return (0.0, None, None, None, None, None) if day_index == 60 else ascending
     return (None,) * 6
 
 
@@ -161,11 +152,7 @@ def cross_section(
         mad_scale=1.0 if values else None,
         winsor_lower=min(values) if values else None,
         winsor_upper=max(values) if values else None,
-        status=(
-            CoreCrossSectionStatus.READY
-            if values
-            else CoreCrossSectionStatus.NO_OBSERVED
-        ),
+        status=(CoreCrossSectionStatus.READY if values else CoreCrossSectionStatus.NO_OBSERVED),
         neutralization_status=CoreNeutralizationStatus.INSUFFICIENT_SAMPLE,
         neutralization_sample_count=len(values),
         neutralization_parameter_count=2,

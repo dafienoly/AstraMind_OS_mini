@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from datetime import date, timedelta
 from pathlib import Path
 from statistics import median
 
@@ -13,14 +14,13 @@ from generate_stage_s_selection_oracle import build_selection_replays
 REPOSITORY = Path(__file__).parents[4]
 OUTPUT = Path(__file__).with_name("stage_s_oracle_v1.json")
 CALENDAR = REPOSITORY / "tests" / "fixtures" / "core" / "f0" / "golden_case.json"
+SELECTION_CALENDAR = Path(__file__).with_name("sse_szse_common_calendar_2022.json")
+REPLAY_CALENDAR = Path(__file__).with_name("sse_szse_common_calendar_2023_2025.json")
+INDEPENDENT_SELECTION = Path(__file__).with_name("stage_s_independent_selection.py")
 PRIORS = REPOSITORY / Path(
     "src/astramind_mini/strategy_research/core/feature_selection/core_selection_priors_v1.json"
 )
-PACKAGES = (
-    "astramind-f0-v1",
-    "qlib-alpha158-79633dd",
-    "formulaic-alpha101-v3",
-)
+PACKAGES = ("astramind-f0-v1", "qlib-alpha158-79633dd", "formulaic-alpha101-v3")  # fmt: skip
 MASK64 = (1 << 64) - 1
 
 
@@ -36,6 +36,40 @@ def _canonical_hash(value: object) -> str:
 
 def _round(value: float) -> float:
     return round(float(value), 12)
+
+
+def _official_sessions(path: Path) -> list[str]:
+    specification = json.loads(path.read_text(encoding="utf-8"))
+    closed: set[date] = set()
+    for raw_start, raw_end in specification["closure_ranges"]:
+        current = date.fromisoformat(raw_start)
+        end = date.fromisoformat(raw_end)
+        while current <= end:
+            closed.add(current)
+            current += timedelta(days=1)
+    first = date.fromisoformat(specification["first_date"])
+    last = date.fromisoformat(specification["last_date"])
+    sessions: list[str] = []
+    current = first
+    while current <= last:
+        if current.weekday() < 5 and current not in closed:
+            sessions.append(current.isoformat())
+        current += timedelta(days=1)
+    year_counts = {
+        str(year): sum(item.startswith(f"{year}-") for item in sessions)
+        for year in range(first.year, last.year + 1)
+    }
+    if (
+        len(sessions) != specification["expected_open_session_count"]
+        or sessions[0] != specification["first_open_session"]
+        or sessions[-1] != specification["last_open_session"]
+        or (
+            "expected_year_counts" in specification
+            and year_counts != specification["expected_year_counts"]
+        )
+    ):
+        raise ValueError(f"official calendar fixture drifted: {path.name}")
+    return sessions
 
 
 def _robust(values: list[float]) -> tuple[dict[str, object], list[float], list[float]]:
@@ -261,6 +295,7 @@ def _package_panels(
 def _provenance(
     panels: list[dict[str, object]],
     replays: list[dict[str, object]],
+    frozen_replay: dict[str, object],
 ) -> dict[str, object]:
     input_records = [
         {
@@ -293,20 +328,22 @@ def _provenance(
     ]
     return {
         "generator_identity": "tests/fixtures/core/processing/generate_stage_s_oracle.py",
-        "generator_version": "3.0.0",
+        "generator_version": "4.0.0",
         "generation_policy": (
             "stdlib-only independent oracle; production evaluators are never imported"
         ),
         "authoritative_source_commit": "9e0c57fef5f916c3af4bd5fc8060c0a8ee1532a7",
         "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "selection_generator_sha256": hashlib.sha256(
-            Path(__file__).with_name(
-                "generate_stage_s_selection_oracle.py"
-            ).read_bytes()
+            Path(__file__).with_name("generate_stage_s_selection_oracle.py").read_bytes()
+        ).hexdigest(),
+        "independent_selection_sha256": hashlib.sha256(
+            INDEPENDENT_SELECTION.read_bytes()
         ).hexdigest(),
         "input_records_hash": _canonical_hash(input_records),
         "processed_outputs_hash": _canonical_hash(processed_outputs),
         "selection_replays_hash": _canonical_hash(replays),
+        "frozen_historical_replay_hash": _canonical_hash(frozen_replay),
         "fixture_content_hash": None,
     }
 
@@ -354,13 +391,15 @@ def _oracle_vectors() -> dict[str, object]:
 def _build_document(
     *,
     sessions: list[str],
+    selection_sessions: list[str],
     panels: list[dict[str, object]],
     replays: list[dict[str, object]],
     bootstrap_vectors: list[dict[str, object]],
 ) -> dict[str, object]:
+    frozen_replay = _frozen_historical_replay(replays)
     return {
-        "schema": "core-feature-processing-selection-oracle-v3",
-        "provenance": _provenance(panels, replays),
+        "schema": "core-feature-processing-selection-oracle-v4",
+        "provenance": _provenance(panels, replays, frozen_replay),
         "dimensions": {
             "sessions": 260,
             "instruments": 24,
@@ -373,6 +412,12 @@ def _build_document(
             "source_path": str(CALENDAR.relative_to(REPOSITORY)),
             "source_sha256": hashlib.sha256(CALENDAR.read_bytes()).hexdigest(),
         },
+        "selection_calendar": {
+            "sessions": selection_sessions,
+            "source_path": str(SELECTION_CALENDAR.relative_to(REPOSITORY)),
+            "source_sha256": hashlib.sha256(SELECTION_CALENDAR.read_bytes()).hexdigest(),
+        },
+        "frozen_historical_replay": frozen_replay,
         "instruments": [
             {"instrument_id": f"S{index:02d}", "industry": _industry(index)} for index in range(24)
         ],
@@ -383,14 +428,52 @@ def _build_document(
     }
 
 
+def _frozen_historical_replay(
+    selection_replays: list[dict[str, object]],
+) -> dict[str, object]:
+    replay_sessions = _official_sessions(REPLAY_CALENDAR)
+    parent_evidence = [
+        {
+            "horizon": item["horizon"],
+            "selection_fold_id": item["independent_fold_identity"],
+            "selection_replay_identity": item["frozen_replay_identity"],
+            "training_first_session": item["decision_sessions"][0],
+            "training_last_session": item["decision_sessions"][-1],
+        }
+        for item in selection_replays
+    ]
+    payload = {
+        "schema": "core-stage-s-frozen-historical-replay-v1",
+        "period_start": "2023-01-01",
+        "period_end": "2025-12-31",
+        "first_common_session": replay_sessions[0],
+        "last_common_session": replay_sessions[-1],
+        "common_session_count": len(replay_sessions),
+        "common_sessions": replay_sessions,
+        "common_sessions_hash": _canonical_hash(replay_sessions),
+        "calendar_source_path": str(REPLAY_CALENDAR.relative_to(REPOSITORY)),
+        "calendar_source_sha256": hashlib.sha256(REPLAY_CALENDAR.read_bytes()).hexdigest(),
+        "selection_freeze_cutoff": "2022-12-31",
+        "selection_parent_evidence": parent_evidence,
+        "relationship_to_processing_fixture": (
+            "The 260x24x3 processing panel is an independent algorithm oracle and is "
+            "not the 2023-2025 market replay. This identity binds the exact official "
+            "replay calendar to the two pre-2023 frozen selection parents."
+        ),
+    }
+    payload["replay_identity"] = _canonical_hash(payload)
+    return payload
+
+
 def main() -> None:
     sessions = json.loads(CALENDAR.read_text(encoding="utf-8"))["common_sessions"]
     if len(sessions) != 260:
         raise ValueError("frozen calendar must contain exactly 260 sessions")
     prior = json.loads(PRIORS.read_text(encoding="utf-8"))
+    selection_sessions = _official_sessions(SELECTION_CALENDAR)
     feature_keys = _feature_keys(prior)
     panels = _package_panels(sessions, feature_keys)
-    replays = build_selection_replays(sessions, prior)
+    replays = build_selection_replays(selection_sessions, prior)
     bootstrap_vectors = [
         _bootstrap_vector("F@1.0.0", "H20", "fold-001"),
         _bootstrap_vector(feature_keys[PACKAGES[1]], "H20", "fold-001"),
@@ -398,6 +481,7 @@ def main() -> None:
     ]
     document = _build_document(
         sessions=sessions,
+        selection_sessions=selection_sessions,
         panels=panels,
         replays=replays,
         bootstrap_vectors=bootstrap_vectors,

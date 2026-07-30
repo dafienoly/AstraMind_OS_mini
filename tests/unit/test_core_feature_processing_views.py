@@ -3,9 +3,13 @@ from __future__ import annotations
 import math
 
 import pytest
+from test_core_feature_selection_attack_support import (
+    forged_complete_link_split,
+    forged_legacy_receipts,
+)
 from test_core_feature_selection_production_support import (
     INSTRUMENTS,
-    production_validated_selection_case,
+    production_selection_case,
 )
 
 from astramind_mini.strategy_research.application.identity import research_hash
@@ -31,17 +35,18 @@ PACKAGE = ASTRAMIND_F0.package_id
 
 
 def test_full_and_selected_views_bind_real_selection_and_project_fixed_columns() -> None:
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
     )
-    selection = validated.manifest
     full = build_core_feature_view_manifest(
-        selection_manifest=validated,
+        selection_manifest=selection,
+        selection_parents=parents,
         view_kind=CoreFeatureViewKind.FULL,
     )
     selected = build_core_feature_view_manifest(
-        selection_manifest=validated,
+        selection_manifest=selection,
+        selection_parents=parents,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     assert full.feature_ids == parents.panel_manifest.feature_order
@@ -50,7 +55,8 @@ def test_full_and_selected_views_bind_real_selection_and_project_fixed_columns()
     projection = project_core_feature_matrix(
         envelope=parents.processed_envelopes[0],
         view=selected,
-        selection_manifest=validated,
+        selection_manifest=selection,
+        selection_parents=parents,
     )
     feature_id = selection.selected_feature_ids[0]
     assert projection.row_order == INSTRUMENTS
@@ -63,13 +69,14 @@ def test_full_and_selected_views_bind_real_selection_and_project_fixed_columns()
 
 
 def test_empty_selection_and_rehashed_view_fail_closed() -> None:
-    empty_parents, empty_validated = production_validated_selection_case(
+    empty_parents, empty_selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
         profile="empty",
     )
     empty_view = build_core_feature_view_manifest(
-        selection_manifest=empty_validated,
+        selection_manifest=empty_selection,
+        selection_parents=empty_parents,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     assert empty_view.status == CoreFeatureViewStatus.BLOCKED
@@ -78,15 +85,17 @@ def test_empty_selection_and_rehashed_view_fail_closed() -> None:
         project_core_feature_matrix(
             envelope=empty_parents.processed_envelopes[0],
             view=empty_view,
-            selection_manifest=empty_validated,
+            selection_manifest=empty_selection,
+            selection_parents=empty_parents,
         )
 
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
     )
     selected = build_core_feature_view_manifest(
-        selection_manifest=validated,
+        selection_manifest=selection,
+        selection_parents=parents,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     attack = selected.model_dump()
@@ -96,18 +105,19 @@ def test_empty_selection_and_rehashed_view_fail_closed() -> None:
         project_core_feature_matrix(
             envelope=parents.processed_envelopes[0],
             view=forged_view,
-            selection_manifest=validated,
+            selection_manifest=selection,
+            selection_parents=parents,
         )
 
 
 def test_forged_selection_is_rejected_at_single_view_and_projection_entries() -> None:
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
     )
-    selection = validated.manifest
     selected = build_core_feature_view_manifest(
-        selection_manifest=validated,
+        selection_manifest=selection,
+        selection_parents=parents,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     forged = _selection_with_rehashed_p_value(selection, 0.01)
@@ -126,6 +136,35 @@ def test_forged_selection_is_rejected_at_single_view_and_projection_entries() ->
         )
 
 
+def test_legacy_receipt_forgery_shapes_cannot_cross_single_public_boundaries() -> None:
+    parents, selection = production_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
+        profile="complete_link",
+    )
+    selected = build_core_feature_view_manifest(
+        selection_manifest=selection,
+        selection_parents=parents,
+        view_kind=CoreFeatureViewKind.SELECTED,
+    )
+    forged = forged_complete_link_split(selection)
+    assert len(forged.selected_feature_ids) > len(selection.selected_feature_ids)
+    for receipt in forged_legacy_receipts(forged, parents):
+        with pytest.raises(TypeError, match="only candidate manifests"):
+            build_core_feature_view_manifest(
+                selection_manifest=receipt,  # type: ignore[arg-type]
+                selection_parents=parents,
+                view_kind=CoreFeatureViewKind.SELECTED,
+            )
+        with pytest.raises(TypeError, match="only candidate manifests"):
+            project_core_feature_matrix(
+                envelope=parents.processed_envelopes[0],
+                view=selected,
+                selection_manifest=receipt,  # type: ignore[arg-type]
+                selection_parents=parents,
+            )
+
+
 def _selection_with_rehashed_p_value(
     selection: CoreFeatureSelectionManifest,
     p_value: float,
@@ -140,21 +179,15 @@ def _selection_with_rehashed_p_value(
         "bootstrap_p_value": p_value,
     }
     data["feature_evidence"] = tuple(evidence)
-    body = {
-        key: value for key, value in data.items() if key not in {"manifest_id", "content_hash"}
-    }
-    content_hash = research_hash(
-        {"schema": "core-feature-selection-manifest-v1", **body}
-    )
+    body = {key: value for key, value in data.items() if key not in {"manifest_id", "content_hash"}}
+    content_hash = research_hash({"schema": "core-feature-selection-manifest-v1", **body})
     data["manifest_id"] = f"core-selection:{content_hash.removeprefix('sha256:')}"
     data["content_hash"] = content_hash
     return CoreFeatureSelectionManifest.model_validate(data)
 
 
 def _rehash_view(data: dict[str, object]) -> dict[str, object]:
-    body = {
-        key: value for key, value in data.items() if key not in {"view_id", "content_hash"}
-    }
+    body = {key: value for key, value in data.items() if key not in {"view_id", "content_hash"}}
     content_hash = research_hash({"schema": "core-feature-view-manifest-v1", **body})
     data["view_id"] = f"core-feature-view:{content_hash.removeprefix('sha256:')}"
     data["content_hash"] = content_hash

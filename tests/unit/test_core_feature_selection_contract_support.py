@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 from test_core_feature_selection_profile_support import (
@@ -35,11 +35,47 @@ from astramind_mini.strategy_research.core.labels import (
 )
 from astramind_mini.strategy_research.core.universe import core_universe_content_hash
 
-_CALENDAR_FIXTURE = Path(__file__).parents[1] / "fixtures" / "core" / "f0" / "golden_case.json"
-_SESSIONS = tuple(
-    date.fromisoformat(item)
-    for item in json.loads(_CALENDAR_FIXTURE.read_text(encoding="utf-8"))["common_sessions"]
+_CALENDAR_FIXTURE = (
+    Path(__file__).parents[1]
+    / "fixtures"
+    / "core"
+    / "processing"
+    / "sse_szse_common_calendar_2022.json"
 )
+
+
+def official_sessions(path: Path) -> tuple[date, ...]:
+    specification = json.loads(path.read_text(encoding="utf-8"))
+    closed: set[date] = set()
+    for raw_start, raw_end in specification["closure_ranges"]:
+        current = date.fromisoformat(raw_start)
+        end = date.fromisoformat(raw_end)
+        while current <= end:
+            closed.add(current)
+            current += timedelta(days=1)
+    first = date.fromisoformat(specification["first_date"])
+    last = date.fromisoformat(specification["last_date"])
+    sessions: list[date] = []
+    current = first
+    while current <= last:
+        if current.weekday() < 5 and current not in closed:
+            sessions.append(current)
+        current += timedelta(days=1)
+    year_counts = {
+        str(year): sum(item.year == year for item in sessions)
+        for year in range(first.year, last.year + 1)
+    }
+    if (
+        len(sessions) != specification["expected_open_session_count"]
+        or sessions[0].isoformat() != specification["first_open_session"]
+        or sessions[-1].isoformat() != specification["last_open_session"]
+        or year_counts != specification.get("expected_year_counts", year_counts)
+    ):
+        raise ValueError(f"official common-session fixture drifted: {path.name}")
+    return tuple(sessions)
+
+
+_SESSIONS = official_sessions(_CALENDAR_FIXTURE)
 CALENDAR = freeze_core_common_calendar(
     calendar_id="fixture-stage-s-common-calendar-v1",
     sessions=_SESSIONS,
@@ -73,7 +109,6 @@ def fixture_envelope(
     decisions: tuple[CoreUniverseDecision, ...],
     index: int,
     profile: str,
-    horizon: CoreLabelHorizon,
 ) -> CoreProcessedFeatureEnvelope:
     prior = load_core_selection_prior_manifest()
     binding = prior.package_bindings[package_id]
@@ -88,7 +123,6 @@ def fixture_envelope(
             feature_index=feature_index,
             day_index=index,
             profile=profile,
-            horizon=horizon,
         )
         for feature_index, feature_id in enumerate(feature_order)
     }
@@ -172,12 +206,18 @@ def fixture_label_batch(
     decisions: tuple[CoreUniverseDecision, ...],
     horizon: CoreLabelHorizon,
     index: int,
+    profile: str = "single",
 ) -> CoreForwardReturnLabelBatch:
     entry = CALENDAR.sessions[CALENDAR.sessions.index(day) + 1]
     terminal = CALENDAR.sessions[CALENDAR.sessions.index(day) + horizon.sessions]
+    label_positions = (
+        tuple(reversed(range(len(INSTRUMENTS))))
+        if profile == "golden" and horizon == CoreLabelHorizon.H60
+        else tuple(range(len(INSTRUMENTS)))
+    )
     prices = tuple(
         observation
-        for position, instrument in enumerate(INSTRUMENTS)
+        for position, instrument in zip(label_positions, INSTRUMENTS, strict=True)
         for observation in (
             CoreForwardPriceObservation(
                 instrument_id=instrument,
@@ -204,9 +244,7 @@ def fixture_label_batch(
         universe_rows=decisions,
         prices=prices,
         label_data_snapshot_id=f"fixture-label-snapshot-{horizon}-{index}",
-        label_data_snapshot_content_hash=research_hash(
-            {"label-snapshot": (horizon, index)}
-        ),
+        label_data_snapshot_content_hash=research_hash({"label-snapshot": (horizon, index)}),
         label_data_snapshot_as_of=SNAPSHOT_AS_OF,
         label_available_cutoff=SNAPSHOT_AS_OF,
     )

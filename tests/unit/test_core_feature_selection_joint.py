@@ -6,25 +6,26 @@ import pytest
 from test_core_feature_selection_attack_support import (
     forged_bootstrap_p_value,
     forged_complete_link_split,
+    forged_legacy_receipts,
 )
 from test_core_feature_selection_production_support import (
     INSTRUMENTS,
     production_selection_case,
-    production_validated_selection_case,
 )
 
 from astramind_mini.strategy_research.application.identity import research_hash
 from astramind_mini.strategy_research.core.feature_processing import (
     CoreFeatureViewKind,
     CoreFeatureViewManifest,
-    build_core_feature_view_manifest,
+)
+from astramind_mini.strategy_research.core.feature_processing.views import (
+    _build_core_feature_view_from_selection,
 )
 from astramind_mini.strategy_research.core.feature_selection import (
     CoreFeatureSelectionManifest,
     CoreFeatureSelectionParents,
     CoreJointSelectedViewManifest,
     CoreJointViewStatus,
-    ValidatedCoreFeatureSelection,
     build_core_joint_selected_view_manifests,
     complete_linkage_clusters,
     project_core_joint_selected_matrix,
@@ -49,11 +50,11 @@ def _parents(
     empty_package: str | None = None,
 ) -> tuple[
     dict[str, CoreFeatureSelectionParents],
-    dict[str, ValidatedCoreFeatureSelection],
+    dict[str, CoreFeatureSelectionManifest],
     dict[str, CoreFeatureViewManifest],
 ]:
     cases = {
-        package: production_validated_selection_case(
+        package: production_selection_case(
             package,
             horizon,
             profile="empty" if package == empty_package else "single",
@@ -63,8 +64,9 @@ def _parents(
     parents = {package: case[0] for package, case in cases.items()}
     selections = {package: case[1] for package, case in cases.items()}
     views = {
-        package: build_core_feature_view_manifest(
+        package: _build_core_feature_view_from_selection(
             selection_manifest=selections[package],
+            selection_parents=parents[package],
             view_kind=CoreFeatureViewKind.SELECTED,
         )
         for package in PACKAGES
@@ -76,14 +78,15 @@ def _build(
     horizon: CoreLabelHorizon,
     parents: tuple[
         dict[str, CoreFeatureSelectionParents],
-        dict[str, ValidatedCoreFeatureSelection],
+        dict[str, CoreFeatureSelectionManifest],
         dict[str, CoreFeatureViewManifest],
     ],
 ) -> tuple[CoreJointSelectedViewManifest, ...]:
-    _, selections, views = parents
+    selection_parents, selections, views = parents
     return build_core_joint_selected_view_manifests(
         horizon=horizon,
         selections=selections,
+        selection_parents=selection_parents,
         single_views=views,
     )
 
@@ -100,11 +103,11 @@ def test_each_horizon_freezes_four_joint_views_and_projects_direct_matrix() -> N
     selection_parents, selections, views = h20_parents
     projection = project_core_joint_selected_matrix(
         envelopes={
-            package: selection_parents[package].processed_envelopes[0]
-            for package in PACKAGES
+            package: selection_parents[package].processed_envelopes[0] for package in PACKAGES
         },
         view=triple,
         selections=selections,
+        selection_parents=selection_parents,
         single_views=views,
     )
     assert projection.row_order == INSTRUMENTS
@@ -127,6 +130,7 @@ def test_empty_parent_still_publishes_blocked_joint_identities() -> None:
             },
             view=blocked,
             selections=selections,
+            selection_parents=selection_parents,
             single_views=single_views,
         )
 
@@ -137,13 +141,8 @@ def test_forged_selection_stops_at_joint_builder_and_projection_entries() -> Non
     triple = next(
         item for item in _build(CoreLabelHorizon.H20, parents) if len(item.package_ids) == 3
     )
-    forged: dict[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ] = dict(selections)
-    forged[PACKAGES[0]] = forged_bootstrap_p_value(
-        selections[PACKAGES[0]].manifest
-    )
+    forged: dict[str, CoreFeatureSelectionManifest] = dict(selections)
+    forged[PACKAGES[0]] = forged_bootstrap_p_value(selections[PACKAGES[0]])
     with pytest.raises(ValueError, match="reconstructed true parents"):
         build_core_joint_selected_view_manifests(
             horizon=CoreLabelHorizon.H20,
@@ -154,14 +153,43 @@ def test_forged_selection_stops_at_joint_builder_and_projection_entries() -> Non
     with pytest.raises(ValueError, match="reconstructed true parents"):
         project_core_joint_selected_matrix(
             envelopes={
-                package: selection_parents[package].processed_envelopes[0]
-                for package in PACKAGES
+                package: selection_parents[package].processed_envelopes[0] for package in PACKAGES
             },
             view=triple,
             selections=forged,
             selection_parents=selection_parents,
             single_views=views,
         )
+
+
+def test_legacy_receipt_forgery_shapes_cannot_cross_joint_public_boundaries() -> None:
+    parents = _parents(CoreLabelHorizon.H20)
+    selection_parents, selections, views = parents
+    triple = next(
+        item for item in _build(CoreLabelHorizon.H20, parents) if len(item.package_ids) == 3
+    )
+    forged = forged_bootstrap_p_value(selections[PACKAGES[0]])
+    for receipt in forged_legacy_receipts(forged, selection_parents[PACKAGES[0]]):
+        attacked = dict(selections)
+        attacked[PACKAGES[0]] = receipt  # type: ignore[assignment]
+        with pytest.raises(TypeError, match="only candidate manifests"):
+            build_core_joint_selected_view_manifests(
+                horizon=CoreLabelHorizon.H20,
+                selections=attacked,
+                selection_parents=selection_parents,
+                single_views=views,
+            )
+        with pytest.raises(TypeError, match="only candidate manifests"):
+            project_core_joint_selected_matrix(
+                envelopes={
+                    package: selection_parents[package].processed_envelopes[0]
+                    for package in PACKAGES
+                },
+                view=triple,
+                selections=attacked,
+                selection_parents=selection_parents,
+                single_views=views,
+            )
 
 
 def test_rehashed_selection_correlation_attack_cannot_propagate_to_joint_view() -> None:
@@ -172,16 +200,13 @@ def test_rehashed_selection_correlation_attack_cannot_propagate_to_joint_view() 
         profile="complete_link",
     )
     selection_parents = {**selection_parents, PACKAGES[0]: complete_parents}
-    attacked: dict[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ] = {
+    attacked: dict[str, CoreFeatureSelectionManifest] = {
         **selections,
         PACKAGES[0]: forged_complete_link_split(complete_selection),
     }
     views = {
         **views,
-        PACKAGES[0]: build_core_feature_view_manifest(
+        PACKAGES[0]: _build_core_feature_view_from_selection(
             selection_manifest=complete_selection,
             selection_parents=complete_parents,
             view_kind=CoreFeatureViewKind.SELECTED,
@@ -203,9 +228,7 @@ def test_fully_rehashed_joint_manifest_is_rejected_against_true_parents() -> Non
     )
     attack = triple.model_dump()
     attack["parent_selections"] = tuple(
-        {**item, "selection_manifest_id": "forged-selection"}
-        if index == 0
-        else item
+        {**item, "selection_manifest_id": "forged-selection"} if index == 0 else item
         for index, item in enumerate(attack["parent_selections"])
     )
     forged = CoreJointSelectedViewManifest.model_validate(_rehash_joint(attack))
@@ -213,11 +236,11 @@ def test_fully_rehashed_joint_manifest_is_rejected_against_true_parents() -> Non
     with pytest.raises(ValueError, match="validated parent"):
         project_core_joint_selected_matrix(
             envelopes={
-                package: selection_parents[package].processed_envelopes[0]
-                for package in PACKAGES
+                package: selection_parents[package].processed_envelopes[0] for package in PACKAGES
             },
             view=forged,
             selections=selections,
+            selection_parents=selection_parents,
             single_views=views,
         )
 
@@ -240,8 +263,7 @@ def test_complete_linkage_does_not_chain_merge_bridge_correlations() -> None:
         profile="complete_link",
     )
     correlations = {
-        frozenset((item.left_feature_key, item.right_feature_key)):
-        item.median_daily_spearman
+        frozenset((item.left_feature_key, item.right_feature_key)): item.median_daily_spearman
         for item in selection.pair_correlations
     }
     assert tuple(correlations.values()) == pytest.approx(
@@ -255,9 +277,7 @@ def test_complete_linkage_does_not_chain_merge_bridge_correlations() -> None:
 
 def _rehash_joint(data: dict[str, object]) -> dict[str, object]:
     body = {
-        key: value
-        for key, value in data.items()
-        if key not in {"joint_view_id", "content_hash"}
+        key: value for key, value in data.items() if key not in {"joint_view_id", "content_hash"}
     }
     content_hash = research_hash({"schema": "core-joint-selected-view-v1", **body})
     data["joint_view_id"] = f"core-joint-selected:{content_hash.removeprefix('sha256:')}"

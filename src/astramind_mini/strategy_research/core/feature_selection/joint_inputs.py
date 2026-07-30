@@ -10,15 +10,14 @@ from ..feature_processing import (
     CoreFeatureViewManifest,
     CoreProcessedFeatureEnvelope,
     CoreProcessedFeaturePanelManifest,
-    build_core_feature_view_manifest,
 )
+from ..feature_processing.views import _build_core_feature_view_from_selection
 from ..labels import CoreLabelHorizon
 from .joint_models import CoreJointFeatureParent
 from .models import CoreFeatureSelectionEvidence, CoreFeatureSelectionManifest
 from .parent_validation import (
     CoreFeatureSelectionParents,
-    ValidatedCoreFeatureSelection,
-    resolve_validated_core_feature_selection,
+    validate_core_feature_selection,
 )
 
 
@@ -32,22 +31,16 @@ class JointInputs:
     single_views: tuple[CoreFeatureViewManifest, ...]
 
     def subset(self, package_ids: tuple[str, ...]) -> JointInputs:
-        positions = {
-            manifest.package_id: index for index, manifest in enumerate(self.manifests)
-        }
+        positions = {manifest.package_id: index for index, manifest in enumerate(self.manifests)}
         return JointInputs(
             manifests=tuple(self.manifests[positions[package]] for package in package_ids),
             prior_content_hash=self.prior_content_hash,
             evidence_by_key=self.evidence_by_key,
-            candidates=tuple(
-                item for item in self.candidates if item.package_id in package_ids
-            ),
+            candidates=tuple(item for item in self.candidates if item.package_id in package_ids),
             envelopes_by_package={
                 package: self.envelopes_by_package[package] for package in package_ids
             },
-            single_views=tuple(
-                self.single_views[positions[package]] for package in package_ids
-            ),
+            single_views=tuple(self.single_views[positions[package]] for package in package_ids),
         )
 
 
@@ -55,31 +48,27 @@ def collect_joint_inputs(
     *,
     package_ids: tuple[str, ...],
     horizon: CoreLabelHorizon,
-    selections: Mapping[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ],
-    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents],
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> JointInputs:
-    validated = tuple(
-        resolve_validated_core_feature_selection(
+    manifests = tuple(
+        validate_core_feature_selection(
             selections[package],
-            selection_parents[package] if selection_parents is not None else None,
+            selection_parents[package],
         )
         for package in package_ids
     )
-    manifests = tuple(item.manifest for item in validated)
     prior_hash = _validate_shared_selection_inputs(manifests, horizon)
     evidence_by_key: dict[str, CoreFeatureSelectionEvidence] = {}
     candidates: list[CoreJointFeatureParent] = []
     envelopes_by_package: dict[str, tuple[CoreProcessedFeatureEnvelope, ...]] = {}
     validated_views: list[CoreFeatureViewManifest] = []
-    for package, receipt in zip(package_ids, validated, strict=True):
-        manifest = receipt.manifest
+    for package, manifest in zip(package_ids, manifests, strict=True):
         panel, envelopes, view = _validate_package_parents(
             package=package,
-            selection=receipt,
+            selection=manifest,
+            parents=selection_parents[package],
             single_views=single_views,
         )
         del panel
@@ -108,8 +97,7 @@ def _validate_shared_selection_inputs(
 ) -> str:
     fold_ids = {item.fold.fold_id for item in manifests}
     plan_identities = {
-        (item.selection_plan_id, item.selection_plan_content_hash)
-        for item in manifests
+        (item.selection_plan_id, item.selection_plan_content_hash) for item in manifests
     }
     prior_hashes = {item.prior_content_hash for item in manifests}
     spec_hashes = {item.selection_spec_hash for item in manifests}
@@ -135,19 +123,19 @@ def _validate_shared_selection_inputs(
 def _validate_package_parents(
     *,
     package: str,
-    selection: ValidatedCoreFeatureSelection,
+    selection: CoreFeatureSelectionManifest,
+    parents: CoreFeatureSelectionParents,
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[
     CoreProcessedFeaturePanelManifest,
     tuple[CoreProcessedFeatureEnvelope, ...],
     CoreFeatureViewManifest,
 ]:
-    manifest = selection.manifest
-    parents = selection.parents
     panel = parents.panel_manifest
     envelopes = parents.processed_envelopes
-    expected_view = build_core_feature_view_manifest(
+    expected_view = _build_core_feature_view_from_selection(
         selection_manifest=selection,
+        selection_parents=parents,
         view_kind=CoreFeatureViewKind.SELECTED,
     )
     actual_view = CoreFeatureViewManifest.model_validate(single_views[package].model_dump())
@@ -164,7 +152,7 @@ def _validate_package_parents(
             item.processed_envelope_content_hash,
             item.universe_content_hash,
         )
-        for item in manifest.processed_days
+        for item in selection.processed_days
     )
     if actual_lineage != expected_lineage:
         raise ValueError("joint processed envelopes differ from frozen selection parents")

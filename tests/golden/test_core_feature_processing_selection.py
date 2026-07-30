@@ -38,6 +38,7 @@ REPOSITORY = Path(__file__).parents[2]
 FIXTURE = REPOSITORY / "tests" / "fixtures" / "core" / "processing" / "stage_s_oracle_v1.json"
 GENERATOR = REPOSITORY / "tests" / "fixtures" / "core" / "processing" / "generate_stage_s_oracle.py"
 SELECTION_GENERATOR = GENERATOR.with_name("generate_stage_s_selection_oracle.py")
+INDEPENDENT_SELECTION = GENERATOR.with_name("stage_s_independent_selection.py")
 
 
 def _load_fixture() -> dict[str, Any]:
@@ -63,13 +64,18 @@ def _canonical_fixture_hash(fixture: dict[str, Any]) -> str:
 def test_oracle_provenance_hashes_and_actual_dimensions_are_auditable() -> None:
     fixture = _load_fixture()
     provenance = fixture["provenance"]
-    assert fixture["schema"] == "core-feature-processing-selection-oracle-v3"
-    assert provenance["generator_version"] == "3.0.0"
+    assert fixture["schema"] == "core-feature-processing-selection-oracle-v4"
+    assert provenance["generator_version"] == "4.0.0"
     assert provenance["authoritative_source_commit"] == ("9e0c57fef5f916c3af4bd5fc8060c0a8ee1532a7")
     assert provenance["generator_sha256"] == hashlib.sha256(GENERATOR.read_bytes()).hexdigest()
-    assert provenance["selection_generator_sha256"] == hashlib.sha256(
-        SELECTION_GENERATOR.read_bytes()
-    ).hexdigest()
+    assert (
+        provenance["selection_generator_sha256"]
+        == hashlib.sha256(SELECTION_GENERATOR.read_bytes()).hexdigest()
+    )
+    assert (
+        provenance["independent_selection_sha256"]
+        == hashlib.sha256(INDEPENDENT_SELECTION.read_bytes()).hexdigest()
+    )
     assert provenance["fixture_content_hash"] == _canonical_fixture_hash(fixture)
     assert fixture["dimensions"] == {
         "sessions": 260,
@@ -222,7 +228,7 @@ def test_two_folds_two_production_selection_replays_and_three_seed_vectors_are_f
     assert len(replays) == 2
     assert [(item["fold_offset"], item["horizon"]) for item in replays] == [
         (0, "H20"),
-        (20, "H60"),
+        (1, "H60"),
     ]
     for replay in replays:
         assert len(replay["decision_sessions"]) == 180

@@ -75,7 +75,7 @@ def test_selector_requires_exact_stage_p_prior_plan_and_fold_inputs() -> None:
             horizon=parents.horizon,
             prior_manifest=load_core_selection_prior_manifest(),
         )
-    assert validate_core_feature_selection(manifest, parents).manifest == manifest
+    assert validate_core_feature_selection(manifest, parents) == manifest
 
 
 def test_parent_bundle_order_is_not_silently_normalized() -> None:

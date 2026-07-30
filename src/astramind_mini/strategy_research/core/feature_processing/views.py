@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from ..feature_selection.models import CoreFeatureSelectionManifest
     from ..feature_selection.parent_validation import (
         CoreFeatureSelectionParents,
-        ValidatedCoreFeatureSelection,
     )
 
 
@@ -106,21 +105,33 @@ class CoreFeatureViewManifest(ContractModel):
 
 def build_core_feature_view_manifest(
     *,
-    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    selection_parents: CoreFeatureSelectionParents | None = None,
+    selection_manifest: CoreFeatureSelectionManifest,
+    selection_parents: CoreFeatureSelectionParents,
     view_kind: CoreFeatureViewKind,
 ) -> CoreFeatureViewManifest:
     """Freeze a view only after reconstructing selection from every true parent."""
     from ..feature_selection.parent_validation import (
-        resolve_validated_core_feature_selection,
+        validate_core_feature_selection,
     )
 
-    validated = resolve_validated_core_feature_selection(
+    selection_manifest = validate_core_feature_selection(
         selection_manifest,
         selection_parents,
     )
-    selection_manifest = validated.manifest
-    selection_parents = validated.parents
+    return _build_core_feature_view_from_selection(
+        selection_manifest=selection_manifest,
+        selection_parents=selection_parents,
+        view_kind=view_kind,
+    )
+
+
+def _build_core_feature_view_from_selection(
+    *,
+    selection_manifest: CoreFeatureSelectionManifest,
+    selection_parents: CoreFeatureSelectionParents,
+    view_kind: CoreFeatureViewKind,
+) -> CoreFeatureViewManifest:
+    """Build from a selection reconstructed earlier in the same public call."""
     panel_manifest = selection_parents.panel_manifest
     _validate_selection_panel(selection_manifest, panel_manifest)
     envelopes = selection_parents.processed_envelopes
@@ -251,26 +262,27 @@ def _freeze_view(
 def validate_core_feature_view_parents(
     *,
     view: CoreFeatureViewManifest,
-    selection_manifest: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    selection_parents: CoreFeatureSelectionParents | None = None,
+    selection_manifest: CoreFeatureSelectionManifest,
+    selection_parents: CoreFeatureSelectionParents,
 ) -> tuple[CoreProcessedFeatureEnvelope, ...]:
     """Rebuild a view from validated parents and reject a self-rehashed substitute."""
     from ..feature_selection.parent_validation import (
-        resolve_validated_core_feature_selection,
+        validate_core_feature_selection,
     )
 
-    validated = resolve_validated_core_feature_selection(
+    selection_manifest = validate_core_feature_selection(
         selection_manifest,
         selection_parents,
     )
     view = CoreFeatureViewManifest.model_validate(view.model_dump())
-    expected = build_core_feature_view_manifest(
-        selection_manifest=validated,
+    expected = _build_core_feature_view_from_selection(
+        selection_manifest=selection_manifest,
+        selection_parents=selection_parents,
         view_kind=view.view_kind,
     )
     if view != expected:
         raise ValueError("feature view differs from its validated parent objects")
-    return validated.parents.processed_envelopes
+    return selection_parents.processed_envelopes
 
 
 def _excluded_dates(

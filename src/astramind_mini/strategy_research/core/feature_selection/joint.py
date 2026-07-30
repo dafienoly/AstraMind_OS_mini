@@ -30,7 +30,6 @@ from .models import (
 )
 from .parent_validation import (
     CoreFeatureSelectionParents,
-    ValidatedCoreFeatureSelection,
 )
 from .representative import representative_sort_key
 
@@ -38,11 +37,8 @@ from .representative import representative_sort_key
 def build_core_joint_selected_view_manifests(
     *,
     horizon: CoreLabelHorizon,
-    selections: Mapping[
-        str,
-        CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    ],
-    selection_parents: Mapping[str, CoreFeatureSelectionParents] | None = None,
+    selections: Mapping[str, CoreFeatureSelectionManifest],
+    selection_parents: Mapping[str, CoreFeatureSelectionParents],
     single_views: Mapping[str, CoreFeatureViewManifest],
 ) -> tuple[CoreJointSelectedViewManifest, ...]:
     """Publish three pairs and one triple for one horizon."""
@@ -53,9 +49,9 @@ def build_core_joint_selected_view_manifests(
         raise ValueError("joint publication requires exactly all three canonical packages")
     expected_packages = set(CANONICAL_JOINT_PACKAGE_ORDER)
     required_inputs = (selections, single_views)
-    if any(set(inputs) != expected_packages for inputs in required_inputs) or (
-        selection_parents is not None
-        and set(selection_parents) != expected_packages
+    if (
+        any(set(inputs) != expected_packages for inputs in required_inputs)
+        or set(selection_parents) != expected_packages
     ):
         raise ValueError("joint publication cannot omit or add packages")
     validated_inputs = collect_joint_inputs(

@@ -5,8 +5,24 @@ from __future__ import annotations
 from astramind_mini.strategy_research.application.identity import research_hash
 from astramind_mini.strategy_research.core.feature_selection import (
     CoreFeatureSelectionManifest,
+    CoreFeatureSelectionParents,
     CoreSelectionReason,
 )
+
+
+class _LegacyReceiptShape:
+    """Test-only model of every forgeable in-process receipt attribute."""
+
+    __slots__ = ("_issuer_guard", "_manifest", "_parents")
+
+    def __init__(
+        self,
+        manifest: CoreFeatureSelectionManifest,
+        parents: CoreFeatureSelectionParents,
+    ) -> None:
+        self._manifest = manifest
+        self._parents = parents
+        self._issuer_guard = object()
 
 
 def forged_bootstrap_p_value(
@@ -16,9 +32,7 @@ def forged_bootstrap_p_value(
     data = selection.model_dump()
     evidence = list(data["feature_evidence"])
     index = next(
-        position
-        for position, item in enumerate(evidence)
-        if item["bootstrap_p_value"] is not None
+        position for position, item in enumerate(evidence) if item["bootstrap_p_value"] is not None
     )
     evidence[index] = {**evidence[index], "bootstrap_p_value": value}
     data["feature_evidence"] = tuple(evidence)
@@ -98,11 +112,7 @@ def forged_turnover(
 ) -> CoreFeatureSelectionManifest:
     data = selection.model_dump()
     evidence = list(data["feature_evidence"])
-    index = next(
-        position
-        for position, item in enumerate(evidence)
-        if item["turnover"] is not None
-    )
+    index = next(position for position, item in enumerate(evidence) if item["turnover"] is not None)
     transitions = tuple(
         {**item, "turnover_ratio": value} if item["valid"] else item
         for item in evidence[index]["turnover_transitions"]
@@ -116,15 +126,36 @@ def forged_turnover(
     return _freeze(data)
 
 
-def _freeze(data: dict[str, object]) -> CoreFeatureSelectionManifest:
-    body = {
-        key: value
-        for key, value in data.items()
-        if key not in {"manifest_id", "content_hash"}
-    }
-    content_hash = research_hash(
-        {"schema": "core-feature-selection-manifest-v1", **body}
+def forged_legacy_receipts(
+    selection: CoreFeatureSelectionManifest,
+    parents: CoreFeatureSelectionParents,
+) -> tuple[object, ...]:
+    """Build subclass, copied-guard and raw-object forms of the former receipt."""
+
+    class OverrideAuthenticity(_LegacyReceiptShape):
+        def _assert_authentic(self) -> None:
+            return None
+
+    override = OverrideAuthenticity(selection, parents)
+    source = _LegacyReceiptShape(selection, parents)
+    copied_guard = object.__new__(_LegacyReceiptShape)
+    object.__setattr__(copied_guard, "_manifest", selection)
+    object.__setattr__(copied_guard, "_parents", parents)
+    object.__setattr__(
+        copied_guard,
+        "_issuer_guard",
+        object.__getattribute__(source, "_issuer_guard"),
     )
+    raw_object = object.__new__(_LegacyReceiptShape)
+    object.__setattr__(raw_object, "_manifest", selection)
+    object.__setattr__(raw_object, "_parents", parents)
+    object.__setattr__(raw_object, "_issuer_guard", object())
+    return override, copied_guard, raw_object
+
+
+def _freeze(data: dict[str, object]) -> CoreFeatureSelectionManifest:
+    body = {key: value for key, value in data.items() if key not in {"manifest_id", "content_hash"}}
+    content_hash = research_hash({"schema": "core-feature-selection-manifest-v1", **body})
     data["manifest_id"] = f"core-selection:{content_hash.removeprefix('sha256:')}"
     data["content_hash"] = content_hash
     return CoreFeatureSelectionManifest.model_validate(data)
@@ -134,5 +165,6 @@ __all__ = [
     "forged_bootstrap_p_value",
     "forged_cluster_representative",
     "forged_complete_link_split",
+    "forged_legacy_receipts",
     "forged_turnover",
 ]

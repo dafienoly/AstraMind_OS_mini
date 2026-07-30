@@ -1,0 +1,27 @@
+{
+  "schema": "sse-szse-common-calendar-fixture-v1",
+  "calendar_version": "sse-szse-common-2022-v1",
+  "first_date": "2022-01-01",
+  "last_date": "2022-12-31",
+  "first_open_session": "2022-01-04",
+  "last_open_session": "2022-12-30",
+  "expected_open_session_count": 242,
+  "session_rule": "weekday excluding the official SSE/SZSE closure intervals; weekend makeup workdays remain closed",
+  "authoritative_sources": [
+    {
+      "year": 2022,
+      "exchange": "SSE",
+      "notice": "上证公告〔2021〕37号",
+      "url": "https://www.sse.com.cn/disclosure/announcement/general/c/c_20211220_5662606.shtml"
+    }
+  ],
+  "closure_ranges": [
+    ["2022-01-01", "2022-01-03"],
+    ["2022-01-31", "2022-02-06"],
+    ["2022-04-03", "2022-04-05"],
+    ["2022-04-30", "2022-05-04"],
+    ["2022-06-03", "2022-06-05"],
+    ["2022-09-10", "2022-09-12"],
+    ["2022-10-01", "2022-10-07"]
+  ]
+}

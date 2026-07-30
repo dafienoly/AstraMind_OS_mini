@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -14,7 +16,8 @@ from .models import CoreFeatureSelectionManifest, CoreSelectionSpec
 from .plan import CoreSelectionFold, CoreSelectionPlan
 from .priors import CoreSelectionPriorManifest
 
-_RECEIPT_ISSUER = object()
+_VALIDATED_CANDIDATES: OrderedDict[bytes, str] = OrderedDict()
+_VALIDATED_CANDIDATE_MAXSIZE = 32
 
 
 @dataclass(frozen=True)
@@ -55,48 +58,6 @@ class CoreFeatureSelectionParents:
         )
 
 
-class ValidatedCoreFeatureSelection:
-    """Opaque receipt issued only by a production reconstruction."""
-
-    __slots__ = ("_issuer_guard", "_manifest", "_parents")
-
-    def __setattr__(self, name: str, value: object) -> None:
-        if hasattr(self, "_issuer_guard"):
-            raise AttributeError("validated selection receipts are immutable")
-        object.__setattr__(self, name, value)
-
-    def __delattr__(self, name: str) -> None:
-        del name
-        raise AttributeError("validated selection receipts are immutable")
-
-    def __init__(
-        self,
-        manifest: CoreFeatureSelectionManifest,
-        parents: CoreFeatureSelectionParents,
-        *,
-        _issuer_guard: object | None = None,
-    ) -> None:
-        if _issuer_guard is not _RECEIPT_ISSUER:
-            raise TypeError("validated selection receipts are factory-issued only")
-        self._manifest = manifest
-        self._parents = parents
-        self._issuer_guard = _issuer_guard
-
-    @property
-    def manifest(self) -> CoreFeatureSelectionManifest:
-        self._assert_authentic()
-        return self._manifest
-
-    @property
-    def parents(self) -> CoreFeatureSelectionParents:
-        self._assert_authentic()
-        return self._parents
-
-    def _assert_authentic(self) -> None:
-        if self._issuer_guard is not _RECEIPT_ISSUER:
-            raise ValueError("selection validation receipt is not authentic")
-
-
 def rebuild_core_feature_selection(
     parents: CoreFeatureSelectionParents,
 ) -> CoreFeatureSelectionManifest:
@@ -115,56 +76,32 @@ def rebuild_core_feature_selection(
     )
 
 
-def rebuild_validated_core_feature_selection(
-    parents: CoreFeatureSelectionParents,
-) -> ValidatedCoreFeatureSelection:
-    """Generate a manifest and its opaque receipt through the production selector."""
-    return _issue_receipt(rebuild_core_feature_selection(parents), parents)
-
-
 def validate_core_feature_selection(
     candidate: CoreFeatureSelectionManifest,
     parents: CoreFeatureSelectionParents,
-) -> ValidatedCoreFeatureSelection:
+) -> CoreFeatureSelectionManifest:
     """Reject any candidate differing from a complete production reconstruction."""
-    candidate = CoreFeatureSelectionManifest.model_validate(candidate.model_dump())
+    if not isinstance(candidate, CoreFeatureSelectionManifest):
+        raise TypeError("selection boundaries accept only candidate manifests")
+    candidate_json = CoreFeatureSelectionManifest.__pydantic_serializer__.to_json(candidate)
+    fingerprint = hashlib.sha256(candidate_json).digest()
+    candidate_content_hash = _VALIDATED_CANDIDATES.get(fingerprint)
+    if candidate_content_hash is None:
+        normalized = CoreFeatureSelectionManifest.model_validate_json(candidate_json)
+        candidate_content_hash = normalized.content_hash
+        _VALIDATED_CANDIDATES[fingerprint] = candidate_content_hash
+        if len(_VALIDATED_CANDIDATES) > _VALIDATED_CANDIDATE_MAXSIZE:
+            _VALIDATED_CANDIDATES.popitem(last=False)
+    else:
+        _VALIDATED_CANDIDATES.move_to_end(fingerprint)
     expected = rebuild_core_feature_selection(parents)
-    if candidate != expected:
+    if candidate_content_hash != expected.content_hash:
         raise ValueError("selection manifest differs from its reconstructed true parents")
-    return _issue_receipt(candidate, parents)
-
-
-def resolve_validated_core_feature_selection(
-    selection: CoreFeatureSelectionManifest | ValidatedCoreFeatureSelection,
-    parents: CoreFeatureSelectionParents | None = None,
-) -> ValidatedCoreFeatureSelection:
-    """Validate raw input once, or authenticate an existing receipt in constant time."""
-    if isinstance(selection, ValidatedCoreFeatureSelection):
-        selection._assert_authentic()
-        if parents is not None and selection.parents != parents:
-            raise ValueError("selection receipt does not bind the supplied parents")
-        return selection
-    if parents is None:
-        raise ValueError("raw selection manifests require every true parent")
-    return validate_core_feature_selection(selection, parents)
-
-
-def _issue_receipt(
-    manifest: CoreFeatureSelectionManifest,
-    parents: CoreFeatureSelectionParents,
-) -> ValidatedCoreFeatureSelection:
-    return ValidatedCoreFeatureSelection(
-        manifest,
-        parents,
-        _issuer_guard=_RECEIPT_ISSUER,
-    )
+    return expected
 
 
 __all__ = [
     "CoreFeatureSelectionParents",
-    "ValidatedCoreFeatureSelection",
     "rebuild_core_feature_selection",
-    "rebuild_validated_core_feature_selection",
-    "resolve_validated_core_feature_selection",
     "validate_core_feature_selection",
 ]

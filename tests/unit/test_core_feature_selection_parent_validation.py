@@ -6,17 +6,17 @@ import pytest
 from test_core_feature_selection_attack_support import (
     forged_cluster_representative,
     forged_complete_link_split,
+    forged_legacy_receipts,
     forged_turnover,
 )
 from test_core_feature_selection_production_support import (
+    production_selection_case,
     production_selection_parents,
-    production_validated_selection_case,
 )
 
 from astramind_mini.strategy_research.core.feature_selection import (
     CoreFeatureSelectionManifest,
     CoreFeatureSelectionParents,
-    ValidatedCoreFeatureSelection,
     rebuild_core_feature_selection,
     validate_core_feature_selection,
 )
@@ -39,12 +39,12 @@ def test_fully_rehashed_selection_evidence_attacks_fail_against_true_parents(
         CoreFeatureSelectionManifest,
     ],
 ) -> None:
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
         profile="complete_link",
     )
-    forged = attack(validated.manifest)
+    forged = attack(selection)
     with pytest.raises(ValueError, match="reconstructed true parents"):
         validate_core_feature_selection(forged, parents)
 
@@ -53,31 +53,46 @@ def test_fully_rehashed_selection_evidence_attacks_fail_against_true_parents(
 def test_fully_rehashed_turnover_attack_fails_against_true_parents(
     turnover: float,
 ) -> None:
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
         profile="complete_link",
     )
-    forged = forged_turnover(validated.manifest, turnover)
+    forged = forged_turnover(selection, turnover)
     with pytest.raises(ValueError, match="reconstructed true parents"):
         validate_core_feature_selection(forged, parents)
 
 
-def test_validated_receipt_cannot_be_publicly_constructed_or_model_validated() -> None:
-    parents, validated = production_validated_selection_case(
+def test_all_legacy_receipt_forgery_shapes_are_rejected_as_candidate_manifests() -> None:
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
     )
-    with pytest.raises(TypeError, match="factory-issued"):
-        ValidatedCoreFeatureSelection(validated.manifest, parents)
-    assert not hasattr(ValidatedCoreFeatureSelection, "model_validate")
-    manifest_attribute = "_manifest"
-    with pytest.raises(AttributeError, match="immutable"):
-        setattr(validated, manifest_attribute, validated.manifest)
+    forged = forged_turnover(selection, 0.5)
+    for attack in forged_legacy_receipts(forged, parents):
+        with pytest.raises(TypeError, match="only candidate manifests"):
+            validate_core_feature_selection(attack, parents)  # type: ignore[arg-type]
+
+
+def test_manifest_subclass_cannot_override_content_comparison() -> None:
+    parents, selection = production_selection_case(
+        PACKAGE,
+        CoreLabelHorizon.H20,
+    )
+    forged = forged_turnover(selection, 0.5)
+
+    class EqualityBypass(CoreFeatureSelectionManifest):
+        def __eq__(self, other: object) -> bool:
+            del other
+            return True
+
+    attack = EqualityBypass.model_validate(forged.model_dump())
+    with pytest.raises(ValueError, match="reconstructed true parents"):
+        validate_core_feature_selection(attack, parents)
 
 
 def test_future_source_tail_is_excluded_before_parent_freeze_and_changes_no_identity() -> None:
-    parents, validated = production_validated_selection_case(
+    parents, selection = production_selection_case(
         PACKAGE,
         CoreLabelHorizon.H20,
     )
@@ -98,4 +113,4 @@ def test_future_source_tail_is_excluded_before_parent_freeze_and_changes_no_iden
         prior_manifest=parents.prior_manifest,
         selection_spec=parents.selection_spec,
     )
-    assert rebuild_core_feature_selection(frozen) == validated.manifest
+    assert rebuild_core_feature_selection(frozen) == selection

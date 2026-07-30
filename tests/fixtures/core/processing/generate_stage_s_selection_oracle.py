@@ -6,6 +6,8 @@ import math
 from itertools import pairwise
 from statistics import median
 
+from stage_s_independent_selection import replay_selection_decisions
+
 MASK64 = (1 << 64) - 1
 
 
@@ -52,35 +54,34 @@ def _spearman(left: tuple[float, ...], right: tuple[float, ...]) -> float | None
     return numerator / denominator if denominator else None
 
 
-def _profile(
-    horizon: str,
-    feature_index: int,
-    day_index: int,
-) -> tuple[float | None, ...]:
+def _profile(feature_index: int, day_index: int) -> tuple[float | None, ...]:
     ascending = (0.0, 1.0, 2.0, 3.0, 4.0, 5.0)
-    forward = ascending if horizon == "H20" else tuple(reversed(ascending))
     if feature_index == 0:
-        return (*forward[:5], None) if day_index == 30 else forward
+        return (*ascending[:5], None) if day_index == 30 else ascending
     if feature_index == 1:
-        return tuple(reversed(forward))
+        return tuple(reversed(ascending))
     if feature_index == 2:
         if day_index == 30:
-            return (*forward[:5], None)
-        return (
-            (0.0, 1.0, 2.0, 4.0, 3.0, 5.0)
-            if day_index == 90
-            else forward
-        )
+            return (*ascending[:5], None)
+        return (0.0, 1.0, 2.0, 4.0, 3.0, 5.0) if day_index == 90 else ascending
     if feature_index == 3:
-        return (0.0, None, None, None, None, None) if day_index == 60 else forward
+        return (0.0, None, None, None, None, None) if day_index == 60 else ascending
     return (None,) * 6
 
 
-def _daily_rankic(horizon: str, feature_index: int) -> tuple[float | None, ...]:
-    labels = tuple(float(index) for index in range(6))
+def _daily_rankic(
+    horizon: str,
+    feature_index: int,
+    day_offset: int,
+) -> tuple[float | None, ...]:
+    labels = (
+        tuple(float(index) for index in range(6))
+        if horizon == "H20"
+        else tuple(float(index) for index in reversed(range(6)))
+    )
     values: list[float | None] = []
-    for day in range(180):
-        profile = _profile(horizon, feature_index, day)
+    for day in range(day_offset, day_offset + 180):
+        profile = _profile(feature_index, day)
         observed = tuple(item for item in profile if item is not None)
         observed_labels = tuple(
             labels[index] for index, item in enumerate(profile) if item is not None
@@ -119,11 +120,11 @@ def _bootstrap_p(values: tuple[float, ...], seed: int) -> float:
 
 
 def _turnover(
-    horizon: str,
     feature_index: int,
     sessions: list[str],
+    day_offset: int,
 ) -> tuple[float | None, list[dict[str, object]]]:
-    daily = tuple(_profile(horizon, feature_index, day) for day in range(180))
+    daily = tuple(_profile(feature_index, day) for day in range(day_offset, day_offset + 180))
     transitions: list[dict[str, object]] = []
     valid_ratios: list[float] = []
     for index, (previous, current) in enumerate(pairwise(daily)):
@@ -136,8 +137,7 @@ def _turnover(
             previous_percentiles = _percentiles(previous)
             current_percentiles = _percentiles(current)
             ratio = math.fsum(
-                abs(current_percentiles[item] - previous_percentiles[item])
-                for item in common
+                abs(current_percentiles[item] - previous_percentiles[item]) for item in common
             ) / len(common)
             valid_ratios.append(ratio)
         transitions.append(
@@ -168,9 +168,7 @@ def _turnover_reason(previous: int, current: int, common: int) -> str:
 
 def _percentiles(values: tuple[float | None, ...]) -> dict[int, float]:
     observed = tuple(
-        (index, float(value))
-        for index, value in enumerate(values)
-        if value is not None
+        (index, float(value)) for index, value in enumerate(values) if value is not None
     )
     ranks = _average_ranks(tuple(value for _, value in observed))
     return {
@@ -186,17 +184,36 @@ def _feature_summary(
     feature_index: int,
     fold_id: str,
     sessions: list[str],
+    day_offset: int,
 ) -> dict[str, object]:
-    daily = _daily_rankic(horizon, feature_index)
+    daily = _daily_rankic(horizon, feature_index, day_offset)
     valid = tuple(float(item) for item in daily if item is not None)
     subfold_counts = [
-        sum(item is not None for item in daily[start : start + 60])
-        for start in (0, 60, 120)
+        sum(item is not None for item in daily[start : start + 60]) for start in (0, 60, 120)
     ]
     eligible = all(count >= 60 for count in subfold_counts)
     seed = _seed(feature_key, horizon, fold_id) if eligible else None
     p_value = _bootstrap_p(valid, seed) if seed is not None else None
-    turnover, transitions = _turnover(horizon, feature_index, sessions)
+    turnover, transitions = _turnover(feature_index, sessions, day_offset)
+    coverage_daily = tuple(
+        sum(item is not None for item in _profile(feature_index, day)) / 6.0
+        for day in range(day_offset, day_offset + 180)
+    )
+    stability = (
+        1.0 / (1.0 + float(median(abs(item - float(median(valid))) for item in valid)))
+        if valid
+        else None
+    )
+    direction_consistent = (
+        all(
+            math.fsum(float(item) for item in daily[start : start + 60] if item is not None)
+            / subfold_counts[position]
+            > 0.0
+            for position, start in enumerate((0, 60, 120))
+            if subfold_counts[position] >= 60
+        )
+        and eligible
+    )
     return {
         "feature_key": feature_key,
         "daily_signed_rankic_hash": _canonical_hash(daily),
@@ -204,13 +221,17 @@ def _feature_summary(
         "subfold_valid_counts": subfold_counts,
         "bootstrap_seed": seed,
         "bootstrap_p_value": p_value,
+        "coverage_passed": sum(value >= 0.8 for value in coverage_daily) / 180 >= 0.9,
+        "coverage_mean": math.fsum(coverage_daily) / len(coverage_daily),
+        "subfold_sample_sufficient": eligible,
+        "direction_consistent": direction_consistent,
+        "selection_eligible": eligible and p_value is not None,
         "turnover": turnover,
         "turnover_valid_transitions": sum(item["valid"] for item in transitions),
         "turnover_transitions_hash": _canonical_hash(transitions),
+        "stability": stability,
         "nonzero_valid_transitions": [
-            item
-            for item in transitions
-            if item["turnover_ratio"] not in {None, 0.0}
+            item for item in transitions if item["turnover_ratio"] not in {None, 0.0}
         ],
         "invalid_transitions": [item for item in transitions if not item["valid"]],
     }
@@ -220,14 +241,10 @@ def build_selection_replays(
     sessions: list[str],
     prior: dict[str, object],
 ) -> list[dict[str, object]]:
-    entries = [
-        item
-        for item in prior["entries"]
-        if item["package_id"] == "astramind-f0-v1"
-    ][:4]
+    entries = [item for item in prior["entries"] if item["package_id"] == "astramind-f0-v1"][:4]
     return [
         _selection_replay(sessions, entries, horizon=horizon, offset=offset)
-        for horizon, offset in (("H20", 0), ("H60", 20))
+        for horizon, offset in (("H20", 0), ("H60", 1))
     ]
 
 
@@ -247,10 +264,15 @@ def _selection_replay(
             feature_index=index,
             fold_id=fold_identity,
             sessions=fold_sessions,
+            day_offset=offset,
         )
         for index, item in enumerate(entries)
     ]
-    _apply_frozen_decisions(evidence, horizon)
+    profiles = [
+        tuple(_profile(index, day) for day in range(offset, offset + 180))
+        for index in range(len(entries))
+    ]
+    decisions = replay_selection_decisions(evidence, entries, profiles)
     payload = {
         "package_id": "astramind-f0-v1",
         "profile": "golden",
@@ -258,11 +280,7 @@ def _selection_replay(
         "fold_offset": offset,
         "decision_sessions": fold_sessions,
         "independent_fold_identity": fold_identity,
-        "feature_evidence": evidence,
-        **_relationships(entries, horizon),
-        "selected_feature_keys": [
-            str(entries[0 if horizon == "H20" else 1]["feature_id@definition_version"])
-        ],
+        **decisions,
     }
     payload["replay_content_hash"] = _canonical_hash(payload)
     payload["frozen_replay_identity"] = _canonical_hash(
@@ -290,60 +308,3 @@ def _fold_identity(fold_sessions: list[str], maturity_session: str) -> str:
         }
     )
     return f"core-selection-fold:{content_hash.removeprefix('sha256:')}"
-
-
-def _apply_frozen_decisions(
-    evidence: list[dict[str, object]],
-    horizon: str,
-) -> None:
-    evidence[0].update(
-        bh_rank=1 if horizon == "H20" else 2,
-        bh_passed=horizon == "H20",
-        reason_code="selected" if horizon == "H20" else "bh_rejected",
-    )
-    evidence[1].update(
-        bh_rank=3 if horizon == "H20" else 1,
-        bh_passed=horizon == "H60",
-        reason_code="bh_rejected" if horizon == "H20" else "selected",
-    )
-    evidence[2].update(
-        bh_rank=2 if horizon == "H20" else 3,
-        bh_passed=horizon == "H20",
-        reason_code="cluster_redundant" if horizon == "H20" else "bh_rejected",
-    )
-    evidence[3].update(
-        bh_rank=None,
-        bh_passed=False,
-        reason_code="subfold_sample_insufficient",
-    )
-
-
-def _relationships(
-    entries: list[dict[str, object]],
-    horizon: str,
-) -> dict[str, object]:
-    first = str(entries[0]["feature_id@definition_version"])
-    second = str(entries[1]["feature_id@definition_version"])
-    third = str(entries[2]["feature_id@definition_version"])
-    if horizon == "H60":
-        return {
-            "pair_correlations": [],
-            "clusters": [{"members": [second], "representative": second}],
-        }
-    return {
-        "pair_correlations": [
-            {
-                "left_feature_key": min(first, third),
-                "right_feature_key": max(first, third),
-                "valid_date_count": 180,
-                "median_daily_spearman": 1.0,
-                "distance": 0.0,
-            }
-        ],
-        "clusters": [
-            {
-                "members": sorted([first, third]),
-                "representative": first,
-            }
-        ],
-    }

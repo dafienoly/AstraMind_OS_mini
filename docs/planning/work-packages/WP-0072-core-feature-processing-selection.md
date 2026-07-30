@@ -432,9 +432,11 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   折身份；
 - selection manifest 进一步绑定准确 `CoreSelectionPlan` id/hash；唯一
   parent-aware 入口从真实 panel、按序 processed envelopes、H20/H60 label batches、
-  fold/plan/spec 和完整 Stage P prior 调用生产 `select_core_features` 重建。首次通过后
-  只签发非 Pydantic、不可公开构造且不可变的 validated receipt，供同一
-  single/joint/projector 调用链复用，避免各层重复 10,000 次 bootstrap；
+  fold/plan/spec 和完整 Stage P prior 调用生产 `select_core_features` 重建。所有接收
+  candidate manifest 的 single view、single projection、joint builder/view 与 joint
+  projection 公共边界都执行该重建和逐字段比较；不签发或信任任何可由外部传入的
+  Python receipt。性能仅通过完整内容指纹后的确定性 selector 缓存和一次性证据索引
+  优化，不改变 10,000 次 bootstrap；
 - 已实现折内每日 RankIC、三个连续 60 日子折门、SplitMix64-v1 圆形区块 bootstrap、
   BH 10%、逐日相关时间中位数、完全链接和代表选择；D1/D3/D5、旧 Stage P hash、
   未冻结父级、相关证据不足和跨包 U0 不一致均有失败关闭检查；
@@ -442,24 +444,32 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   blocked/空 selected 仍发布准确身份，但不能投影模型矩阵，下游不得重做填补、选择或
   列排序；
 - 受控 oracle 已升级为三个包、260 个固定真实沪深共同交易日、24 只证券和三个行业
-  的实际 18,720 条输入及 18,720 条处理输出，并冻结两个 180 日折各自的 H20/H60
-  真实生产选择回放身份和三个 bootstrap seed/index 向量。fixture 规范内容哈希为
-  `sha256:1267e03f0f8bde7c1cbadab927f4f57330a4188894b8ad79cbe0c350eb89eb70`，
+  的实际 18,720 条输入及 18,720 条处理输出；该处理 fixture 与 horizon 无关，同一
+  fold 的 H20/H60 共享完全相同的 processed panel/envelope 身份，差异只来自 label
+  batch 和选择证据。另以 2022 年 242 个真实共同交易日冻结两个 180 日 H20/H60
+  训练父级，并把 2023-01-01～2025-12-31 的 727 个真实共同交易日全序列、日历源
+  哈希和两个 2022-12-31 前选择父级绑定为独立 frozen replay identity。fixture
+  规范内容哈希为
+  `sha256:5288d5d4bce3e368d5925e8f1721313b69356292663d453d1cb15e10296b4721`，
   输入、处理输出和选择回放哈希分别为
   `sha256:52b49d96423a5c5d7c1cb874968e220c5ab8db7524935a8e40f98632c6c1f4f2`、
   `sha256:06adf9486beff0ae15c109e98a291bc737f03501d0257d121a0dba1669e8a47c` 和
-  `sha256:46dcd3b7baec29f69dcb8a4199f93fba43a46cc2f41ff72354b75a9fe5bb04f1`；
-- oracle 由 `generate_stage_s_oracle.py` v3.0.0 与独立选择生成器仅用标准库和冻结
-  输入生成，两个生成器 SHA-256 分别为
-  `90c9fa3376b14467c5cd4d3c7d0ad3e4fb952b6c8514fe7853495f1acae1d4f5` 和
-  `0f9a4344c2af97d102222faafb182f5cff0d98d4984ceb6892e5080cc50b2003`，
+  `sha256:7671ae4fddb257d48e495890f4b51b7976ee4cc8c5e806696be3169dd2eb1830`；
+  2023～2025 frozen replay 哈希为
+  `sha256:682355c785842075e97e64812f577a557ee8dcfae5123c9f9a99053ca938e053`；
+- oracle 由 `generate_stage_s_oracle.py` v4.0.0、独立证据生成器和独立决策重演器仅用
+  标准库及冻结输入生成，三个文件 SHA-256 分别为
+  `54b7c8d3bca5a37c5ba118902efdea4a3a4c7c2997bd87cb1c25861bdd3d4c76`、
+  `aa1f589860a315777c4406ccbe5480d4a713523892cf6f1d0446f6177519005d` 和
+  `17cb4175b9a5e61c90c687429436252e2668d0ef6583bf5f56513b9aa237b285`，
   运行 `uv run python tests/fixtures/core/processing/generate_stage_s_oracle.py` 可确定性
-  重建；测试独立重算生成器、输入、输出、回放和 fixture 哈希，并用手算
-  MAD/平均秩/BH/完全链接及独立 10,000 次 bootstrap 校验生产原语，未调用生产
-  evaluator 生成期望值；
-- 两个生成器分别按处理 oracle 与选择 oracle 的自然职责拆分；413/349 行生成器和约
-  4.5 MB fixture 属于单用途、可审计生成过程与高内聚逐行 oracle 数据，按仓库规则
-  作生成/fixture 豁免；生产源码均不超过 350 行，新增函数均不超过 80 行；
+  重建；测试独立重算生成器、输入、输出、回放和 fixture 哈希。独立决策重演器从
+  p/evidence 重算 BH、逐日 Spearman、完全链接、代表、换手和 selected，全部 p 改为
+  `1.0` 时必须空选；另用手算 MAD/平均秩/BH/完全链接及独立 10,000 次 bootstrap
+  校验生产原语，未调用生产 evaluator 生成期望值；
+- 三个生成文件分别按处理、选择证据和选择决策的自然职责拆分；497/310/229 行生成器
+  和约 4.5 MB fixture 属于单用途、可审计生成过程与高内聚逐行 oracle 数据，按仓库
+  规则作生成/fixture 豁免；生产源码均不超过 350 行，新增函数均不超过 80 行；
 - selection manifest 会从逐日证据重算固定 Stage P/tokenizer 身份、coverage 日历与
   阈值、BH 检验族、完全链接簇、代表和 selected；单包及联合 view/projector 必须消费
   准确 panel、processed envelope、selection 和单包 view 父对象，替换内容后重算全部
@@ -475,8 +485,12 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   冻结稳定 turnover=0、非零有效 transition、两类无效 transition、missing/N/A、
   selected/rejected、BH pass/fail、相关簇及代表，并证明对抗性 imputed model value
   不进入 observed-only RankIC；
-- 最终 affected-scope 共 50 项处理、选择、标签与 golden 测试，墙钟时间 86.98 秒，
-  满足默认小于 90 秒的检查目标；同一调用链只运行一次 parent-aware 重建；
+- 旧 receipt 的子类覆盖、合法 guard 复制和 `object.__new__`/`object.__setattr__`
+  三类伪造均不能通过 single view/projector 或 joint builder/projector；正常候选
+  manifest 也只有经完整真实父级重建相等后才能继续；
+- 最终 affected-scope 共 54 项处理、选择、标签与 golden 测试；首次冷环境基线为
+  80.78 秒，完整信任边界与安全内容缓存就绪后的连续暖运行分别为 79.85/79.28 秒，
+  保留 10,000 次 bootstrap 且满足本工作包 `<=80s` 暖运行目标；
 - Stage P 的 283 项先验文件保持零差异，冻结内容哈希继续为
   `sha256:818554838477dd7ad9d3f4fc9490551cae0a78d69a315eb781fa62ed2a630952`；
   本阶段未读取生产 `var/`、历史胜负或模型结果，也未触碰 MiniQMT、账户、Paper、

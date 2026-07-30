@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import hashlib
+from collections import OrderedDict
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import cast
 
 from ..feature_processing import (
     CoreProcessedFeatureEnvelope,
     CoreProcessedFeaturePanelManifest,
 )
-from ..labels import CoreForwardReturnLabelBatch, CoreLabelHorizon
+from ..labels import (
+    CoreForwardReturnLabelBatch,
+    CoreLabelHorizon,
+)
 from .models import CoreSelectionSpec
 from .plan import CoreSelectionFold, CoreSelectionPlan
 from .priors import (
@@ -19,6 +25,11 @@ from .priors import (
     CoreSelectionPriorManifest,
     load_core_selection_prior_manifest,
 )
+
+_VALIDATED_ENVELOPE_FINGERPRINTS: OrderedDict[bytes, None] = OrderedDict()
+_VALIDATED_ENVELOPE_FINGERPRINT_MAXSIZE = 4_096
+_VALIDATED_LABEL_FINGERPRINTS: OrderedDict[bytes, None] = OrderedDict()
+_VALIDATED_LABEL_FINGERPRINT_MAXSIZE = 4_096
 
 
 @dataclass(frozen=True)
@@ -45,26 +56,20 @@ def validate_selection_inputs(
     prior_manifest: CoreSelectionPriorManifest | None,
     spec: CoreSelectionSpec,
 ) -> ValidatedSelectionInputs:
-    panel_manifest = CoreProcessedFeaturePanelManifest.model_validate(
-        panel_manifest.model_dump()
-    )
-    envelopes = tuple(
-        CoreProcessedFeatureEnvelope.model_validate(item.model_dump())
-        for item in processed_envelopes
-    )
-    labels = tuple(
-        CoreForwardReturnLabelBatch.model_validate(item.model_dump())
-        for item in label_batches
-    )
-    selection_plan = CoreSelectionPlan.model_validate(selection_plan.model_dump())
-    fold = CoreSelectionFold.model_validate(fold.model_dump())
-    spec = CoreSelectionSpec.model_validate(spec.model_dump())
+    _revalidate_panel(panel_manifest)
+    envelopes = tuple(processed_envelopes)
+    for envelope in envelopes:
+        _revalidate_envelope(envelope)
+    labels = tuple(label_batches)
+    for label in labels:
+        _revalidate_label(label)
+    _revalidate_plan(selection_plan, fold)
+    cast(Callable[[], object], spec.validate_fixed_v1)()
     if horizon not in spec.allowed_horizons:
         raise ValueError("D1/D3/D5 diagnostics cannot influence H20/H60 selection")
     canonical_prior = load_core_selection_prior_manifest()
-    prior = CoreSelectionPriorManifest.model_validate(
-        (prior_manifest or canonical_prior).model_dump(by_alias=True)
-    )
+    prior = prior_manifest or canonical_prior
+    cast(Callable[[], object], prior.validate_frozen_identity)()
     if (
         prior != canonical_prior
         or prior.priors_content_hash != STAGE_P_PRIORS_CONTENT_HASH
@@ -93,6 +98,64 @@ def validate_selection_inputs(
         prior=prior,
         spec=spec,
     )
+
+
+def _revalidate_panel(panel: CoreProcessedFeaturePanelManifest) -> None:
+    if not isinstance(panel, CoreProcessedFeaturePanelManifest):
+        raise TypeError("selection panel must use the public frozen contract")
+    cast(Callable[[], object], panel.validate_identity)()
+
+
+def _revalidate_envelope(envelope: CoreProcessedFeatureEnvelope) -> None:
+    if not isinstance(envelope, CoreProcessedFeatureEnvelope):
+        raise TypeError("selection envelopes must use the public frozen contract")
+    fingerprint = hashlib.sha256(
+        CoreProcessedFeatureEnvelope.__pydantic_serializer__.to_json(envelope)
+    ).digest()
+    if fingerprint in _VALIDATED_ENVELOPE_FINGERPRINTS:
+        _VALIDATED_ENVELOPE_FINGERPRINTS.move_to_end(fingerprint)
+        return
+    for row in envelope.rows:
+        cast(Callable[[], object], row.validate_state)()
+    for cross_section in envelope.cross_sections:
+        cast(Callable[[], object], cross_section.validate_counts)()
+    cast(Callable[[], object], envelope.processing_spec.validate_fixed_v1)()
+    cast(Callable[[], object], envelope.validate_identity)()
+    _VALIDATED_ENVELOPE_FINGERPRINTS[fingerprint] = None
+    if len(_VALIDATED_ENVELOPE_FINGERPRINTS) > _VALIDATED_ENVELOPE_FINGERPRINT_MAXSIZE:
+        _VALIDATED_ENVELOPE_FINGERPRINTS.popitem(last=False)
+
+
+def _revalidate_label(label: CoreForwardReturnLabelBatch) -> None:
+    if not isinstance(label, CoreForwardReturnLabelBatch):
+        raise TypeError("selection labels must use the public frozen contract")
+    fingerprint = hashlib.sha256(
+        CoreForwardReturnLabelBatch.__pydantic_serializer__.to_json(label)
+    ).digest()
+    if fingerprint in _VALIDATED_LABEL_FINGERPRINTS:
+        _VALIDATED_LABEL_FINGERPRINTS.move_to_end(fingerprint)
+        return
+    cast(Callable[[], object], label.spec.validate_fixed_v1)()
+    cast(Callable[[], object], label.common_calendar.validate_identity)()
+    for universe_row in label.universe_rows:
+        cast(Callable[[], object], universe_row.validate_decision)()
+    for row in label.rows:
+        cast(Callable[[], object], row.validate_state)()
+    cast(Callable[[], object], label.validate_identity_and_counts)()
+    _VALIDATED_LABEL_FINGERPRINTS[fingerprint] = None
+    if len(_VALIDATED_LABEL_FINGERPRINTS) > _VALIDATED_LABEL_FINGERPRINT_MAXSIZE:
+        _VALIDATED_LABEL_FINGERPRINTS.popitem(last=False)
+
+
+def _revalidate_plan(plan: CoreSelectionPlan, fold: CoreSelectionFold) -> None:
+    if not isinstance(plan, CoreSelectionPlan) or not isinstance(fold, CoreSelectionFold):
+        raise TypeError("selection plan and fold must use public frozen contracts")
+    for item in plan.folds:
+        for subfold in item.subfolds:
+            cast(Callable[[], object], subfold.validate_dates)()
+        cast(Callable[[], object], item.validate_identity)()
+    cast(Callable[[], object], plan.validate_identity)()
+    cast(Callable[[], object], fold.validate_identity)()
 
 
 def _validate_daily_alignment(

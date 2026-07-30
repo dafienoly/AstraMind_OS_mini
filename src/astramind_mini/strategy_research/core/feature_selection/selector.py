@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+from collections import OrderedDict
 from collections.abc import Sequence
 
 from ..feature_processing import (
@@ -12,6 +13,7 @@ from ..feature_processing import (
 from ..labels import CoreForwardReturnLabelBatch, CoreLabelHorizon
 from .bh import benjamini_hochberg
 from .clustering import complete_linkage_clusters
+from .evidence_panel import SelectionEvidencePanel
 from .feature_evidence import build_initial_feature_evidence
 from .metrics import (
     correlation_distance_map,
@@ -29,6 +31,9 @@ from .priors import CoreSelectionPriorEntry, CoreSelectionPriorManifest
 from .representative import representative_sort_key
 from .selection_freeze import _freeze_selection_manifest
 from .validation import ValidatedSelectionInputs, validate_selection_inputs
+
+_SELECTION_CACHE_MAXSIZE = 32
+_SELECTION_CACHE: OrderedDict[tuple[object, ...], str] = OrderedDict()
 
 
 def select_core_features(
@@ -54,7 +59,31 @@ def select_core_features(
         prior_manifest=prior_manifest,
         spec=rules,
     )
-    return _select_validated(inputs)
+    cache_key = _selection_cache_key(inputs)
+    cached = _SELECTION_CACHE.get(cache_key)
+    if cached is not None:
+        _SELECTION_CACHE.move_to_end(cache_key)
+        return CoreFeatureSelectionManifest.model_validate_json(cached)
+    result = _select_validated(inputs)
+    _SELECTION_CACHE[cache_key] = result.model_dump_json()
+    _SELECTION_CACHE.move_to_end(cache_key)
+    if len(_SELECTION_CACHE) > _SELECTION_CACHE_MAXSIZE:
+        _SELECTION_CACHE.popitem(last=False)
+    return result
+
+
+def _selection_cache_key(inputs: ValidatedSelectionInputs) -> tuple[object, ...]:
+    """Key a deterministic optimization only after every parent was revalidated."""
+    return (
+        inputs.panel.content_hash,
+        tuple(item.content_hash for item in inputs.envelopes),
+        tuple(item.content_hash for item in inputs.labels),
+        inputs.plan.content_hash,
+        inputs.fold.content_hash,
+        inputs.horizon.value,
+        inputs.prior.priors_content_hash,
+        inputs.spec.model_dump_json(),
+    )
 
 
 def _select_validated(
@@ -131,11 +160,11 @@ def _initial_evidence(
     horizon: CoreLabelHorizon,
     spec: CoreSelectionSpec,
 ) -> tuple[CoreFeatureSelectionEvidence, ...]:
+    evidence_panel = SelectionEvidencePanel.freeze(envelopes, labels)
     return tuple(
         build_initial_feature_evidence(
             prior=item,
-            envelopes=envelopes,
-            labels=labels,
+            evidence_panel=evidence_panel,
             fold=fold,
             horizon=horizon,
             spec=spec,

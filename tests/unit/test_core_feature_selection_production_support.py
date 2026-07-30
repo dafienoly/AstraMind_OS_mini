@@ -19,16 +19,15 @@ from astramind_mini.strategy_research.core.feature_selection import (
     CoreFeatureSelectionManifest,
     CoreFeatureSelectionParents,
     CoreSelectionFold,
-    ValidatedCoreFeatureSelection,
     freeze_core_selection_fold,
     freeze_core_selection_plan,
     load_core_selection_prior_manifest,
-    rebuild_validated_core_feature_selection,
+    rebuild_core_feature_selection,
 )
 from astramind_mini.strategy_research.core.labels import CoreLabelHorizon
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=32)
 def production_selection_case(
     package_id: str,
     horizon: CoreLabelHorizon,
@@ -37,33 +36,16 @@ def production_selection_case(
     fold_offset: int = 0,
 ) -> tuple[CoreFeatureSelectionParents, CoreFeatureSelectionManifest]:
     """Build valid public contracts, then invoke the sole production selector."""
-    parents, validated = production_validated_selection_case(
-        package_id,
-        horizon,
-        profile=profile,
-        fold_offset=fold_offset,
-    )
-    return parents, validated.manifest
-
-
-@lru_cache(maxsize=16)
-def production_validated_selection_case(
-    package_id: str,
-    horizon: CoreLabelHorizon,
-    *,
-    profile: str = "single",
-    fold_offset: int = 0,
-) -> tuple[CoreFeatureSelectionParents, ValidatedCoreFeatureSelection]:
     parents = production_selection_parents(
         package_id,
         horizon,
         profile=profile,
         fold_offset=fold_offset,
     )
-    return parents, rebuild_validated_core_feature_selection(parents)
+    return parents, rebuild_core_feature_selection(parents)
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=32)
 def production_selection_parents(
     package_id: str,
     horizon: CoreLabelHorizon,
@@ -76,6 +58,7 @@ def production_selection_parents(
     dates = CALENDAR.sessions[fold_offset : fold_offset + 180]
     fold = _fold(dates)
     decisions = tuple(fixture_universe(day) for day in dates)
+    absolute_indices = tuple(CALENDAR.sessions.index(day) for day in dates)
     envelopes = tuple(
         fixture_envelope(
             package_id=package_id,
@@ -83,9 +66,8 @@ def production_selection_parents(
             decisions=day_decisions,
             index=index,
             profile=profile,
-            horizon=horizon,
         )
-        for index, day_decisions in enumerate(decisions)
+        for index, day_decisions in zip(absolute_indices, decisions, strict=True)
     )
     labels = tuple(
         fixture_label_batch(
@@ -93,9 +75,12 @@ def production_selection_parents(
             decisions=day_decisions,
             horizon=horizon,
             index=index,
+            profile=profile,
         )
-        for index, (day, day_decisions) in enumerate(
-            zip(dates, decisions, strict=True)
+        for index, (day, day_decisions) in zip(
+            absolute_indices,
+            zip(dates, decisions, strict=True),
+            strict=True,
         )
     )
     return CoreFeatureSelectionParents.freeze(
@@ -122,5 +107,4 @@ __all__ = [
     "INSTRUMENTS",
     "production_selection_case",
     "production_selection_parents",
-    "production_validated_selection_case",
 ]
