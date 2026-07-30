@@ -137,6 +137,7 @@
 - [WP-0062：V2 生产特征矩阵、训练编排与预测发布](./planning/work-packages/WP-0062-v2-production-training-pipeline.md)
 - [WP-0063：系统“方法与状态”页面实施](./planning/work-packages/WP-0063-method-status-page-implementation.md)
 - [WP-0064：长期并行交付基线](./planning/work-packages/WP-0064-long-term-parallel-delivery-baseline.md)
+- [WP-0070：核心 U0、点时数据语义与特征合同](./planning/work-packages/WP-0070-core-universe-data-semantics.md)
 - [本地开发指南](./development/local-development.md)
 - [Vibe Coding 规范（Agent 内部英文文档）](./development/vibe-coding.md)
 - [工作包模板（Agent 内部英文文档）](./development/work-package-template.md)

@@ -1,0 +1,99 @@
+# WP-0070：核心 U0、点时数据语义与特征合同
+
+- 版本：1.0.0
+- 状态：已批准实施
+- 需求：REQ-2026-0007 v2.3.0
+- 阶段：5A
+- UI 提案：不适用
+- 所有者：Worker C / Strategy Research
+
+## 目标
+
+建立周度核心研究后续所有因子包共用的最小稳定腰部：可复算的 `U0-v1` 点时成员与
+新风险资格、`core-data-semantics-v1` 输入语义，以及绑定一个不可变 `DataSnapshot`
+和周度截止的核心输入身份。F0、Alpha158、Alpha101 必须消费同一合同，不能各自重写
+股票池、价格、行业、缺失或可用时间规则。
+
+## 非目标
+
+- 不计算 F0、Alpha158、Alpha101 或任何模型预测；
+- 不实现 full/selected、Ridge、LightGBM、H20/H60、O0 或 CorePolicy；
+- 不创建新页面，不修改导航或现有 UI；
+- 不连接 MiniQMT，不读取账户，不修改生产 `var/`，不建立 Paper/Live 或订单；
+- 不把分钟/Tick、当前会话投影、北交所、新股或 ETF 放入首期核心生产池；
+- 不修改当前 WP-0041 MiniQMT 数据管线重构拥有的目录。
+
+## 允许文件
+
+- `src/astramind_mini/strategy_research/core/**`
+- `tests/unit/test_core_universe.py`
+- `tests/unit/test_core_data_semantics.py`
+- `tests/fixtures/core/**`
+- 本工作包及其直接需求/追踪状态
+
+不得修改 `src/astramind_mini/contracts/**`、`data/**`、`composition.py`、
+`strategy_research/public.py`、数据库迁移、根配置、生产数据和前端。若实现证明必须
+改变共享契约，停止并返回主控，不在本包扩大范围。
+
+## 合同与唯一所有者
+
+Strategy Research 的 `core` 子包拥有：
+
+1. `CoreUniverseSpec`：冻结 `U0-v1` 的板块、成熟期、状态、流动性和覆盖规则；
+2. `CoreUniverseDecision`：逐证券记录 `research_member`、`new_risk_eligible`、
+   `diagnostic_pool`、原因码和输入截止；
+3. `CoreDataSemantics`：冻结连续研究价、原始价量、点时行业、财务可用时间和三态缺失；
+4. `CoreInputSnapshot`：绑定 `DataSnapshot`、周度决策日、截止时间、共同交易日历、
+   数据语义、U0 版本、数据集引用、行数、日期范围和内容身份；
+5. `CoreFeaturePackageSpec`：只声明规范包身份、规范维数和输入语义；本包不生成因子值。
+
+后续包只能导入该子包公开入口，不得复制资格或语义常量。
+
+## 行为
+
+### U0-v1
+
+- 只纳入上交所主板/科创板、深交所主板/创业板的点时 A 股；
+- 成熟期按上市日起 252 个沪深共同交易日计算，不按自然日近似；
+- ST、`*ST`、退市整理或状态未知不能新增风险；
+- 最近 20 个共同交易日原始成交额中位数至少 2,000 万元；停牌、无成交或缺合法 Bar
+  的日期按 0，少于 20 日直接不合格；
+- 暂停证券仍保留在历史研究面板和已有持仓诊断，但 `new_risk_eligible=false`；
+- 北交所进入明确诊断池，新股进入独立诊断池，均不静默混入生产候选。
+
+### core-data-semantics-v1
+
+- OHLC 与收益使用连续研究价格指数；
+- 原始价量只用于成交、流动性、容量和执行约束，复权兼容价只供审计；
+- 行业必须是决策时点可知的 SW2021 身份，缺失时严格行业算子失败关闭；
+- 财务记录按公告实际可用时间生效，只有日期时从下一共同交易日收盘后可用，修订不回写；
+- 因子值状态只有 `value / missing / not_applicable`，另有冻结覆盖门，禁止用 0 填充未知；
+- 当前会话、形成中分钟和未封存 Tick 不得进入核心输入身份。
+
+## 验收
+
+1. Given 同一冻结输入，When 重复构造 U0 与 `CoreInputSnapshot`，Then 内容身份完全一致。
+2. Given 未来公告、后来修订、未来行业归属或截止后的行情，When 构造历史决策日输入，
+   Then 对应记录不可见，并有负向测试证明。
+3. Given 新股、北交所、ST、状态未知、停牌、少于 20 日或流动性不足证券，When 评估，
+   Then 研究成员、生产新风险资格和诊断池不会混为一个布尔值。
+4. Given 无成交日，When 计算 20 日成交额中位数，Then 该日按 0；但因子输入保持真实
+   缺失状态，不把成交约束口径回写成因子值。
+5. Given 数据集引用、截止、行数、日期范围或内容发生变化，When 冻结输入，
+   Then 发布新身份；旧身份不被覆盖。
+6. 核心合同不导入 MiniQMT SDK、Market Regime 内部模块、Portfolio & Risk 或
+   Trading Execution；不创建 `PortfolioTarget`、`OrderPlan` 或券商动作。
+
+## 检查
+
+```text
+uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py
+uv run pytest tests/unit/test_architecture.py tests/unit/test_contracts.py
+make docs-check
+git diff --check
+```
+
+## 交接
+
+完成后由主控复核合同维度、原因码、点时负测和内容身份，再从最新集成提交释放
+WP-0071A/B/C。三个因子包可以并行计算，但不得并行修改本包合同。
