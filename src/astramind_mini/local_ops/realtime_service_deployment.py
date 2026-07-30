@@ -13,6 +13,9 @@ TASK_NAME = "AstraMind OS Mini - Realtime Market"
 TASK_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 TRIGGER_LABELS = ("Windows 登录后启动", "每日 08:55 恢复启动")
 WINDOWS_WRAPPER_FILENAME = "run_realtime_market_task-v1.ps1"
+WINDOWS_POWERSHELL_EXECUTABLE = (
+    r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+)
 type SchedulerQueryState = Literal["installed", "not_installed", "query_failed"]
 
 
@@ -93,7 +96,7 @@ def task_xml(spec: RealtimeMarketTaskSpec) -> bytes:
     _setting(restart, "Count", "999")
     actions = ET.SubElement(task, _tag("Actions"), {"Context": "LocalUser"})
     execute = ET.SubElement(actions, _tag("Exec"))
-    ET.SubElement(execute, _tag("Command")).text = "powershell.exe"
+    ET.SubElement(execute, _tag("Command")).text = WINDOWS_POWERSHELL_EXECUTABLE
     ET.SubElement(execute, _tag("Arguments")).text = spec.action_arguments
     payload = cast(bytes, ET.tostring(task, encoding="utf-16", xml_declaration=True))
     _assert_safe(payload.decode("utf-16"))
@@ -153,6 +156,7 @@ def scheduler_query_state(
 __all__ = [
     "TASK_NAME",
     "TRIGGER_LABELS",
+    "WINDOWS_POWERSHELL_EXECUTABLE",
     "WINDOWS_WRAPPER_FILENAME",
     "RealtimeMarketTaskSpec",
     "SchedulerQueryState",

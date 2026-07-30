@@ -1,4 +1,5 @@
 import argparse
+import base64
 import re
 import subprocess
 from io import BytesIO
@@ -8,6 +9,7 @@ import pytest
 
 from astramind_mini.local_ops.realtime_service_deployment import (
     TASK_NAME,
+    WINDOWS_POWERSHELL_EXECUTABLE,
     RealtimeMarketTaskSpec,
     scheduler_query_state,
     task_access_denied,
@@ -21,6 +23,7 @@ from scripts.manage_realtime_market_service import (
     _run_task,
     _status,
     _task_command,
+    _task_definition_matches,
     run,
 )
 
@@ -45,7 +48,7 @@ def test_realtime_task_is_persistent_restartable_and_broker_free() -> None:
     assert "PT0S" in payload
     assert "realtime-market-service-run" in payload
     assert "/home/ly/work/AstraMind_OS_mini" in payload
-    assert "powershell.exe" in payload
+    assert WINDOWS_POWERSHELL_EXECUTABLE in payload
     assert "run_realtime_market_task-v1.ps1" in payload
     assert "wsl.exe" not in payload
     assert "wsl.localhost" not in payload.lower()
@@ -151,6 +154,26 @@ def test_scheduler_spawn_failure_is_query_failed_and_preserves_last_fact(
     assert "private windows detail" not in output
 
 
+@pytest.mark.parametrize("last_result", ["267009", "0x41301"])
+def test_scheduler_running_result_is_not_reported_as_a_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    last_result: str,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    output = f"任务名: \\{TASK_NAME}\n上次结果: {last_result}\n"
+    monkeypatch.setattr(
+        "scripts.manage_realtime_market_service._task_command",
+        lambda _: subprocess.CompletedProcess([], 0, output, ""),
+    )
+
+    assert _status() == 0
+    rendered = capsys.readouterr().out
+    assert "scheduler_execution_state=running" in rendered
+    assert "scheduler_recovery_action=" not in rendered
+
+
 def test_runner_start_and_nonzero_exit_are_blocked_with_log(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -218,13 +241,49 @@ def test_wrapper_install_is_atomic_and_hash_verified(
 
     assert install_windows_wrapper(spec).returncode == 0
     invocation = captured[0]
-    script = invocation[invocation.index("-Command") + 1]
+    encoded = invocation[invocation.index("-EncodedCommand") + 1]
+    script = base64.b64decode(encoded).decode("utf-16-le")
     assert "Copy-Item" in script
     assert "Copy-Item -LiteralPath $Source -Destination $Temporary -Force" in script
     assert "Get-FileHash -Algorithm SHA256" in script
-    assert "Move-Item -LiteralPath $Temporary -Destination $Target -Force" in script
+    assert "[System.IO.File]::Replace($Temporary, $Target, $Backup)" in script
+    assert "Move-Item -LiteralPath $Temporary -Destination $Target" in script
     assert script.index("Copy-Item") < script.index("Move-Item")
-    assert invocation[-1] == spec.wrapper_path
+    assert (
+        "$Source = '\\\\wsl.localhost\\Ubuntu\\workspace\\scripts\\windows\\wrapper.ps1'"
+        in script
+    )
+    assert f"$Target = '{spec.wrapper_path}'" in script
+    assert "$args" not in script
+
+
+def test_wrapper_install_encoded_command_escapes_powershell_literals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spec = RealtimeMarketTaskSpec(
+        distro="Ubuntu",
+        repository_root=Path("/workspace"),
+        windows_user_sid="S-1-5-21-1",
+        windows_local_app_data=r"C:\Users\O'Neil\AppData\Local",
+    )
+    captured: list[list[str]] = []
+
+    def command(arguments: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        captured.append(arguments)
+        return subprocess.CompletedProcess(arguments, 0, "wrapper_hash=ABC", "")
+
+    monkeypatch.setattr(
+        "astramind_mini.local_ops.realtime_windows_wrapper._windows_path",
+        lambda _: r"\\wsl.localhost\Ubuntu\O'Neil\wrapper.ps1",
+    )
+    monkeypatch.setattr(subprocess, "run", command)
+
+    assert install_windows_wrapper(spec).returncode == 0
+    invocation = captured[0]
+    encoded = invocation[invocation.index("-EncodedCommand") + 1]
+    script = base64.b64decode(encoded).decode("utf-16-le")
+    assert r"$Source = '\\wsl.localhost\Ubuntu\O''Neil\wrapper.ps1'" in script
+    assert r"$Target = 'C:\Users\O''Neil\AppData\Local" in script
 
 
 def test_install_copies_wrapper_before_registration_and_fails_closed(
@@ -285,7 +344,7 @@ def test_install_copies_wrapper_before_registration_and_fails_closed(
 
     def successful_task(arguments: list[str]) -> subprocess.CompletedProcess[str]:
         events.append("register" if "/Create" in arguments else "verify")
-        output = f"任务名: \\{TASK_NAME}" if "/Query" in arguments else ""
+        output = task_xml(spec).decode("utf-16") if "/Query" in arguments else ""
         return subprocess.CompletedProcess(arguments, 0, output, "")
 
     monkeypatch.setattr(
@@ -295,6 +354,66 @@ def test_install_copies_wrapper_before_registration_and_fails_closed(
     monkeypatch.setattr("scripts.manage_realtime_market_service._task_command", successful_task)
     assert run(args) == 0
     assert events == ["copy", "register", "verify"]
+
+
+def test_install_does_not_accept_an_old_task_after_registration_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spec = RealtimeMarketTaskSpec(
+        distro="Ubuntu",
+        repository_root=tmp_path,
+        windows_user_sid="S-1-5-21-1",
+        windows_local_app_data=r"C:\Users\tester\AppData\Local",
+    )
+    args = argparse.Namespace(
+        action="install",
+        distro="Ubuntu",
+        confirm_task_name=TASK_NAME,
+        confirm_workdir=tmp_path.as_posix(),
+        make_target="realtime-market-service-run",
+    )
+    artifact = tmp_path / "task.xml"
+    artifact.write_bytes(task_xml(spec))
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr("scripts.manage_realtime_market_service._spec", lambda _: spec)
+    monkeypatch.setattr("scripts.manage_realtime_market_service._write_preview", lambda _: artifact)
+    monkeypatch.setattr("scripts.manage_realtime_market_service._print_preview", lambda *_: None)
+    monkeypatch.setattr(
+        "scripts.manage_realtime_market_service._windows_path", lambda _: r"C:\task.xml"
+    )
+    monkeypatch.setattr(
+        "scripts.manage_realtime_market_service._install_windows_wrapper",
+        lambda _: subprocess.CompletedProcess([], 0, "wrapper_hash=ABC", ""),
+    )
+
+    def task_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+        calls.append(arguments)
+        return subprocess.CompletedProcess(arguments, 5, "", "Access is denied")
+
+    monkeypatch.setattr("scripts.manage_realtime_market_service._task_command", task_command)
+    monkeypatch.setattr(
+        "scripts.manage_realtime_market_service._elevated_install",
+        lambda _: subprocess.CompletedProcess([], 1, "", "UAC cancelled"),
+    )
+
+    assert run(args) == 1
+    assert len(calls) == 1
+
+
+def test_task_definition_verification_rejects_old_direct_wsl_action() -> None:
+    spec = RealtimeMarketTaskSpec(
+        distro="Ubuntu",
+        repository_root=Path("/workspace"),
+        windows_user_sid="S-1-5-21-1",
+        windows_local_app_data=r"C:\Users\tester\AppData\Local",
+    )
+    current = task_xml(spec).decode("utf-16")
+    old = current.replace(WINDOWS_POWERSHELL_EXECUTABLE, "wsl.exe", 1)
+
+    assert _task_definition_matches(current, spec)
+    assert not _task_definition_matches(old, spec)
 
 
 def test_windows_wrapper_caps_every_line_before_four_generation_rotation() -> None:

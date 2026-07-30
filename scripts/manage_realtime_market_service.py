@@ -6,12 +6,14 @@ import argparse
 import json
 import os
 import subprocess
+import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
 
 from astramind_mini.local_ops.realtime_service_deployment import (
     TASK_NAME,
     TRIGGER_LABELS,
+    WINDOWS_POWERSHELL_EXECUTABLE,
     RealtimeMarketTaskSpec,
     scheduler_query_state,
     task_access_denied,
@@ -59,10 +61,11 @@ def run(args: argparse.Namespace) -> int:
     completed = _task_command(["/Create", "/TN", TASK_NAME, "/XML", _windows_path(artifact), "/F"])
     if task_access_denied(completed.stdout, completed.stderr):
         completed = _elevated_install(artifact)
-    verified = _task_command(["/Query", "/TN", TASK_NAME, "/FO", "LIST", "/V"])
-    installed = (
-        scheduler_query_state(verified.returncode, verified.stdout, verified.stderr) == "installed"
-    )
+    if completed.returncode != 0:
+        _print_result("registration_failed", completed)
+        return completed.returncode
+    verified = _task_command(["/Query", "/TN", TASK_NAME, "/XML"])
+    installed = verified.returncode == 0 and _task_definition_matches(verified.stdout, spec)
     _print_result("installed" if installed else "error", completed)
     if not installed:
         _print_scheduler_message(verified)
@@ -108,7 +111,7 @@ def _print_preview(spec: RealtimeMarketTaskSpec, artifact: Path) -> None:
     print("restart_on_failure=1m")
     print("multiple_instances=ignore_new")
     print(f"working_directory={spec.repository_root}")
-    print("command=powershell.exe")
+    print(f"command={WINDOWS_POWERSHELL_EXECUTABLE}")
     print(f"arguments={spec.action_arguments}")
     print(f"windows_wrapper={spec.wrapper_path}")
     print(f"task_xml={artifact}")
@@ -146,7 +149,9 @@ def _status() -> int:
     last_result = _scheduler_field(completed.stdout, "上次结果", "Last Result")
     if last_result is not None:
         print(f"scheduler_last_result={last_result}")
-        if last_result not in {"0", "0x0"}:
+        if last_result in {"267009", "0x41301"}:
+            print("scheduler_execution_state=running")
+        elif last_result not in {"0", "0x0"}:
             print("scheduler_recovery_action=检查 wsl.exe 启动、发行版与任务工作目录")
     runtime = RealtimeStatusStore(control_root).read()
     if runtime is None:
@@ -385,6 +390,19 @@ def _scheduler_field(payload: str, *labels: str) -> str | None:
         if separator and name.strip().casefold() in {label.casefold() for label in labels}:
             return value.strip()
     return None
+
+
+def _task_definition_matches(payload: str, spec: RealtimeMarketTaskSpec) -> bool:
+    task_start = payload.find("<Task")
+    if task_start < 0:
+        return False
+    try:
+        root = ET.fromstring(payload[task_start:])
+    except ET.ParseError:
+        return False
+    command = root.findtext(f".//{{{root.tag.partition('}')[0].lstrip('{')}}}Command")
+    arguments = root.findtext(f".//{{{root.tag.partition('}')[0].lstrip('{')}}}Arguments")
+    return command == WINDOWS_POWERSHELL_EXECUTABLE and arguments == spec.action_arguments
 
 
 def _elevated_install(artifact: Path) -> subprocess.CompletedProcess[str]:
