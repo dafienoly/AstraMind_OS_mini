@@ -383,6 +383,13 @@ stderr、原生退出码、异常类型、脱敏异常消息、HResult 和本次
 `service_operational_state`；`scheduler_state=installed` 只表示任务存在，不代表
 服务健康。
 
+这里的“健康 Python 运行状态”不是 `state=running` 单字段：进程必须存活且
+`process_state=running`，feed 必须已连接或已对账，必须有会话、90 秒内成功心跳、
+非零消息和微批及其时间证据，并且没有运行错误。`status.json` 缺失、读取失败、JSON
+损坏或 Schema 不合法分别显示 `runtime_status_read_state=missing / unreadable /
+invalid`，服务状态失败关闭而不是让 `status` 命令退出异常；较新的表面状态不能遮蔽
+较早的包装器失败。
+
 2026-07-31 复核证明旧的已安装任务定义和包装器 SHA 与当时仓库完全一致；运行失败
 不是“任务未更新”。本诊断尾包改变了包装器与参数，所以下一次恢复只需对同名任务做
 一次用户可见的 UAC 覆盖安装，再在连续竞价窗口启动并观察 15 分钟。不要先卸载任务，

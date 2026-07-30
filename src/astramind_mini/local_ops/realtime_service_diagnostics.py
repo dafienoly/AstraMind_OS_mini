@@ -6,16 +6,18 @@ import json
 import os
 import subprocess
 from collections.abc import Mapping
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
+from astramind_mini.local_ops.realtime_runtime_diagnostics import (
+    project_runtime_status,
+)
+from astramind_mini.local_ops.realtime_runtime_status import (
+    read_runtime_status,
+)
 from astramind_mini.local_ops.realtime_service_deployment import (
     TASK_NAME,
     scheduler_query_state,
-)
-from astramind_mini.local_ops.realtime_service_runtime import (
-    RealtimeRuntimeStatus,
-    RealtimeStatusStore,
 )
 from astramind_mini.local_ops.realtime_windows_diagnostics import (
     read_windows_wrapper_diagnostic_result,
@@ -65,148 +67,31 @@ def realtime_status_lines(
         environ=environ,
         now=current_time,
     )
-    runtime = RealtimeStatusStore(control_root).read()
-    runtime_state, runtime_updated_at, runtime_healthy, runtime_lines = _runtime_lines(
-        runtime,
+    runtime = project_runtime_status(
+        read_runtime_status(control_root / "status.json"),
         now=current_time,
     )
     wrapper_timing = correlate_wrapper_timing(
         wrapper_read.diagnostic,
-        runtime_updated_at=runtime_updated_at,
-        runtime_healthy=runtime_healthy,
+        runtime_updated_at=runtime.updated_at,
+        runtime_healthy=runtime.healthy,
         now=current_time,
     )
     lines.extend(wrapper_status_lines(wrapper_read, wrapper_timing))
-    lines.extend(runtime_lines)
+    lines.extend(runtime.lines)
     lines.append(
         "service_operational_state="
         + resolve_operational_state(
             scheduler_state,
             last_result,
             wrapper_read,
-            runtime_state,
+            runtime.state,
+            runtime.read_state,
             wrapper_timing,
         )
     )
     lines.append("broker_actions_allowed=false")
     return tuple(lines)
-
-
-def _runtime_lines(
-    runtime: RealtimeRuntimeStatus | None,
-    *,
-    now: datetime,
-) -> tuple[str, datetime | None, bool, tuple[str, ...]]:
-    if runtime is None:
-        return (
-            "not_running",
-            None,
-            False,
-            (
-                "wsl_process_state=not_running",
-                "feed_session_state=not_started",
-                "projection_state=not_available",
-                "completed_day_state=unknown",
-            ),
-        )
-    try:
-        updated_at = datetime.fromisoformat(runtime.updated_at)
-    except (TypeError, ValueError):
-        return _invalid_runtime_timestamp()
-    if updated_at.tzinfo is None or updated_at.utcoffset() is None:
-        return _invalid_runtime_timestamp()
-    updated_at = updated_at.astimezone(UTC)
-    current_time = now.astimezone(UTC)
-    if updated_at > current_time + timedelta(minutes=5):
-        return _invalid_runtime_timestamp()
-    age = max(
-        0,
-        int((current_time - updated_at).total_seconds()),
-    )
-    process_alive = Path(f"/proc/{runtime.pid}").is_dir()
-    terminal = runtime.process_state == "exited" or runtime.state in {
-        "stopped",
-        "error",
-        "blocked",
-        "reconciled",
-    }
-    runtime_state = runtime.state if terminal or (process_alive and age <= 90) else "stale_process"
-    lines = [
-        f"wsl_process_state={runtime_state}",
-        f"feed_session_state={runtime.feed_state}",
-        f"projection_state={runtime.projection_state}",
-        f"completed_day_state={runtime.completed_day_state}",
-        f"runtime_pid={runtime.pid}",
-        f"runtime_heartbeat_age_seconds={age}",
-    ]
-    _append_runtime_evidence(lines, runtime)
-    healthy = (
-        age <= 90
-        and runtime_state
-        not in {
-            "blocked",
-            "connecting",
-            "error",
-            "not_running",
-            "recovering",
-            "stale_process",
-            "stopped",
-        }
-        and runtime.last_error is None
-    )
-    return runtime_state, updated_at, healthy, tuple(lines)
-
-
-def _invalid_runtime_timestamp() -> tuple[str, None, bool, tuple[str, ...]]:
-    return (
-        "invalid_runtime_status",
-        None,
-        False,
-        (
-            "wsl_process_state=invalid_runtime_status",
-            "runtime_timestamp_state=invalid",
-            "feed_session_state=unknown",
-            "projection_state=not_available",
-            "completed_day_state=unknown",
-        ),
-    )
-
-
-def _append_runtime_evidence(lines: list[str], runtime: RealtimeRuntimeStatus) -> None:
-    for name, output_name in (
-        ("market_date", "market_date"),
-        ("session_id", "session_id"),
-        ("last_successful_heartbeat_at", "last_successful_heartbeat"),
-        ("last_message_at", "last_message_at"),
-        ("last_microbatch_at", "last_microbatch_at"),
-    ):
-        value = getattr(runtime, name)
-        if value:
-            lines.append(f"runtime_{output_name}={value}")
-    lines.extend(
-        (
-            f"runtime_messages={runtime.messages}",
-            f"runtime_microbatches={runtime.microbatches}",
-        )
-    )
-    if runtime.exit_code is not None:
-        lines.append(f"runtime_exit_code={runtime.exit_code}")
-    if runtime.last_error:
-        lines.extend(
-            (
-                "runtime_failure_origin=python_feed_error",
-                f"runtime_last_error={redact_diagnostic_text(runtime.last_error)}",
-            )
-        )
-    for index, failure in enumerate(runtime.retry_failures, start=1):
-        safe_failure = redact_diagnostic_text(json.dumps(failure, ensure_ascii=False))
-        lines.append(f"retry_failure_{index}={safe_failure}")
-    if runtime.log_path:
-        lines.append(f"runtime_log_path={runtime.log_path}")
-    if runtime.recovery_action:
-        lines.append(f"runtime_recovery_action={redact_diagnostic_text(runtime.recovery_action)}")
-    elif runtime.last_error:
-        lines.append("runtime_recovery_action=读取 service.log 与具体 Python feed 根因后恢复")
 
 
 def _scheduler_result_lines(last_result: str | None) -> tuple[str, ...]:

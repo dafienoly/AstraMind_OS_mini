@@ -18,7 +18,7 @@ from astramind_mini.local_ops.realtime_service_deployment import (
 )
 from astramind_mini.local_ops.realtime_service_diagnostics import realtime_status_lines
 from astramind_mini.local_ops.realtime_service_runner import (
-    run_realtime_task as _run_task,
+    run_realtime_task,
 )
 from astramind_mini.local_ops.realtime_windows_wrapper import (
     install_windows_wrapper as _install_windows_wrapper,
@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
 
 def run(args: argparse.Namespace) -> int:
     if args.action == "run-task":
-        return _run_task(args.make_target)
+        return run_realtime_task(args.make_target)
     if args.action == "status":
         return _status()
     if args.action in ("start", "pause", "uninstall"):

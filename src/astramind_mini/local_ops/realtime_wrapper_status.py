@@ -66,13 +66,24 @@ def resolve_operational_state(
     last_result: str | None,
     wrapper_read: WindowsWrapperDiagnosticRead,
     runtime_state: str,
+    runtime_read_state: str,
     timing: WrapperTiming,
 ) -> str:
     if scheduler_state == "not_installed":
         return "not_installed"
     if last_result not in {None, "0", "0x0", "267009", "0x41301"}:
         return "blocked"
-    if runtime_state in {"error", "blocked", "invalid_runtime_status", "stale_process"}:
+    if runtime_read_state in {"missing", "unreadable", "invalid"}:
+        return "blocked"
+    if runtime_state in {
+        "blocked",
+        "error",
+        "exited",
+        "invalid_runtime_status",
+        "not_running",
+        "stale_process",
+        "stopped",
+    }:
         return "blocked"
     if scheduler_state == "query_failed":
         return "unknown"

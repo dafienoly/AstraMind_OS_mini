@@ -98,7 +98,7 @@ WP-0064 是交付治理基线；下表是后续顺序和授权状态的唯一计
 
 | 预留 WP | 结果 | 长期通道 | 当前授权 |
 | --- | --- | --- | --- |
-| [WP-0047](./work-packages/WP-0047-stock-market-tape-and-multiscale-chart.md) | MiniQMT 只读服务恢复、分钟暖启动/封存、多周期 API 与既有界面闭环 | A | 1.0.1 诊断尾包已完成；同名任务 UAC 覆盖与盘中运营证据待完成，不含账户、Paper/Live 或订单 |
+| [WP-0047](./work-packages/WP-0047-stock-market-tape-and-multiscale-chart.md) | MiniQMT 只读服务恢复、分钟暖启动/封存、多周期 API 与既有界面闭环 | A | 1.0.3 诊断尾包已完成；同名任务 UAC 覆盖与盘中运营证据待完成，不含账户、Paper/Live 或订单 |
 | WP-0065 | 候选级日内研究数据桥：冻结请求、幂等缓存、覆盖证据、Research Snapshot | A | 待 REQ-0005 实施及新 MiniQMT 调用授权 |
 | WP-0066 | 短线分钟/Tick 三态诊断与日频基线 A/B | B | 待实施授权；依赖 WP-0065 |
 | WP-0067 | 新 Research Shadow 公共身份、独立账本与恢复合同 | B | 待 REQ-0006/0014 实施授权 |

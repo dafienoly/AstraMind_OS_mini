@@ -121,7 +121,8 @@ def test_stale_nonfailure_wrapper_does_not_prove_health(
     rendered = _status(tmp_path, local_app_data, last_result="0")
 
     assert "wrapper_timestamp_state=stale" in rendered
-    assert "service_operational_state=unknown" in rendered
+    assert "runtime_status_read_state=missing" in rendered
+    assert "service_operational_state=blocked" in rendered
 
 
 def test_scheduler_nonzero_result_still_blocks_historical_wrapper_failure(
@@ -203,22 +204,34 @@ def _write_wrapper(
     return local_app_data
 
 
-def _write_runtime(root: Path, *, state: str, updated_at: datetime) -> None:
+def _write_runtime(
+    root: Path,
+    *,
+    state: str,
+    updated_at: datetime,
+    overrides: dict[str, object] | None = None,
+) -> None:
     control_root = root / "control"
     control_root.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, object] = {
+        "state": state,
+        "updated_at": updated_at.isoformat(),
+        "pid": os.getpid(),
+        "process_state": "running",
+        "feed_state": "connected",
+        "projection_state": "active",
+        "completed_day_state": "unknown",
+        "session_id": "sha256:" + "1" * 64,
+        "messages": 1,
+        "microbatches": 1,
+        "last_successful_heartbeat_at": updated_at.isoformat(),
+        "last_message_at": updated_at.isoformat(),
+        "last_microbatch_at": updated_at.isoformat(),
+        "last_error": None,
+    }
+    payload.update(overrides or {})
     (control_root / "status.json").write_text(
-        json.dumps(
-            {
-                "state": state,
-                "updated_at": updated_at.isoformat(),
-                "pid": os.getpid(),
-                "process_state": "running",
-                "feed_state": "connected",
-                "projection_state": "active",
-                "completed_day_state": "unknown",
-                "last_error": None,
-            }
-        ),
+        json.dumps(payload),
         encoding="utf-8",
     )
 

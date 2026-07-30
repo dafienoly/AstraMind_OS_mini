@@ -19,10 +19,10 @@ from astramind_mini.local_ops.realtime_service_deployment import (
 from astramind_mini.local_ops.realtime_service_runner import (
     append_bounded_log as _append_bounded_log,
 )
+from astramind_mini.local_ops.realtime_service_runner import run_realtime_task
 from astramind_mini.local_ops.realtime_windows_wrapper import install_windows_wrapper
 from scripts.manage_realtime_market_service import (
     _mutate_existing,
-    _run_task,
     _status,
     _task_command,
     _task_definition_matches,
@@ -229,7 +229,7 @@ def test_runner_start_and_nonzero_exit_are_blocked_with_log(
         lambda *args, **kwargs: (_ for _ in ()).throw(OSError("cannot execute")),
     )
 
-    assert _run_task("realtime-market-service-run") == 127
+    assert run_realtime_task("realtime-market-service-run") == 127
     assert (tmp_path / "var/control/realtime-market-service/service.log").is_file()
     status = (tmp_path / "var/control/realtime-market-service/status.json").read_text()
     assert '"state": "blocked"' in status
@@ -243,7 +243,7 @@ def test_runner_start_and_nonzero_exit_are_blocked_with_log(
             return 9
 
     monkeypatch.setattr(subprocess, "Popen", lambda *args, **kwargs: FailedProcess())
-    assert _run_task("realtime-market-service-run") == 9
+    assert run_realtime_task("realtime-market-service-run") == 9
     status = (tmp_path / "var/control/realtime-market-service/status.json").read_text()
     assert '"state": "blocked"' in status
     assert '"exit_code": 9' in status
