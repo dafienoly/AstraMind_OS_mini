@@ -1,0 +1,99 @@
+{
+  "schema": "astramind-f0-golden-v1",
+  "oracle": {
+    "kind": "independent-hand-formula-and-state-oracle",
+    "implementation": "tests/golden/test_core_f0_formulas.py",
+    "generator_policy": "never call evaluate_astramind_f0 when deriving expected rows or hashes",
+    "coverage": [
+      "24 ordered feature values and three-state reasons for six instruments",
+      "260 fixed real SSE/SZSE common sessions",
+      "historical U0 membership and SW L1 change",
+      "financial and dividend point-in-time edges are frozen in focused golden-backed tests"
+    ]
+  },
+  "provenance": {
+    "generator_identity": "tests/golden/test_core_f0_formulas.py::_oracle_rows",
+    "input_builder_identity": "tests/unit/test_core_f0_unit.py::_bundle",
+    "generator_version": "astramind-f0-independent-oracle-v1.0.0",
+    "generator_process": "reviewed deterministic in-test oracle; no standalone generator; production evaluator is excluded from expected-row derivation",
+    "authoritative_source_commit": "37c83fd166fe050c1f2a843560d10a72665cea76",
+    "authoritative_source_paths": [
+      "docs/requirements/REQ-2026-0007-core-weekly-portfolio.md",
+      "docs/planning/work-packages/WP-0071A-astramind-f0-formula-package.md"
+    ],
+    "input_hash_schema": "astramind-f0-golden-complete-input-v1",
+    "complete_input_hash": "sha256:6380f00c90e84476b7a62c8045a1516011e3939a25c8d30fdbdabc787e561844"
+  },
+  "common_sessions": ["2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-15","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-19","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-03-29","2024-04-01","2024-04-02","2024-04-03","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-27","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-19","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-04","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-02","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-28","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-25","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-09","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-20","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27"],
+  "instruments": [
+    "600000.SH",
+    "600001.SH",
+    "600002.SH",
+    "600003.SH",
+    "600004.SH",
+    "600005.SH"
+  ],
+  "sw_l1": {
+    "600000.SH": "sw-bank",
+    "600001.SH": "sw-bank",
+    "600002.SH": "sw-tech",
+    "600003.SH": "sw-tech",
+    "600004.SH": "sw-consumer",
+    "600005.SH": "sw-tech"
+  },
+  "historical_boundaries": {
+    "600005.SH": "new-stock U0 entry after 60 sessions; SW L1 changes consumer -> tech"
+  },
+  "edge_case_expectations": {
+    "visible_financial_revision_ep": 1.46e-8,
+    "visible_dividend_revisions_total_dps": 0.8,
+    "date_only_same_day_uses_older_visible_ep": 1.2e-8,
+    "suspended_zero_amount_amihud": ["missing", "f0_amihud_coverage_incomplete"],
+    "missing_bar_realized_vol": ["missing", "f0_common_session_window_incomplete"],
+    "price_limit_rev_5": -0.10361763718615014,
+    "corporate_action_continuous_rev_5": -0.004196983234532103,
+    "zero_variance_realized_vol": 0.0,
+    "zero_denominator_debt_to_assets": ["missing", "f0_invalid_denominator"],
+    "non_finite_market_cap_ep": ["missing", "f0_non_finite_result"],
+    "industry_change_market_state": "observed",
+    "new_stock_pre_entry_excluded_from_historical_u0": true
+  },
+  "expected_output_hash": "sha256:9ec72ebefaecdbcd0d70b83dcd2b06b1173f68273c2a67cdd75c09f3991d4446",
+  "expected_rows_content_hash": "sha256:40184c4d5498c45c04c41f952b1b3861fc30e53b58f979d071410ec1d2d28a4a",
+  "expected_state_counts": [79, 26, 39],
+  "expected_instrument_row_hashes": {
+    "600000.SH": "sha256:4ffbc1caa9a8c3c876179049d0c15b85ba66b8a41549f1585975d73ac486a2d1",
+    "600001.SH": "sha256:fc5c777cad30a264f4f25968a6c8d44b6c7e03a1e1efd9a902827b17904b8c68",
+    "600002.SH": "sha256:e38370d76f9afeb34a9077d48fb69a15194824343984dcc79f8bd2869009167a",
+    "600003.SH": "sha256:56003f84e2f9e9e61e2ea2d783a9bbcc9ac22e8d09368653ac76965bf718ed44",
+    "600004.SH": "sha256:4a2d1537c17d19cab996e945039892a3e1d6bf39dcf2d80606b5b02fc0f9cf7e",
+    "600005.SH": "sha256:b29e742b7047b3414953340645f0feb80df04636a2b4e1d81b2478bf5e098db2"
+  },
+  "full_definition_manifest_hash": "sha256:a404abe527f5b50c66c974d4520529a1ec0a4aaa3049daea28fea66900f6900f",
+  "expected_600000_rows": [
+    {"feature":"EP_TTM","state":"observed","value":1.41e-8,"reason":null},
+    {"feature":"BP","state":"observed","value":9e-8,"reason":null},
+    {"feature":"SP_TTM","state":"observed","value":1.41e-7,"reason":null},
+    {"feature":"DY_TTM","state":"observed","value":0.020873134492919214,"reason":null},
+    {"feature":"ROE_TTM","state":"observed","value":0.16588235294117648,"reason":null},
+    {"feature":"ROA_TTM","state":"observed","value":0.08163157894736842,"reason":null},
+    {"feature":"OPERATING_MARGIN_TTM","state":"observed","value":0.15,"reason":null},
+    {"feature":"OCF_TO_NET_INCOME_TTM","state":"observed","value":1.0909090909090908,"reason":null},
+    {"feature":"ACCRUALS_TO_ASSETS_TTM","state":"observed","value":-0.0074210526315789446,"reason":null},
+    {"feature":"DEBT_TO_ASSETS","state":"observed","value":0.55,"reason":null},
+    {"feature":"REVENUE_TTM_YOY","state":"observed","value":0.23684210526315796,"reason":null},
+    {"feature":"NET_PROFIT_TTM_YOY","state":"observed","value":0.23684210526315796,"reason":null},
+    {"feature":"OCF_TTM_YOY","state":"observed","value":0.23684210526315774,"reason":null},
+    {"feature":"MOM_20_5","state":"observed","value":0.0077488299734953525,"reason":null},
+    {"feature":"MOM_60_5","state":"observed","value":0.03751867893164884,"reason":null},
+    {"feature":"MOM_120_20","state":"observed","value":0.07155907708546416,"reason":null},
+    {"feature":"INDUSTRY_REL_MOM_60_5","state":"observed","value":-0.00017794995653908074,"reason":null},
+    {"feature":"REV_5","state":"observed","value":-0.004196983234532103,"reason":null},
+    {"feature":"RESIDUAL_REV_20","state":"observed","value":4.098284211995207e-17,"reason":null},
+    {"feature":"REALIZED_VOL_20","state":"observed","value":0.002726533386154197,"reason":null},
+    {"feature":"DOWNSIDE_VOL_60","state":"observed","value":0.0,"reason":null},
+    {"feature":"LOG_MEDIAN_AMOUNT_20","state":"observed","value":17.564897003447044,"reason":null},
+    {"feature":"TURNOVER_MEAN_20","state":"observed","value":0.012495000000000001,"reason":null},
+    {"feature":"AMIHUD_20","state":"observed","value":0.0013999624871399985,"reason":null}
+  ]
+}

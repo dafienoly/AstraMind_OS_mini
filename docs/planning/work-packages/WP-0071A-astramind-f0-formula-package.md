@@ -1,7 +1,7 @@
 # WP-0071A：AstraMind F0 原生 24 因子公式包
 
-- 版本：1.0.0
-- 状态：实施中；独立复核返修与 WP-0070 v1.1 适配进行中
+- 版本：1.1.0
+- 状态：已实现；等待主控独立复核与集成
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5A
 - UI 提案：不适用
@@ -154,6 +154,32 @@ uv run mypy --strict src/astramind_mini/strategy_research/core/f0
 make docs-check
 git diff --check
 ```
+
+## 实施结果
+
+- 已在独立 `f0` 子包实现 24 个固定顺序原始公式，输出只通过 WP-0070 v1.1
+  `build_core_raw_feature_envelope` 形成统一三态 envelope，并直接校验唯一
+  `CoreCommonCalendar` 完整日期序列。
+- 完整计算语义 manifest 固定为
+  `sha256:a404abe527f5b50c66c974d4520529a1ec0a4aaa3049daea28fea66900f6900f`；
+  它覆盖 24 个定义、公式/方向/家族/输入/回看/适用性/失败原因以及逐字段 TTM、
+  即时项、跨字段可比口径、财务/分红稳定修订归并和全部市场窗口、逐日收益、
+  行业截面覆盖、几何复合、OLS 求解/rcond/rank/奇异/归约、年化与 Amihud 常量，
+  也冻结行情最大权威时点归并及公司分类的有效区间、分层选择和并列冲突策略。
+- 当前 U0 决策集使用 WP-0070 公共规范哈希算法精确绑定
+  `CoreInputSnapshot.universe_content_hash`，全历史 U0 的日/证券身份必须唯一。
+  财务流量逐指标独立选择自身最新可见累计期；ROE、ROA 和应计项要求 TTM 期与平均
+  存量期精确一致，跨字段期间或 `comparable_scope` 不一致失败关闭。财务与分红的
+  稳定修订身份不包含公告时点或 payload；同身份完全相同记录确定性去重，任一字段
+  冲突失败关闭。不同 revision 只按权威可用时间选择，同一最大可用时点的等价计算
+  payload 合并、冲突关闭，绝不以 `revision_id` 字典序裁决。
+- golden 使用 260 个固定沪深共同交易日、6 只证券和 3 个行业；测试中的手算公式/
+  三态 oracle 独立构造全部 144 行，再经公共 builder 推导行与输出身份，不调用生产
+  evaluator 生成期望。fixture 记录受审计 oracle 的版本与代码身份、权威需求源提交，
+  并从完整 `F0InputBundle` 独立重算输入指纹。另覆盖公告生效/修订、分红修订、停牌/零成交、缺 Bar、
+  涨跌停、公司行动连续研究价、零方差、除零、非有限、行业变化与新股历史 U0。
+- 本结果不包含处理后特征、选择、模型、组合、UI、生产补采、MiniQMT、账户、
+  Research Shadow、Paper/Live 或订单动作。
 
 ## 交接
 
