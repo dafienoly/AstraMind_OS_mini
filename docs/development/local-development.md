@@ -370,6 +370,21 @@ make realtime-market-service-start
 PID 不存在显示 `stale_process`。查询失败不会覆盖最后已知安装事实，暂停后启动会先
 重新启用任务；恢复流程不需要卸载任务。
 
+Windows 包装器固定调用 `%SystemRoot%\System32\wsl.exe`，使用
+`ProcessStartInfo` 直接传递发行版、工作目录和只读运行目标，不经过 `bash -lc` 或
+PowerShell 原生 stderr 管道。每次尝试把 `running / completed /
+wrapper_launch_exception / wsl_native_exit` 原子写入
+`%LOCALAPPDATA%\AstraMindOSMini\realtime-task-status.json`，并分别有界记录 stdout、
+stderr、原生退出码、异常类型、脱敏异常消息和 HResult。`status` 再与 WSL 内
+`status.json` 合并，独立显示 `python_feed_error` 和最终
+`service_operational_state`；`scheduler_state=installed` 只表示任务存在，不代表
+服务健康。
+
+2026-07-31 复核证明旧的已安装任务定义和包装器 SHA 与当时仓库完全一致；运行失败
+不是“任务未更新”。本诊断尾包改变了包装器与参数，所以下一次恢复只需对同名任务做
+一次用户可见的 UAC 覆盖安装，再在连续竞价窗口启动并观察 15 分钟。不要先卸载任务，
+也不要用全局 WSL 关闭掩盖故障。
+
 测速命令记录原生获取、桥接、规范化、落盘和端到端延迟。默认产生诊断报告，不能
 激活生产路由；只有完整生产范围的覆盖、点时和内容门禁报告才允许执行配置级切源。
 MiniQMT 故障时按整个数据集回退 Tushare，既有不可变快照不会被改写。

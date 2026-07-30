@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import subprocess
 import xml.etree.ElementTree as ET
-from datetime import UTC, datetime
 from pathlib import Path
 
 from astramind_mini.local_ops.realtime_service_deployment import (
@@ -15,11 +13,13 @@ from astramind_mini.local_ops.realtime_service_deployment import (
     TRIGGER_LABELS,
     WINDOWS_POWERSHELL_EXECUTABLE,
     RealtimeMarketTaskSpec,
-    scheduler_query_state,
     task_access_denied,
     task_xml,
 )
-from astramind_mini.local_ops.realtime_service_runtime import RealtimeStatusStore
+from astramind_mini.local_ops.realtime_service_diagnostics import realtime_status_lines
+from astramind_mini.local_ops.realtime_service_runner import (
+    run_realtime_task as _run_task,
+)
 from astramind_mini.local_ops.realtime_windows_wrapper import (
     install_windows_wrapper as _install_windows_wrapper,
 )
@@ -130,107 +130,9 @@ def _require_exact_confirmation(
 
 def _status() -> int:
     completed = _task_command(["/Query", "/TN", TASK_NAME, "/FO", "LIST", "/V"])
-    state = scheduler_query_state(completed.returncode, completed.stdout, completed.stderr)
-    installed = state == "installed"
-    control_root = Path("var/control/realtime-market-service")
-    fact_path = control_root / "scheduler-fact.json"
-    previous = _read_scheduler_fact(fact_path)
-    if state != "query_failed":
-        _write_scheduler_fact(fact_path, state)
-    print(f"state={state}")
-    print(f"task_name={TASK_NAME}")
-    if state == "query_failed" and previous is not None:
-        print(f"last_known_task_state={previous['state']}")
-        print(f"last_known_installed={str(previous['state'] == 'installed').lower()}")
-        print(f"last_known_task_checked_at={previous['checked_at']}")
-    if installed or state == "query_failed":
-        _print_scheduler_message(completed)
-    print(f"scheduler_exit_code={completed.returncode}")
-    last_result = _scheduler_field(completed.stdout, "上次结果", "Last Result")
-    if last_result is not None:
-        print(f"scheduler_last_result={last_result}")
-        if last_result in {"267009", "0x41301"}:
-            print("scheduler_execution_state=running")
-        elif last_result not in {"0", "0x0"}:
-            print("scheduler_recovery_action=检查 wsl.exe 启动、发行版与任务工作目录")
-    runtime = RealtimeStatusStore(control_root).read()
-    if runtime is None:
-        print("wsl_process_state=not_running")
-        print("feed_session_state=not_started")
-        print("projection_state=not_available")
-        print("completed_day_state=unknown")
-    else:
-        age = max(
-            0,
-            int(
-                (
-                    datetime.now(UTC) - datetime.fromisoformat(runtime.updated_at).astimezone(UTC)
-                ).total_seconds()
-            ),
-        )
-        process_alive = Path(f"/proc/{runtime.pid}").is_dir()
-        terminal = runtime.process_state == "exited" or runtime.state in {
-            "stopped",
-            "error",
-            "blocked",
-            "reconciled",
-        }
-        runtime_state = (
-            runtime.state if terminal or (process_alive and age <= 90) else "stale_process"
-        )
-        print(f"wsl_process_state={runtime_state}")
-        print(f"feed_session_state={runtime.feed_state}")
-        print(f"projection_state={runtime.projection_state}")
-        print(f"completed_day_state={runtime.completed_day_state}")
-        print(f"runtime_pid={runtime.pid}")
-        print(f"runtime_heartbeat_age_seconds={age}")
-        if runtime.market_date:
-            print(f"runtime_market_date={runtime.market_date}")
-        if runtime.session_id:
-            print(f"runtime_session_id={runtime.session_id}")
-        print(f"runtime_messages={runtime.messages}")
-        print(f"runtime_microbatches={runtime.microbatches}")
-        if runtime.last_successful_heartbeat_at:
-            print(f"runtime_last_successful_heartbeat={runtime.last_successful_heartbeat_at}")
-        if runtime.last_message_at:
-            print(f"runtime_last_message_at={runtime.last_message_at}")
-        if runtime.last_microbatch_at:
-            print(f"runtime_last_microbatch_at={runtime.last_microbatch_at}")
-        if runtime.exit_code is not None:
-            print(f"runtime_exit_code={runtime.exit_code}")
-        if runtime.last_error:
-            print(f"runtime_last_error={runtime.last_error}")
-        for index, failure in enumerate(runtime.retry_failures, start=1):
-            print(f"retry_failure_{index}={json.dumps(failure, ensure_ascii=False)}")
-        if runtime.log_path:
-            print(f"runtime_log_path={runtime.log_path}")
-        if runtime.recovery_action:
-            print(f"runtime_recovery_action={runtime.recovery_action}")
-    print("broker_actions_allowed=false")
+    for line in realtime_status_lines(completed):
+        print(line)
     return 0
-
-
-def _read_scheduler_fact(path: Path) -> dict[str, str] | None:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-    if value.get("state") not in {"installed", "not_installed"}:
-        return None
-    return {"state": str(value["state"]), "checked_at": str(value["checked_at"])}
-
-
-def _write_scheduler_fact(path: Path, state: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(
-        json.dumps(
-            {"state": state, "checked_at": datetime.now(UTC).isoformat()},
-            ensure_ascii=False,
-        ),
-        encoding="utf-8",
-    )
-    os.replace(temporary, path)
 
 
 def _mutate_existing(action: str) -> int:
@@ -263,108 +165,6 @@ def _mutate_existing(action: str) -> int:
     return completed.returncode
 
 
-def _run_task(make_target: str) -> int:
-    if make_target != "realtime-market-service-run":
-        raise ValueError("拒绝未知实时服务目标")
-    log_root = Path("var/control/realtime-market-service")
-    log_root.mkdir(parents=True, exist_ok=True)
-    log_path = log_root / "service.log"
-    log_path.touch(exist_ok=True)
-    try:
-        process = subprocess.Popen(
-            ["/usr/bin/make", make_target],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-    except OSError as error:
-        _append_bounded_log(log_path, f"service_start_failed:{type(error).__name__}\n".encode())
-        RealtimeStatusStore(log_root).publish(
-            "blocked",
-            process_state="exited",
-            feed_state="blocked",
-            projection_state="blocked",
-            exit_code=127,
-            last_error="service_process_start_failed",
-            recovery_action="检查 /usr/bin/make 与任务工作目录后重试",
-            successful_heartbeat=False,
-        )
-        return 127
-    assert process.stdout is not None
-    while chunk := process.stdout.read(64 * 1024):
-        _append_bounded_log(log_path, chunk)
-    returncode = process.wait()
-    status_store = RealtimeStatusStore(log_root)
-    current = status_store.read()
-    terminal_state = (
-        current.state
-        if returncode == 0 and current is not None
-        else "stopped"
-        if returncode == 0
-        else "blocked"
-    )
-    status_store.publish(
-        terminal_state,
-        process_state="exited",
-        feed_state=(
-            current.feed_state
-            if returncode == 0 and current is not None
-            else "not_started"
-            if returncode == 0
-            else "blocked"
-        ),
-        projection_state=(
-            current.projection_state
-            if returncode == 0 and current is not None
-            else "unknown"
-            if returncode == 0
-            else "blocked"
-        ),
-        completed_day_state=current.completed_day_state if current is not None else "unknown",
-        exit_code=returncode,
-        last_error=(
-            current.last_error
-            if current is not None and current.last_error
-            else "service_process_failed"
-            if returncode != 0
-            else None
-        ),
-        retry_failures=current.retry_failures if current is not None else (),
-        recovery_action=current.recovery_action if current is not None else None,
-        successful_heartbeat=False,
-    )
-    return returncode
-
-
-def _rotate_logs(path: Path, *, generations: int = 4, max_bytes: int = 2_000_000) -> None:
-    if not path.is_file() or path.stat().st_size < max_bytes:
-        return
-    path.with_name(f"{path.name}.{generations}").unlink(missing_ok=True)
-    for index in range(generations - 1, 0, -1):
-        source = path.with_name(f"{path.name}.{index}")
-        if source.is_file():
-            os.replace(source, path.with_name(f"{path.name}.{index + 1}"))
-    os.replace(path, path.with_name(f"{path.name}.1"))
-
-
-def _truncate_log(path: Path, *, max_bytes: int = 2_000_000) -> None:
-    if path.stat().st_size <= max_bytes:
-        return
-    with path.open("rb") as stream:
-        stream.seek(-max_bytes, os.SEEK_END)
-        tail = stream.read()
-    temporary = path.with_suffix(".tmp")
-    temporary.write_bytes(tail)
-    os.replace(temporary, path)
-
-
-def _append_bounded_log(path: Path, payload: bytes, *, max_bytes: int = 2_000_000) -> None:
-    if path.is_file() and path.stat().st_size + len(payload) > max_bytes:
-        _rotate_logs(path, max_bytes=0)
-    with path.open("ab", buffering=0) as stream:
-        stream.write(payload[-max_bytes:])
-    _truncate_log(path, max_bytes=max_bytes)
-
-
 def _task_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(
@@ -382,14 +182,6 @@ def _task_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
             "",
             f"scheduler_query_start_failed:{type(error).__name__}",
         )
-
-
-def _scheduler_field(payload: str, *labels: str) -> str | None:
-    for line in payload.splitlines():
-        name, separator, value = line.partition(":")
-        if separator and name.strip().casefold() in {label.casefold() for label in labels}:
-            return value.strip()
-    return None
 
 
 def _task_definition_matches(payload: str, spec: RealtimeMarketTaskSpec) -> bool:

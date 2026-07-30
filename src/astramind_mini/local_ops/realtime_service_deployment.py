@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shlex
 import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -13,9 +12,7 @@ TASK_NAME = "AstraMind OS Mini - Realtime Market"
 TASK_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 TRIGGER_LABELS = ("Windows 登录后启动", "每日 08:55 恢复启动")
 WINDOWS_WRAPPER_FILENAME = "run_realtime_market_task-v1.ps1"
-WINDOWS_POWERSHELL_EXECUTABLE = (
-    r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
-)
+WINDOWS_POWERSHELL_EXECUTABLE = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 type SchedulerQueryState = Literal["installed", "not_installed", "query_failed"]
 
 
@@ -29,17 +26,6 @@ class RealtimeMarketTaskSpec:
 
     @property
     def action_arguments(self) -> str:
-        shell_command = shlex.join(
-            [
-                "/usr/bin/uv",
-                "run",
-                "python",
-                "scripts/manage_realtime_market_service.py",
-                "run-task",
-                "--make-target",
-                "realtime-market-service-run",
-            ]
-        )
         return subprocess.list2cmdline(
             [
                 "-NoProfile",
@@ -51,8 +37,8 @@ class RealtimeMarketTaskSpec:
                 self.distro,
                 "-Workdir",
                 self.repository_root.as_posix(),
-                "-Command",
-                shell_command,
+                "-MakeTarget",
+                "realtime-market-service-run",
             ]
         )
 

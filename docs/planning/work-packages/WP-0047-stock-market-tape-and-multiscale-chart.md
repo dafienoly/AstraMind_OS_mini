@@ -1,8 +1,8 @@
 # WP-0047：个股全景行情与多时标检查器
 
-- 版本：1.0.0
-- 状态：已批准实施；代码验收已完成，待更新既有任务定义并完成真实连续竞价 15 分钟
-  与页面端到端 P95 运营验收
+- 版本：1.0.1
+- 状态：已批准实施；代码验收和运行诊断尾包已完成，待以新包装器覆盖既有任务，并完成
+  真实连续竞价 15 分钟与页面端到端 P95 运营验收
 - 需求：REQ-2026-0004 v2.9.0、REQ-2026-0008 v2.2.1、
   REQ-2026-0009 v1.5.0
 - 阶段：6A、6B
@@ -42,7 +42,10 @@ K 线”只能视为目标契约，不能作为已完成运营能力。
 ## 允许文件
 
 - `src/astramind_mini/data/**realtime**`
+- `src/astramind_mini/local_ops/realtime_*`
 - `scripts/run_miniqmt_realtime_pipeline.py`
+- `scripts/manage_realtime_market_service.py`
+- `scripts/windows/run_realtime_market_task.ps1`
 - `scripts/windows/miniqmt_data_bridge.py`
 - `apps/web/src/market-dashboard/realtime/**`（UI 获批后）
 - 共享价格检查器及其直接测试（UI 获批后）
@@ -145,17 +148,23 @@ K 线”只能视为目标契约，不能作为已完成运营能力。
   `EncodedCommand` 绑定，既有包装器采用同目录临时文件加备份的原子替换，并且任务
   注册失败后不再因旧任务仍存在而误报成功；任务定义查询还会精确核对绝对
   Windows PowerShell 路径和完整参数。
-- 2026-07-30 第一次同名覆盖安装通过 UAC，将计划任务动作更新为
-  `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe` 绝对路径；此后代码又
-  加固了编码参数、包装器原子替换和注册结果校验。用于登记最新完整定义的第二次覆盖
-  安装被取消，因此 Windows 中的已登记任务仍落后于当前代码，不能以绝对路径已经存在
-  误判为最新定义已安装。
-- 手动启动已登记任务仍返回 `-196608`，有界日志为
-  `wsl_start_failed=RuntimeException`；任务包装器和最小 `wsl.exe -d Ubuntu` 探针还
-  间歇命中 `UtilAcceptVsock:273: accept4 failed 110`，尚未进入 MiniQMT Python 行情
-  会话。WSL 内同时观察到 67 个父进程为 1、无子进程且无活跃 interop 端点的孤儿
-  `Relay`，但尚未执行有权限的清理，也不能仅凭相关性宣称其是唯一根因。为保护承载
-  当前 Codex 的 Ubuntu，禁止在会话内执行全局 WSL 关闭。
+- 2026-07-31 权威实机复核确认：已安装任务的动作是
+  `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`，参数与当时仓库定义
+  一致，Windows 本地包装器 SHA256 也与 `ce53f1f` 仓库文件完全一致；此前“已登记任务
+  仍落后于代码”的判断已经过时，不能继续作为运行失败原因。
+- 同次复核中任务上次结果仍为 `-196608`，旧包装器仅留下
+  `wsl_start_failed=RuntimeException`；WSL 运行状态为 `error`、feed `not_started`，
+  消息与微批均为 0，`aggregates/1m` 仍无文件。交互式绝对路径
+  `wsl.exe -d Ubuntu -- /bin/echo probe_ok` 曾成功，说明 WSL 并非持续不可用；同日稍后
+  的只读 WSL→Windows 探针又命中 `UtilAcceptVsock:273: accept4 failed 110`，所以
+  interop 仍具有间歇性，不能只归因于计划任务，也不能把一次成功当成稳定恢复。
+- 运行诊断尾包改用 `%SystemRoot%\System32\wsl.exe` 和
+  `System.Diagnostics.ProcessStartInfo`，通过 Windows 命令行规范安全绑定独立 argv，
+  不再拼接 `bash -lc` 或合并原生 stderr 管道；stdout/stderr 分别有界排空，原生退出码、
+  异常类型、脱敏消息和 HResult 写入同目录原子状态。状态投影分别报告
+  `wrapper_launch_exception / wsl_native_exit / python_feed_error`，任务存在不再等同于
+  服务成功。该变更尚未执行 UAC 覆盖安装，安装后才可用新证据区分计划任务启动异常、
+  WSL 原生失败和 Python feed 失败，再重跑交易时段验收。
 - 因此本包仍未完成运营验收：行情会话、消息和微批仍为零，真实 `aggregates/1m`
   尚未形成，真实连续竞价 15 分钟和页面端到端 P95 证据尚未保存。不得以代码测试通过
   替代上述证据，也不得将本工作包标为完成。

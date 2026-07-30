@@ -16,9 +16,11 @@ from astramind_mini.local_ops.realtime_service_deployment import (
     task_is_present,
     task_xml,
 )
+from astramind_mini.local_ops.realtime_service_runner import (
+    append_bounded_log as _append_bounded_log,
+)
 from astramind_mini.local_ops.realtime_windows_wrapper import install_windows_wrapper
 from scripts.manage_realtime_market_service import (
-    _append_bounded_log,
     _mutate_existing,
     _run_task,
     _status,
@@ -79,7 +81,8 @@ def test_windows_task_wrapper_bounds_logs_and_exposes_wsl_exit() -> None:
 
     assert "$MaxBytes = 2MB" in payload
     assert "$Generations = 4" in payload
-    assert "wsl_start_failed=" in payload
+    assert "wrapper_launch_exception" in payload
+    assert "wsl_native_exit_code=" in payload
     assert "wsl_exit_code=" in payload
     assert "Redact-Line" in payload
     assert "token|api[_ -]?key|secret|password|account" in payload
@@ -87,6 +90,15 @@ def test_windows_task_wrapper_bounds_logs_and_exposes_wsl_exit() -> None:
     assert "Rotate-Log $PayloadBytes" in payload
     assert "Limit-LogFile $LogPath" in payload
     assert "$MaxLineCharacters = 131072" in payload
+    assert 'return Join-Path $env:SystemRoot "System32\\wsl.exe"' in payload
+    assert "System.Diagnostics" in payload
+    assert "ProcessStartInfo" in payload
+    assert "RedirectStandardOutput = true" in payload
+    assert "RedirectStandardError = true" in payload
+    assert "BuildArguments(arguments)" in payload
+    assert "& wsl.exe" not in payload
+    assert "2>&1" not in payload
+    assert "/bin/bash" not in payload
     assert scheduler_query_state(0, f"任务名: \\{TASK_NAME}", "") == "installed"
     assert (
         scheduler_query_state(1, "", "ERROR: The system cannot find the file specified.")
@@ -107,7 +119,14 @@ def test_windows_wrapper_redacts_quoted_multiword_values_without_eating_paths() 
     compiled = re.compile(compatible_pattern)
     key_a = "to" + "ken"
     key_b = "sec" + "ret"
-    fixture = f"{key_a}=\"alpha beta gamma\", {key_b}='two word secret'; /secret/path remains"
+    key_c = "pass" + "word"
+    key_d = "api" + " key"
+    key_e = "account" + "_" + "id"
+    fixture = (
+        f"{key_a}=\"alpha beta gamma\", {key_b}='two word secret'; "
+        f"{key_c} unquoted multi word, {key_d}='api value'; "
+        f'{key_e}="account value", /secret/path remains, accounting=value remains'
+    )
 
     redacted = compiled.sub(
         lambda match: f"{match.group('prefix')}<redacted>",
@@ -116,7 +135,28 @@ def test_windows_wrapper_redacts_quoted_multiword_values_without_eating_paths() 
 
     assert "alpha beta gamma" not in redacted
     assert "two word secret" not in redacted
+    assert "unquoted multi word" not in redacted
+    assert "api value" not in redacted
+    assert "account value" not in redacted
     assert "/secret/path remains" in redacted
+    assert "accounting=value remains" in redacted
+
+
+def test_task_arguments_preserve_spaces_and_chinese_without_shell_command() -> None:
+    spec = RealtimeMarketTaskSpec(
+        distro="测试 Ubuntu",
+        repository_root=Path("/home/ly/含 空格"),
+        windows_user_sid="S-1-5-21-1",
+        windows_local_app_data=r"C:\Users\tester\AppData\Local",
+    )
+
+    arguments = spec.action_arguments
+
+    assert '-Distro "测试 Ubuntu"' in arguments
+    assert '-Workdir "/home/ly/含 空格"' in arguments
+    assert "-MakeTarget realtime-market-service-run" in arguments
+    assert "-Command" not in arguments
+    assert "bash -lc" not in arguments
 
 
 def test_task_log_is_rotated_and_bounded_while_process_is_running(tmp_path: Path) -> None:
@@ -134,6 +174,7 @@ def test_scheduler_spawn_failure_is_query_failed_and_preserves_last_fact(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "windows-local"))
     fact = tmp_path / "var/control/realtime-market-service/scheduler-fact.json"
     fact.parent.mkdir(parents=True)
     fact.write_text(
@@ -162,6 +203,7 @@ def test_scheduler_running_result_is_not_reported_as_a_failure(
     last_result: str,
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "windows-local"))
     output = f"任务名: \\{TASK_NAME}\n上次结果: {last_result}\n"
     monkeypatch.setattr(
         "scripts.manage_realtime_market_service._task_command",
@@ -250,8 +292,7 @@ def test_wrapper_install_is_atomic_and_hash_verified(
     assert "Move-Item -LiteralPath $Temporary -Destination $Target" in script
     assert script.index("Copy-Item") < script.index("Move-Item")
     assert (
-        "$Source = '\\\\wsl.localhost\\Ubuntu\\workspace\\scripts\\windows\\wrapper.ps1'"
-        in script
+        "$Source = '\\\\wsl.localhost\\Ubuntu\\workspace\\scripts\\windows\\wrapper.ps1'" in script
     )
     assert f"$Target = '{spec.wrapper_path}'" in script
     assert "$args" not in script
@@ -411,9 +452,15 @@ def test_task_definition_verification_rejects_old_direct_wsl_action() -> None:
     )
     current = task_xml(spec).decode("utf-16")
     old = current.replace(WINDOWS_POWERSHELL_EXECUTABLE, "wsl.exe", 1)
+    old_shell_argument = current.replace(
+        "-MakeTarget realtime-market-service-run",
+        "-Command &quot;/usr/bin/uv run python old-shell&quot;",
+        1,
+    )
 
     assert _task_definition_matches(current, spec)
     assert not _task_definition_matches(old, spec)
+    assert not _task_definition_matches(old_shell_argument, spec)
 
 
 def test_windows_wrapper_caps_every_line_before_four_generation_rotation() -> None:
