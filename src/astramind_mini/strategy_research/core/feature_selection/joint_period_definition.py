@@ -157,6 +157,17 @@ def _validate_definition_parent_keys(
         or set(parents.selection_parents) != expected
     ):
         raise ValueError("joint definition requires canonical target and all three true parents")
+    for package in CANONICAL_JOINT_PACKAGE_ORDER:
+        selection = parents.selections[package]
+        selection_parents = parents.selection_parents[package]
+        if (
+            selection.package_id != package
+            or selection_parents.panel_manifest.package_id != package
+            or any(
+                envelope.package_id != package for envelope in selection_parents.processed_envelopes
+            )
+        ):
+            raise ValueError("joint definition mapping key differs from true parent package")
 
 
 def _same_bytes(

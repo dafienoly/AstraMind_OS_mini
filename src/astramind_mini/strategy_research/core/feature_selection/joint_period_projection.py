@@ -128,6 +128,10 @@ def _rebuild_period_panels(
     envelopes: dict[str, tuple[CoreProcessedFeatureEnvelope, ...]] = {}
     for package in definition.package_ids:
         panel, rebuilt = _rebuild_panel_bundle(period_panel_parents[package])
+        if panel.package_id != package or any(
+            envelope.package_id != package for envelope in rebuilt
+        ):
+            raise ValueError("period joint mapping key differs from rebuilt package")
         _same_bytes(
             period_panels[package],
             panel,

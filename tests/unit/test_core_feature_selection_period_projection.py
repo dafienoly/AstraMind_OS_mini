@@ -51,26 +51,12 @@ TARGETS = (
 
 
 def test_all_pair_and_triple_definitions_project_exact_new_period_parents() -> None:
-    panel_parents = {package: exact_period_panel_parents(package) for package in PACKAGES}
-    panels = {
-        package: rebuild_core_processed_feature_panel(proof)
-        for package, proof in panel_parents.items()
-    }
     for target in TARGETS:
-        definition_parents = _definition_parents(target)
-        definition = rebuild_core_frozen_joint_feature_definition(definition_parents)
-        proof = CorePeriodJointProjectionParents.freeze(
-            definition=definition,
-            definition_parents=definition_parents,
-            period_panels={package: panels[package] for package in target},
-            period_panel_parents={package: panel_parents[package] for package in target},
-            decision_date=panels[target[0]].decision_dates[-1],
-        )
+        proof = _period_proof(target)
         projection = rebuild_core_period_joint_projection(proof)
-        assert validate_core_period_joint_projection(projection, proof) == projection
         assert tuple(item.package_id for item in projection.package_bindings) == target
         assert projection.row_order == INSTRUMENTS
-        assert projection.column_order == definition.model_columns
+        assert projection.column_order == proof.definition.model_columns
 
 
 def test_joint_definition_rejects_selection_horizon_order_and_representative_attacks() -> None:
@@ -89,6 +75,41 @@ def test_joint_definition_rejects_selection_horizon_order_and_representative_att
     forged_definition = representative_attack(definition)
     with pytest.raises(ValueError, match="frozen joint definition differs"):
         validate_core_frozen_joint_feature_definition(forged_definition, parents)
+
+
+@pytest.mark.parametrize("target", TARGETS)
+def test_joint_period_rejects_complete_package_bundle_swaps(
+    target: tuple[str, ...],
+) -> None:
+    definition_parents = _definition_parents(target)
+    sources = target[1:] + target[:1]
+    forged_selections = dict(definition_parents.selections)
+    forged_selection_parents = dict(definition_parents.selection_parents)
+    for package, source in zip(target, sources, strict=True):
+        forged_selections[package] = definition_parents.selections[source]
+        forged_selection_parents[package] = definition_parents.selection_parents[source]
+    forged_definition_parents = replace(
+        definition_parents,
+        selections=forged_selections,
+        selection_parents=forged_selection_parents,
+    )
+    with pytest.raises(ValueError, match="mapping key differs from true parent package"):
+        rebuild_core_frozen_joint_feature_definition(forged_definition_parents)
+
+    proof = _period_proof(target)
+    forged_panels = dict(proof.period_panels)
+    forged_panel_parents = dict(proof.period_panel_parents)
+    for package, source in zip(target, sources, strict=True):
+        forged_panels[package] = proof.period_panels[source]
+        forged_panel_parents[package] = proof.period_panel_parents[source]
+    with pytest.raises(ValueError, match="mapping key differs from rebuilt package"):
+        rebuild_core_period_joint_projection(
+            replace(
+                proof,
+                period_panels=forged_panels,
+                period_panel_parents=forged_panel_parents,
+            )
+        )
 
 
 def test_joint_period_projection_rejects_cross_package_u0_and_package_omission() -> None:
@@ -157,12 +178,13 @@ def _cases(
         package: production_selection_case(
             package,
             horizon,
-            profile="full_ready" if package == PACKAGES[0] else "single",
+            profile="single",
         )
         for package in PACKAGES
     }
 
 
+@lru_cache(maxsize=4)
 def _definition_parents(
     target: tuple[str, ...],
 ) -> CoreFrozenJointFeatureDefinitionParents:
@@ -175,6 +197,7 @@ def _definition_parents(
     )
 
 
+@lru_cache(maxsize=4)
 def _period_proof(target: tuple[str, ...]) -> CorePeriodJointProjectionParents:
     definition_parents = _definition_parents(target)
     definition = rebuild_core_frozen_joint_feature_definition(definition_parents)

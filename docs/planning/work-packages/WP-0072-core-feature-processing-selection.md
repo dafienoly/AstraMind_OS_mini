@@ -378,6 +378,10 @@ golden fixture 至少包含：
 ## 检查
 
 ```text
+# 默认 affected：后续周期投影的全部单包/联合 exact-parent 与攻击回归
+uv run pytest tests/unit/test_core_feature_processing_period_projection.py \
+  tests/unit/test_core_feature_selection_period_projection.py -q
+# 显式 extended：Stage S 全量处理、选择、标签与 golden 真实性回归
 uv run pytest tests/unit/test_core_feature_processing_*.py \
   tests/unit/test_core_feature_selection_*.py \
   tests/unit/test_core_labels_*.py \
@@ -517,6 +521,14 @@ Research Shadow 实际运行、Paper/Live 或订单。上述边界不能借本�
   自重哈希 processed 制品；
 - 当期 panel 必须整体晚于开发 selection 窗口；其包定义、registry/computation/
   processing hash、feature order、decision date、U0、证券行序和三态值必须与真实
-  parents 一致。联合投影还要求所有包的 U0 内容身份和行序完全相同；
+  parents 一致。联合投影还要求每个映射 key 与开发 selection、开发 panel/envelope
+  parents、当期重建 panel/envelope 的真实 `package_id` 逐项相同，并要求所有包的
+  U0 内容身份和行序完全相同；三种 selected pair 与 selected triple 均以整包轮换
+  反例证明 F0、Alpha158、Alpha101 不能互换标签；
 - 原有仅允许开发期父 envelope 的 single/joint view projector 未放宽；扩展通过独立
   rebuild/validate API 提供，不修改标签、模型、共享合同、Stage P prior 或因子算法。
+- 后续周期投影默认 affected 门仅运行上述两个 period projection 文件，完整保留
+  180 日三子折、10,000 次 bootstrap、exact-parent、全重哈希与真实整包攻击；Stage S
+  既有全部 wildcard/golden 回归保留为紧随其后的显式 extended 门，不删除、不降采样，
+  避免把历史真实性矩阵伪装为低于 90 秒的默认反馈门。默认 14 项在两个独立 pytest
+  进程中分别为 82.00/80.04 秒；extended 72 项为 147.87 秒。
