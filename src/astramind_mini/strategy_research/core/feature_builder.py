@@ -8,8 +8,17 @@ from datetime import datetime
 
 from astramind_mini.contracts import FeatureSnapshot
 
-from ..application.identity import research_hash
 from .contracts import CoreFeaturePackageSpec, CoreInputSnapshot
+from .feature_identity import (
+    canonical_definition_registry_hash,
+    canonical_feature_snapshot_id,
+    canonical_manifest_content_hash,
+    canonical_manifest_id,
+    canonical_package_spec_hash,
+    canonical_raw_snapshot_content_hash,
+    canonical_row_content_hashes,
+    canonical_rows_content_hash,
+)
 from .feature_output import (
     CoreFeatureCoverage,
     CoreFeatureRowIdentity,
@@ -50,26 +59,32 @@ def prepare_core_raw_feature_batch(
         feature_order=ordered_features,
         decision_time=core_input.cutoff_at,
     )
-    rows_content_hash = research_hash(canonical_rows)
-    payload = {
-        "core_input_snapshot_id": core_input.core_input_snapshot_id,
-        "core_input_content_hash": core_input.content_hash,
-        "data_snapshot_id": core_input.data_snapshot.snapshot_id,
-        "decision_time": core_input.cutoff_at,
-        "package_spec": package_spec,
-        "feature_order": ordered_features,
-        "rows": canonical_rows,
-        "raw_output_schema": "core-raw-feature-output-v1",
-    }
-    content_hash = research_hash(payload)
+    row_content_hashes = canonical_row_content_hashes(canonical_rows)
+    rows_content_hash = canonical_rows_content_hash(row_content_hashes)
+    package_spec_hash = canonical_package_spec_hash(package_spec)
+    registry_hash = canonical_definition_registry_hash(ordered_features, canonical_rows)
+    content_hash = canonical_raw_snapshot_content_hash(
+        core_input_snapshot_id=core_input.core_input_snapshot_id,
+        core_input_content_hash=core_input.content_hash,
+        data_snapshot_id=core_input.data_snapshot.snapshot_id,
+        decision_time=core_input.cutoff_at,
+        package_spec_hash=package_spec_hash,
+        definition_registry_hash=registry_hash,
+        feature_order=ordered_features,
+        rows_content_hash=rows_content_hash,
+    )
     return CoreRawFeatureBatchDraft(
-        feature_snapshot_id=f"feature-snapshot:{content_hash.removeprefix('sha256:')}",
+        feature_snapshot_id=canonical_feature_snapshot_id(content_hash),
         content_hash=content_hash,
         rows_content_hash=rows_content_hash,
+        row_content_hashes=row_content_hashes,
         core_input_snapshot_id=core_input.core_input_snapshot_id,
+        core_input_content_hash=core_input.content_hash,
         data_snapshot_id=core_input.data_snapshot.snapshot_id,
         decision_time=core_input.cutoff_at,
         package_spec=package_spec,
+        package_spec_hash=package_spec_hash,
+        definition_registry_hash=registry_hash,
         feature_order=ordered_features,
         rows=canonical_rows,
     )
@@ -190,28 +205,36 @@ def _build_manifest(draft: CoreRawFeatureBatchDraft) -> CoreRawFeatureManifest:
         _feature_coverage(feature_id, draft.rows) for feature_id in draft.feature_order
     )
     instruments = {item.instrument_id for item in draft.rows}
-    payload = {
-        "rows_content_hash": draft.rows_content_hash,
-        "feature_snapshot_id": draft.feature_snapshot_id,
-        "core_input_snapshot_id": draft.core_input_snapshot_id,
-        "package_id": draft.package_spec.package_id,
-        "feature_order": draft.feature_order,
-        "row_order": row_order,
-        "feature_coverage": coverage,
-        "row_count": len(draft.rows),
-        "instrument_count": len(instruments),
-        "observed_count": observed,
-        "missing_count": missing,
-        "not_applicable_count": not_applicable,
-        "observed_coverage_ratio": observed / len(draft.rows),
-    }
-    content_hash = research_hash(payload)
-    return CoreRawFeatureManifest(
-        manifest_id=f"core-raw-feature-manifest:{content_hash.removeprefix('sha256:')}",
-        content_hash=content_hash,
+    content_hash = canonical_manifest_content_hash(
         rows_content_hash=draft.rows_content_hash,
+        row_content_hashes=draft.row_content_hashes,
         feature_snapshot_id=draft.feature_snapshot_id,
         core_input_snapshot_id=draft.core_input_snapshot_id,
+        core_input_content_hash=draft.core_input_content_hash,
+        package_spec_hash=draft.package_spec_hash,
+        definition_registry_hash=draft.definition_registry_hash,
+        package_id=draft.package_spec.package_id,
+        feature_order=draft.feature_order,
+        row_order=row_order,
+        feature_coverage=coverage,
+        row_count=len(draft.rows),
+        instrument_count=len(instruments),
+        observed_count=observed,
+        missing_count=missing,
+        not_applicable_count=not_applicable,
+        observed_coverage_ratio=observed / len(draft.rows),
+    )
+    return CoreRawFeatureManifest(
+        manifest_id=canonical_manifest_id(content_hash),
+        content_hash=content_hash,
+        rows_content_hash=draft.rows_content_hash,
+        row_content_hashes=draft.row_content_hashes,
+        feature_snapshot_id=draft.feature_snapshot_id,
+        core_input_snapshot_id=draft.core_input_snapshot_id,
+        core_input_content_hash=draft.core_input_content_hash,
+        package_spec=draft.package_spec,
+        package_spec_hash=draft.package_spec_hash,
+        definition_registry_hash=draft.definition_registry_hash,
         package_id=draft.package_spec.package_id,
         feature_order=draft.feature_order,
         row_order=row_order,

@@ -28,6 +28,7 @@
 - `src/astramind_mini/strategy_research/core/**`
 - `tests/unit/test_core_universe.py`
 - `tests/unit/test_core_data_semantics.py`
+- `tests/unit/test_core_feature_identity.py`
 - `tests/fixtures/core/**`
 - 本工作包及其直接需求/追踪状态
 
@@ -67,7 +68,7 @@ Strategy Research 的 `core` 子包拥有：
 - 原始价量只用于成交、流动性、容量和执行约束，复权兼容价只供审计；
 - 行业必须是决策时点可知的 SW2021 身份，缺失时严格行业算子失败关闭；
 - 财务记录按公告实际可用时间生效，只有日期时从下一共同交易日收盘后可用，修订不回写；
-- 因子值状态只有 `value / missing / not_applicable`，另有冻结覆盖门，禁止用 0 填充未知；
+- 因子值状态只有 `observed / missing / not_applicable`，另有冻结覆盖门，禁止用 0 填充未知；
 - 当前会话、形成中分钟和未封存 Tick 不得进入核心输入身份。
 
 ## 验收
@@ -87,7 +88,8 @@ Strategy Research 的 `core` 子包拥有：
 ## 检查
 
 ```text
-uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py
+uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py \
+  tests/unit/test_core_feature_identity.py
 uv run pytest tests/unit/test_architecture.py tests/unit/test_contracts.py
 make docs-check
 git diff --check
@@ -114,8 +116,10 @@ WP-0071A/B/C。三个因子包可以并行计算，但不得并行修改本包�
   必须有限且字段状态严格一致；
 - 三包共用两阶段原始公式输出 builder：先对不含 `feature_snapshot_id` 的规范行草稿
   计算内容身份，再注入统一共享 `FeatureSnapshot`；manifest 保存规范特征顺序、逐行
-  身份、行数、逐特征覆盖和内容哈希，原始阶段不做缩尾、填补、标准化或中性化；
-- 两份聚焦单测覆盖新股、北交所、ST、未知、停牌、流动性/覆盖、未来泄漏、
+  身份、行数、逐特征覆盖和内容哈希，并显式绑定核心输入、完整包规范与定义注册表
+  哈希；draft、manifest、envelope 均用同一组规范身份函数重算验证，原始阶段不做
+  缩尾、填补、标准化或中性化；
+- 三份聚焦单测覆盖新股、北交所、ST、未知、停牌、流动性/覆盖、未来泄漏、
   非 A 股、规格篡改、三态/非有限值、三包共用 envelope、宽度/重复、幂等与内容变化
-  负测；跨三包矩阵因限定只能写入指定测试文件而保持为一个内聚测试模块，仍低于
-  500 行阻断阈值。未修改共享契约、Data、MiniQMT、前端、生产数据或交易代码。
+  负测；身份与 dump 篡改负测独立放在专属测试模块，既有数据语义测试保持原样。
+  未修改共享契约、Data、MiniQMT、前端、生产数据或交易代码。
