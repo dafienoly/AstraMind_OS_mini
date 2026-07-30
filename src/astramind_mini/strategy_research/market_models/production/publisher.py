@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from datetime import date, datetime
 from pathlib import Path
@@ -126,6 +127,13 @@ def _data_gates(
     matrix: ProductionFeatureMatrix,
     trained: ProductionTrainedBundle,
 ) -> tuple[DataGateState, ...]:
+    feature_cells = tuple(value for row in matrix.rows for value in row.features) + tuple(
+        value for row in matrix.inference_rows for value in row.features
+    )
+    observed_feature_cells = sum(
+        value is not None and math.isfinite(value) for value in feature_cells
+    )
+    label_candidates = trained.label_candidate_sample_count
     return (
         DataGateState(
             gate_name="immutable_snapshot_integrity",
@@ -136,14 +144,16 @@ def _data_gates(
         DataGateState(
             gate_name="production_feature_matrix",
             status="pass",
-            observation_count=len(matrix.rows),
-            coverage_ratio=1.0,
+            observation_count=observed_feature_cells,
+            coverage_ratio=observed_feature_cells / len(feature_cells),
         ),
         DataGateState(
             gate_name="label_maturity",
             status="pass",
             observation_count=trained.mature_sample_count,
-            coverage_ratio=1.0,
+            coverage_ratio=(
+                trained.mature_sample_count / label_candidates if label_candidates else None
+            ),
         ),
         DataGateState(
             gate_name="supportive_evidence",

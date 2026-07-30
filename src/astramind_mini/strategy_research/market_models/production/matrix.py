@@ -146,6 +146,7 @@ def training_set(
     ordered = tuple(indexed[sample_id] for sample_id in sample_ids)
     return TabularTrainingSet(
         sample_ids=tuple(row.sample_id for row in ordered),
+        feature_at=tuple(row.feature_at for row in ordered),
         feature_names=matrix.feature_names,
         features=np.asarray(
             [[np.nan if value is None else value for value in row.features] for row in ordered],

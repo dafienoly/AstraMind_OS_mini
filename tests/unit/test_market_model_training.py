@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -13,6 +13,7 @@ from astramind_mini.strategy_research.market_models.recipes import recipe_for
 from astramind_mini.strategy_research.market_models.splits import WalkForwardFold
 from astramind_mini.strategy_research.market_models.training import (
     TabularTrainingSet,
+    mean_daily_rank_ic,
     multiclass_brier,
     spearman_rank_correlation,
     train_with_grid,
@@ -59,6 +60,22 @@ def test_average_tie_rank_and_brier_are_reproducible() -> None:
     ) == pytest.approx(0.05)
 
 
+def test_rank_ic_is_meaned_by_daily_cross_section_and_skips_invalid_days() -> None:
+    feature_at = (
+        *(datetime(2025, 1, 2, tzinfo=UTC) for _ in range(3)),
+        *(datetime(2025, 1, 3, tzinfo=UTC) for _ in range(3)),
+        *(datetime(2025, 1, 6, tzinfo=UTC) for _ in range(3)),
+    )
+    actual = np.asarray([1.0, 2.0, 3.0, 100.0, 200.0, 300.0, 7.0, 7.0, 7.0])
+    predicted = np.asarray([1.0, 2.0, 3.0, 300.0, 200.0, 100.0, 1.0, 2.0, 3.0])
+
+    daily = mean_daily_rank_ic(actual, predicted, feature_at)
+    pooled = spearman_rank_correlation(actual, predicted)
+
+    assert daily == pytest.approx(0.0)
+    assert pooled != pytest.approx(daily)
+
+
 def test_regression_training_uses_explicit_time_folds_and_native_missing() -> None:
     sample_ids = tuple(f"sample:{index:03d}" for index in range(90))
     base = np.linspace(-2.0, 2.0, 90)
@@ -66,6 +83,7 @@ def test_regression_training_uses_explicit_time_folds_and_native_missing() -> No
     features[5, 1] = np.nan
     dataset = TabularTrainingSet(
         sample_ids=sample_ids,
+        feature_at=_feature_times(len(sample_ids)),
         feature_names=("trend", "volatility"),
         features=features,
         labels=base * 2.0 + 0.1,
@@ -103,6 +121,7 @@ def test_lifecycle_training_reports_macro_f1_and_brier() -> None:
     features = np.column_stack((labels.astype(float), np.arange(120) % 5))
     dataset = TabularTrainingSet(
         sample_ids=sample_ids,
+        feature_at=_feature_times(len(sample_ids)),
         feature_names=("future_structure_proxy", "coverage"),
         features=features,
         labels=labels,
@@ -126,6 +145,7 @@ def test_training_rejects_infinite_features_and_empty_folds() -> None:
     with pytest.raises(ValueError, match="not infinity"):
         TabularTrainingSet(
             sample_ids=("sample:1",),
+            feature_at=_feature_times(1),
             feature_names=("feature",),
             features=np.asarray([[np.inf]]),
             labels=np.asarray([1.0]),
@@ -133,6 +153,7 @@ def test_training_rejects_infinite_features_and_empty_folds() -> None:
 
     dataset = TabularTrainingSet(
         sample_ids=("sample:1", "sample:2"),
+        feature_at=_feature_times(2),
         feature_names=("feature",),
         features=np.asarray([[1.0], [2.0]]),
         labels=np.asarray([1.0, 2.0]),
@@ -144,6 +165,11 @@ def test_training_rejects_infinite_features_and_empty_folds() -> None:
             folds=(),
             parameter_grid=PARAMETERS,
         )
+
+
+def _feature_times(count: int) -> tuple[datetime, ...]:
+    start = datetime(2024, 1, 1, tzinfo=UTC)
+    return tuple(start + timedelta(days=index // 3) for index in range(count))
 
 
 def test_prediction_batches_are_content_addressed_and_readonly() -> None:

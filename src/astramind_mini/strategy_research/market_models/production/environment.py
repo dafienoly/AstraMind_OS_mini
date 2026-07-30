@@ -6,7 +6,7 @@ from importlib.metadata import version
 
 from ..contracts import DependencyVersion
 
-_PACKAGES = ("numpy", "scikit-learn", "skops")
+_PACKAGES = ("duckdb", "numpy", "scikit-learn", "skops")
 
 
 def production_dependencies() -> tuple[DependencyVersion, ...]:

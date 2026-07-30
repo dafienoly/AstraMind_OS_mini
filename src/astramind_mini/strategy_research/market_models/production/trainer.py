@@ -27,6 +27,7 @@ class ProductionTrainedBundle:
     training_end: date
     maturity_cutoff: date
     mature_sample_count: int
+    label_candidate_sample_count: int
 
 
 class ProductionModelTrainer:
@@ -42,6 +43,7 @@ class ProductionModelTrainer:
         parameters: dict[int, Mapping[str, bool | int | float | str]] = {}
         selected_dates: list[date] = []
         mature_count = 0
+        candidate_count = 0
         for horizon in recipe.horizons:
             samples = point_in_time_samples(matrix, horizon=horizon)
             folds = tuple(
@@ -94,6 +96,10 @@ class ProductionModelTrainer:
             estimators[str(horizon)] = _fit_final(final, selected.parameters)
             parameters[horizon] = selected.parameters
             samples_by_id = {sample.sample_id: sample for sample in samples}
+            training_start = _years_before(maturity_cutoff, recipe.rolling_years)
+            candidate_count += sum(
+                training_start <= sample.feature_at <= maturity_cutoff for sample in samples
+            )
             selected_dates.extend(
                 samples_by_id[sample_id].feature_at.date() for sample_id in final_ids
             )
@@ -107,6 +113,7 @@ class ProductionModelTrainer:
             training_end=maturity_cutoff.date(),
             maturity_cutoff=maturity_cutoff.date(),
             mature_sample_count=mature_count,
+            label_candidate_sample_count=candidate_count,
         )
 
     def predict(
@@ -166,6 +173,13 @@ def _standardize(values: np.ndarray) -> np.ndarray:
     if deviation < 1e-12:
         return np.zeros_like(values)
     return (values - float(np.mean(values))) / deviation
+
+
+def _years_before(value: datetime, years: int) -> datetime:
+    try:
+        return value.replace(year=value.year - years)
+    except ValueError:
+        return value.replace(year=value.year - years, day=28)
 
 
 __all__ = [

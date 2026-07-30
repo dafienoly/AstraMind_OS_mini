@@ -132,6 +132,24 @@ def test_walk_forward_purges_unmature_labels_and_is_deterministic() -> None:
     assert "sample:late" not in january.train_sample_ids
 
 
+def test_walk_forward_excludes_a_whole_partially_mature_month() -> None:
+    samples = (
+        sample("sample:complete", datetime(2023, 12, 1, tzinfo=UTC), label_delay_days=0),
+        sample("sample:early-mature", datetime(2024, 1, 1, tzinfo=UTC), label_delay_days=0),
+        sample("sample:late-immature", datetime(2024, 1, 31, tzinfo=UTC), label_delay_days=60),
+    )
+
+    folds = build_walk_forward_folds(
+        samples,
+        recipe=recipe_for("industry_heat"),
+        purpose="development",
+        evidence_cutoff=datetime(2024, 3, 15, tzinfo=UTC),
+    )
+
+    assert tuple(fold.validation_month for fold in folds) == (date(2023, 12, 1),)
+    assert all("sample:early-mature" not in fold.validation_sample_ids for fold in folds)
+
+
 def test_final_training_only_includes_labels_mature_at_training_time() -> None:
     samples = (
         sample("sample:mature", datetime(2025, 1, 1, tzinfo=UTC), label_delay_days=0),

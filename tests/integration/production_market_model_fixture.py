@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import calendar
+import csv
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -40,6 +40,15 @@ INDUSTRIES = (
     ("801020.SI", "行业乙", "000002.SZ"),
     ("801030.SI", "行业丙", "000003.SZ"),
 )
+TRADING_DAYS = tuple(
+    day
+    for ordinal in range(
+        date(2012, 5, 1).toordinal(),
+        date(2023, 12, 29).toordinal() + 1,
+    )
+    for day in (date.fromordinal(ordinal),)
+    if day.weekday() < 5
+)
 
 
 @dataclass(frozen=True)
@@ -59,7 +68,7 @@ def production_snapshot(
 ) -> tuple[Path, str, dict[str, DatasetManifest]]:
     data_root = root / "data"
     staging = root / "staging"
-    days = _month_ends(date(2000, 1, 31), date(2023, 12, 31))
+    days = TRADING_DAYS
     cutoff = datetime.combine(days[-1], time(23), tzinfo=SHANGHAI)
     inputs = _dataset_inputs(
         days,
@@ -294,27 +303,22 @@ def _parquet_bytes(
 ) -> bytes:
     path.parent.mkdir(parents=True, exist_ok=True)
     definitions = ", ".join(f'"{name}" {kind}' for name, kind in columns)
-    placeholders = ", ".join("?" for _ in columns)
+    staging = path.with_suffix(".tsv")
+    with staging.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+        writer.writerows(rows)
     with duckdb.connect(":memory:") as connection:
         connection.execute(f"CREATE TABLE dataset ({definitions})")
-        connection.executemany(f"INSERT INTO dataset VALUES ({placeholders})", rows)
+        connection.execute(
+            "COPY dataset FROM ? (FORMAT CSV, DELIMITER '\t', HEADER FALSE)",
+            [str(staging)],
+        )
         connection.execute(
             "COPY dataset TO ? (FORMAT PARQUET, COMPRESSION ZSTD)",
             [str(path)],
         )
+    staging.unlink()
     return path.read_bytes()
-
-
-def _month_ends(start: date, end: date) -> tuple[date, ...]:
-    result = []
-    year, month = start.year, start.month
-    while (year, month) <= (end.year, end.month):
-        result.append(date(year, month, calendar.monthrange(year, month)[1]))
-        month += 1
-        if month == 13:
-            year += 1
-            month = 1
-    return tuple(result)
 
 
 def _industry_close(position: int, index: int) -> float:
@@ -325,4 +329,10 @@ def _industry_close(position: int, index: int) -> float:
     return 110.0 + index * 0.14 + 4.0 * math.cos(index / 7.0)
 
 
-__all__ = ["INDUSTRIES", "PARAMETERS", "SHANGHAI", "production_snapshot"]
+__all__ = [
+    "INDUSTRIES",
+    "PARAMETERS",
+    "SHANGHAI",
+    "TRADING_DAYS",
+    "production_snapshot",
+]

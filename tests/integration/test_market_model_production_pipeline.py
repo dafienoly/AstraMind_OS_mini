@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
+import pytest
 from sklearn.ensemble import HistGradientBoostingRegressor  # type: ignore[import-untyped]
 
 from astramind_mini.strategy_research.market_models.evidence_store import (
@@ -23,8 +25,15 @@ from astramind_mini.strategy_research.market_models.production.artifacts import 
 from astramind_mini.strategy_research.market_models.production.contracts import (
     ProductionFamily,
 )
+from astramind_mini.strategy_research.market_models.production.environment import (
+    production_dependency_identity,
+)
 from astramind_mini.strategy_research.market_models.production.matrix import (
+    ProductionFeatureMatrixBuilder,
     point_in_time_samples,
+)
+from astramind_mini.strategy_research.market_models.production.publisher import (
+    _data_gates,
 )
 from astramind_mini.strategy_research.market_models.production.snapshot import (
     VerifiedSnapshotReader,
@@ -37,14 +46,19 @@ from astramind_mini.strategy_research.market_models.production.storage import (
     ProductionFeatureMatrixStore,
     ProductionPredictionStore,
 )
+from astramind_mini.strategy_research.market_models.production.trainer import (
+    ProductionTrainedBundle,
+)
 from astramind_mini.strategy_research.market_models.recipes import recipe_for
 from astramind_mini.strategy_research.market_models.splits import (
+    build_walk_forward_folds,
     final_training_sample_ids,
 )
 from tests.integration.production_market_model_fixture import (
     INDUSTRIES,
     PARAMETERS,
     SHANGHAI,
+    TRADING_DAYS,
     production_snapshot,
 )
 
@@ -111,6 +125,7 @@ def _run_and_assert_family(
     assert manifest.training_window.start == date(2012, 12, 31)
     assert manifest.training_window.end == date(2022, 12, 31)
     assert manifest.maturity_cutoff == date(2022, 12, 31)
+    assert "duckdb" in {item.package for item in manifest.dependency_versions}
     assert publication.batch.evidence_state == "unvalidated"
     assert publication.batch.horizons == horizons
     assert publication.baseline_method_version == recipe_for(family).baseline_method_version
@@ -122,6 +137,10 @@ def _run_and_assert_family(
     gates = {item.gate_name: item for item in evidence.data_gates}
     assert gates["supportive_evidence"].status == "pending"
     assert gates["label_maturity"].observation_count == _mature_sample_count(matrix, family)
+    assert gates["label_maturity"].coverage_ratio == pytest.approx(
+        _mature_sample_count(matrix, family) / _candidate_sample_count(matrix, family)
+    )
+    _assert_daily_training_semantics(matrix, family)
     files_before = _file_set(output_root)
     assert (
         service.run(
@@ -242,11 +261,11 @@ def test_features_exclude_observations_after_decision_time_and_future_schedule(
     history = ProductionHistoryReader().load(verified)
 
     assert not any(
-        bar.industry_code == INDUSTRIES[0][0] and bar.trade_date == date(2023, 12, 31)
+        bar.industry_code == INDUSTRIES[0][0] and bar.trade_date == TRADING_DAYS[-1]
         for bar in history.industry_bars
     )
     assert any(
-        bar.industry_code == INDUSTRIES[1][0] and bar.trade_date == date(2023, 12, 31)
+        bar.industry_code == INDUSTRIES[1][0] and bar.trade_date == TRADING_DAYS[-1]
         for bar in history.industry_bars
     )
 
@@ -287,6 +306,94 @@ def test_skops_model_bytes_are_reproducible_across_independent_fits() -> None:
     assert first.payload == second.payload
 
 
+def test_production_dependency_identity_includes_duckdb() -> None:
+    assert "duckdb" in {package for package, _ in production_dependency_identity()}
+
+
+def test_data_gate_coverage_counts_missing_feature_cells_and_maturity_denominator(
+    tmp_path: Path,
+) -> None:
+    data_root, snapshot_id, _ = production_snapshot(tmp_path / "input")
+    verified = VerifiedSnapshotReader(data_root).load(
+        snapshot_id,
+        required_datasets=REQUIRED_DATASETS,
+    )
+    matrix = ProductionFeatureMatrixBuilder().build(
+        family="industry_heat",
+        data_snapshot_id=snapshot_id,
+        history=ProductionHistoryReader().load(verified),
+    )
+    first = matrix.rows[0]
+    missing = first.model_copy(
+        update={"features": (None, *first.features[1:])},
+    )
+    matrix_with_missing = matrix.model_copy(
+        update={"rows": (missing, *matrix.rows[1:])},
+    )
+    trained = ProductionTrainedBundle(
+        estimators={},
+        parameters={},
+        training_start=date(2012, 12, 31),
+        training_end=date(2022, 12, 31),
+        maturity_cutoff=date(2022, 12, 31),
+        mature_sample_count=75,
+        label_candidate_sample_count=100,
+    )
+
+    gates = {gate.gate_name: gate for gate in _data_gates(matrix_with_missing, trained)}
+    total_cells = (len(matrix.rows) + len(matrix.inference_rows)) * len(matrix.feature_names)
+
+    assert gates["production_feature_matrix"].observation_count == total_cells - 1
+    assert gates["production_feature_matrix"].coverage_ratio == pytest.approx(
+        (total_cells - 1) / total_cells
+    )
+    assert gates["label_maturity"].coverage_ratio == pytest.approx(0.75)
+    no_denominator = {
+        gate.gate_name: gate
+        for gate in _data_gates(
+            matrix_with_missing,
+            replace(
+                trained,
+                mature_sample_count=0,
+                label_candidate_sample_count=0,
+            ),
+        )
+    }
+    assert no_denominator["label_maturity"].coverage_ratio is None
+
+
+def _assert_daily_training_semantics(
+    matrix: ProductionFeatureMatrix,
+    family: ProductionFamily,
+) -> None:
+    recipe = recipe_for(family)
+    calendar = {day: index for index, day in enumerate(TRADING_DAYS)}
+    for horizon in recipe.horizons:
+        row = next(
+            candidate
+            for candidate in matrix.rows
+            if candidate.entity_id == INDUSTRIES[0][0]
+            and candidate.horizon_sessions == horizon
+            and candidate.feature_at.date() == date(2021, 1, 4)
+        )
+        assert calendar[row.label_end_at.date()] - calendar[row.feature_at.date()] == horizon
+
+        samples = point_in_time_samples(matrix, horizon=horizon)
+        cutoff = datetime(2022, 12, 31, 18, tzinfo=SHANGHAI)
+        folds = build_walk_forward_folds(
+            samples,
+            recipe=recipe,
+            purpose="development",
+            evidence_cutoff=cutoff,
+        )
+        indexed = {sample.sample_id: sample for sample in samples}
+        assert len(folds) == 12
+        for fold in folds:
+            validation = tuple(indexed[sample_id] for sample_id in fold.validation_sample_ids)
+            assert len({sample.feature_at.date() for sample in validation}) > 1
+            assert max(sample.label_available_at for sample in validation) <= cutoff
+
+
 def _mature_sample_count(
     matrix: ProductionFeatureMatrix,
     family: ProductionFamily,
@@ -304,6 +411,19 @@ def _mature_sample_count(
             )
         )
     return count
+
+
+def _candidate_sample_count(
+    matrix: ProductionFeatureMatrix,
+    family: ProductionFamily,
+) -> int:
+    recipe = recipe_for(family)
+    start = datetime(2012, 12, 31, 18, tzinfo=SHANGHAI)
+    cutoff = datetime(2022, 12, 31, 18, tzinfo=SHANGHAI)
+    return sum(
+        start <= row.feature_at <= cutoff and row.horizon_sessions in recipe.horizons
+        for row in matrix.rows
+    )
 
 
 def _file_set(root: Path) -> tuple[str, ...]:

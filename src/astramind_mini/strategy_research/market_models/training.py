@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any
 
 import numpy as np
@@ -21,6 +22,7 @@ from .splits import WalkForwardFold
 @dataclass(frozen=True)
 class TabularTrainingSet:
     sample_ids: tuple[str, ...]
+    feature_at: tuple[datetime, ...]
     feature_names: tuple[str, ...]
     features: np.ndarray
     labels: np.ndarray
@@ -32,6 +34,10 @@ class TabularTrainingSet:
             raise ValueError("training feature shape does not match identities")
         if self.labels.shape[0] != len(self.sample_ids):
             raise ValueError("training labels do not match sample identities")
+        if len(self.feature_at) != len(self.sample_ids):
+            raise ValueError("training feature times do not match sample identities")
+        if any(value.tzinfo is None or value.utcoffset() is None for value in self.feature_at):
+            raise ValueError("training feature times must be timezone-aware")
         if len(set(self.sample_ids)) != len(self.sample_ids):
             raise ValueError("training sample identities must be unique")
         if np.isinf(self.features).any():
@@ -117,6 +123,7 @@ def _evaluate_parameters(
                 dataset.labels[validation_indexes],
                 estimator,
                 dataset.features[validation_indexes],
+                tuple(dataset.feature_at[index] for index in validation_indexes),
             )
         )
     return tuple(item for item in metrics if math.isfinite(item.primary_score))
@@ -138,10 +145,15 @@ def _score_fold(
     actual: np.ndarray,
     estimator: HistGradientBoostingRegressor | HistGradientBoostingClassifier,
     features: np.ndarray,
+    feature_at: Sequence[datetime],
 ) -> FoldMetric:
     predicted = estimator.predict(features)
     if recipe.task == "regression":
-        rank_ic = spearman_rank_correlation(actual.astype(float), predicted.astype(float))
+        rank_ic = mean_daily_rank_ic(
+            actual.astype(float),
+            predicted.astype(float),
+            feature_at,
+        )
         return FoldMetric(fold_id=fold_id, primary_score=rank_ic, rank_ic=rank_ic)
     macro_f1 = float(f1_score(actual, predicted, average="macro", zero_division=0))
     probabilities = estimator.predict_proba(features)
@@ -153,6 +165,32 @@ def _score_fold(
         macro_f1=macro_f1,
         brier=brier,
     )
+
+
+def mean_daily_rank_ic(
+    actual: np.ndarray,
+    predicted: np.ndarray,
+    feature_at: Sequence[datetime],
+) -> float:
+    if len(actual) != len(predicted) or len(actual) != len(feature_at):
+        raise ValueError("daily RankIC inputs must have matching lengths")
+    by_day: dict[date, list[int]] = {}
+    for index, timestamp in enumerate(feature_at):
+        by_day.setdefault(timestamp.date(), []).append(index)
+    daily_scores = tuple(
+        score
+        for indexes in by_day.values()
+        for score in (
+            spearman_rank_correlation(
+                actual[np.asarray(indexes, dtype=int)],
+                predicted[np.asarray(indexes, dtype=int)],
+            ),
+        )
+        if math.isfinite(score)
+    )
+    if not daily_scores:
+        return float("nan")
+    return float(np.mean(daily_scores))
 
 
 def spearman_rank_correlation(actual: np.ndarray, predicted: np.ndarray) -> float:
@@ -202,6 +240,7 @@ __all__ = [
     "FoldMetric",
     "TabularTrainingSet",
     "TrainedMarketModel",
+    "mean_daily_rank_ic",
     "multiclass_brier",
     "spearman_rank_correlation",
     "train_with_grid",

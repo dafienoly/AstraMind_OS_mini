@@ -9,7 +9,12 @@ from datetime import UTC, date, datetime
 
 from ..application.identity import research_hash
 from .recipes import MarketModelRecipe
-from .samples import EvidencePurpose, PointInTimeSample, sample_is_eligible
+from .samples import (
+    EvidencePurpose,
+    MembershipKnowledge,
+    PointInTimeSample,
+    sample_is_eligible,
+)
 
 
 @dataclass(frozen=True)
@@ -30,26 +35,53 @@ def build_walk_forward_folds(
     purpose: EvidencePurpose,
     evidence_cutoff: datetime,
 ) -> tuple[WalkForwardFold, ...]:
-    eligible = tuple(
+    membership_eligible = tuple(
         sample
         for sample in samples
-        if sample_is_eligible(
-            sample,
-            purpose=purpose,
-            evidence_cutoff=evidence_cutoff,
-        )
+        if _membership_is_allowed(sample.membership_knowledge, purpose=purpose)
     )
-    months = sorted({(sample.feature_at.year, sample.feature_at.month) for sample in eligible})[
-        -recipe.validation_months :
-    ]
+    months = _complete_validation_months(
+        membership_eligible,
+        evidence_cutoff=evidence_cutoff,
+        limit=recipe.validation_months,
+    )
     return tuple(
         _build_fold(
-            eligible,
+            membership_eligible,
             recipe=recipe,
             validation_month=date(year, month, 1),
             evidence_cutoff=evidence_cutoff,
         )
         for year, month in months
+    )
+
+
+def _complete_validation_months(
+    samples: Sequence[PointInTimeSample],
+    *,
+    evidence_cutoff: datetime,
+    limit: int,
+) -> tuple[tuple[int, int], ...]:
+    by_month: dict[tuple[int, int], list[PointInTimeSample]] = {}
+    for sample in samples:
+        month = (sample.feature_at.year, sample.feature_at.month)
+        by_month.setdefault(month, []).append(sample)
+    complete = sorted(
+        month
+        for month, candidates in by_month.items()
+        if max(sample.label_available_at for sample in candidates) <= evidence_cutoff
+    )
+    return tuple(complete[-limit:])
+
+
+def _membership_is_allowed(
+    knowledge: MembershipKnowledge,
+    *,
+    purpose: EvidencePurpose,
+) -> bool:
+    return not (
+        knowledge == "reconstructed_not_then_known"
+        and purpose in {"sealed_replay", "audit", "prospective"}
     )
 
 
