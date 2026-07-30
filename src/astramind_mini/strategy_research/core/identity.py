@@ -30,6 +30,9 @@ def freeze_core_input_snapshot(
     """Validate immutable inputs and derive an order-independent content identity."""
     if data_snapshot.as_of > cutoff_at:
         raise ValueError("a future DataSnapshot cannot be bound to an earlier core cutoff")
+    snapshot_names = [item.dataset_name for item in data_snapshot.datasets]
+    if len(snapshot_names) != len(set(snapshot_names)):
+        raise ValueError("DataSnapshot cannot contain duplicate dataset names")
     ordered = tuple(sorted(datasets, key=lambda item: item.dataset_name))
     names = [item.dataset_name for item in ordered]
     if len(names) != len(set(names)):

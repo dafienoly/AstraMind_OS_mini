@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 
 from astramind_mini.strategy_research.core import (
     CoreBoard,
@@ -11,6 +12,7 @@ from astramind_mini.strategy_research.core import (
     CoreSecurityObservation,
     CoreUniverseDecision,
     CoreUniverseReason,
+    CoreUniverseSpec,
     core_universe_content_hash,
     evaluate_core_universe,
 )
@@ -107,6 +109,65 @@ def test_u0_eligible_decision_is_idempotent_and_keeps_zero_amount_sessions() -> 
     assert first.diagnostic_pool == ()
     assert first.median_amount_20_cny == 20_000_000
     assert first.liquidity_observation_count == 20
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {
+            "allowed_boards": (
+                CoreBoard.SSE_MAIN,
+                CoreBoard.SSE_STAR,
+                CoreBoard.SZSE_MAIN,
+                CoreBoard.SZSE_CHINEXT,
+                CoreBoard.BSE,
+            )
+        },
+        {
+            "allowed_boards": (
+                CoreBoard.SSE_STAR,
+                CoreBoard.SSE_MAIN,
+                CoreBoard.SZSE_MAIN,
+                CoreBoard.SZSE_CHINEXT,
+            )
+        },
+        {"minimum_listed_common_sessions": 251},
+        {"liquidity_window_common_sessions": 19},
+        {"minimum_median_amount_cny": 19_999_999},
+    ],
+)
+def test_u0_v1_spec_rejects_any_parameter_or_board_order_change(
+    changes: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError):
+        CoreUniverseSpec.model_validate(changes)
+    with pytest.raises(ValidationError):
+        CoreUniverseSpec().model_copy(update=changes)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"security_type": "etf"},
+        {"share_class": "b_share"},
+    ],
+)
+def test_non_a_share_security_is_rejected_before_u0_evaluation(
+    changes: dict[str, object],
+) -> None:
+    payload = {
+        "instrument_id": "600000.SH",
+        "security_type": "stock",
+        "share_class": "a_share",
+        "board": CoreBoard.SSE_MAIN,
+        "listed_on": date(2020, 1, 1),
+        "available_at": datetime(2020, 1, 1, 18, 0, tzinfo=TZ),
+        **changes,
+    }
+    with pytest.raises(ValidationError):
+        CoreSecurityObservation.model_validate(payload)
+    with pytest.raises(ValidationError):
+        _security().model_copy(update=changes)
 
 
 @pytest.mark.parametrize(

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal, Self
 
 from pydantic import Field, model_validator
 
@@ -16,6 +17,24 @@ from astramind_mini.contracts.base import (
     Identifier,
     Version,
 )
+
+from .feature_values import FeatureAvailabilityState
+
+
+class _ValidatedCopyContract(ContractModel):
+    """Keep fixed v1 contracts valid when callers derive a copy."""
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool = False,
+    ) -> Self:
+        if not update:
+            return super().model_copy(deep=deep)
+        payload = self.model_dump()
+        payload.update(update)
+        return type(self).model_validate(payload)
 
 
 class CoreBoard(StrEnum):
@@ -57,12 +76,6 @@ class CoreUniverseReason(StrEnum):
     CRITICAL_PRICE_UNAVAILABLE = "critical_price_unavailable"
 
 
-class FeatureAvailabilityState(StrEnum):
-    VALUE = "value"
-    MISSING = "missing"
-    NOT_APPLICABLE = "not_applicable"
-
-
 class CoreInputLayer(StrEnum):
     COMPLETED_DAILY = "completed_daily"
     SEALED_INTRADAY_DIAGNOSTIC = "sealed_intraday_diagnostic"
@@ -71,7 +84,7 @@ class CoreInputLayer(StrEnum):
     UNSEALED_TICK = "unsealed_tick"
 
 
-class CoreUniverseSpec(ContractModel):
+class CoreUniverseSpec(_ValidatedCopyContract):
     universe_version: Literal["U0-v1"] = "U0-v1"
     allowed_boards: tuple[CoreBoard, ...] = (
         CoreBoard.SSE_MAIN,
@@ -83,9 +96,28 @@ class CoreUniverseSpec(ContractModel):
     liquidity_window_common_sessions: Literal[20] = 20
     minimum_median_amount_cny: Literal[20_000_000] = 20_000_000
 
+    @model_validator(mode="after")
+    def validate_u0_v1(self) -> CoreUniverseSpec:
+        expected_boards = (
+            CoreBoard.SSE_MAIN,
+            CoreBoard.SSE_STAR,
+            CoreBoard.SZSE_MAIN,
+            CoreBoard.SZSE_CHINEXT,
+        )
+        if (
+            self.allowed_boards != expected_boards
+            or self.minimum_listed_common_sessions != 252
+            or self.liquidity_window_common_sessions != 20
+            or self.minimum_median_amount_cny != 20_000_000
+        ):
+            raise ValueError("U0-v1 parameters and board order are immutable")
+        return self
 
-class CoreSecurityObservation(ContractModel):
+
+class CoreSecurityObservation(_ValidatedCopyContract):
     instrument_id: Identifier
+    security_type: Literal["stock"] = "stock"
+    share_class: Literal["a_share"] = "a_share"
     board: CoreBoard
     listed_on: date
     delisted_on: date | None = None
@@ -136,24 +168,7 @@ class CoreUniverseDecision(ContractModel):
         return self
 
 
-class CoreFeatureValue(ContractModel):
-    feature_id: Identifier
-    state: FeatureAvailabilityState
-    value: float | None = None
-    reason_code: Identifier | None = None
-
-    @model_validator(mode="after")
-    def validate_state_value(self) -> CoreFeatureValue:
-        if self.state == FeatureAvailabilityState.VALUE and self.value is None:
-            raise ValueError("value state requires a numeric value")
-        if self.state != FeatureAvailabilityState.VALUE and self.value is not None:
-            raise ValueError("missing and not-applicable states cannot be encoded as a number")
-        if self.state != FeatureAvailabilityState.VALUE and self.reason_code is None:
-            raise ValueError("non-value states require a stable reason code")
-        return self
-
-
-class CoreDataSemantics(ContractModel):
+class CoreDataSemantics(_ValidatedCopyContract):
     version: Literal["core-data-semantics-v1"] = "core-data-semantics-v1"
     ohlc_source: Literal["continuous_research_price_index"] = (
         "continuous_research_price_index"
@@ -173,7 +188,7 @@ class CoreDataSemantics(ContractModel):
         "next_common_session_after_close"
     )
     feature_states: tuple[FeatureAvailabilityState, ...] = (
-        FeatureAvailabilityState.VALUE,
+        FeatureAvailabilityState.OBSERVED,
         FeatureAvailabilityState.MISSING,
         FeatureAvailabilityState.NOT_APPLICABLE,
     )
@@ -183,10 +198,16 @@ class CoreDataSemantics(ContractModel):
     @model_validator(mode="after")
     def validate_coverage_gates(self) -> CoreDataSemantics:
         if (
-            self.minimum_training_dates_coverage != 0.9
+            self.feature_states
+            != (
+                FeatureAvailabilityState.OBSERVED,
+                FeatureAvailabilityState.MISSING,
+                FeatureAvailabilityState.NOT_APPLICABLE,
+            )
+            or self.minimum_training_dates_coverage != 0.9
             or self.minimum_cross_section_observed != 0.8
         ):
-            raise ValueError("core-data-semantics-v1 coverage gates are immutable")
+            raise ValueError("core-data-semantics-v1 states and coverage gates are immutable")
         return self
 
 
@@ -225,12 +246,29 @@ class CoreInputSnapshot(ContractModel):
     datasets: tuple[CoreDatasetSlice, ...] = Field(min_length=1)
 
 
-class CoreFeaturePackageSpec(ContractModel):
+class CoreFeaturePackageSpec(_ValidatedCopyContract):
     package_id: Identifier
     canonical_dimension: int = Field(gt=0)
     authoritative_source: Identifier
     data_semantics_version: Literal["core-data-semantics-v1"]
     universe_version: Literal["U0-v1"]
+
+    @model_validator(mode="after")
+    def validate_canonical_package(self) -> CoreFeaturePackageSpec:
+        expected = {
+            "astramind-f0-v1": (24, "REQ-2026-0007-v2.3.0-section-6"),
+            "qlib-alpha158-79633dd": (
+                158,
+                "qlib-79633dd9506ea689e5400dea0197717b5b3d74b7",
+            ),
+            "formulaic-alpha101-v3": (101, "arxiv-1601.00991v3"),
+        }
+        if expected.get(self.package_id) != (
+            self.canonical_dimension,
+            self.authoritative_source,
+        ):
+            raise ValueError("unknown or altered canonical core feature package")
+        return self
 
 
 __all__ = [
@@ -240,7 +278,6 @@ __all__ = [
     "CoreDatasetSlice",
     "CoreDiagnosticPool",
     "CoreFeaturePackageSpec",
-    "CoreFeatureValue",
     "CoreInputLayer",
     "CoreInputSnapshot",
     "CoreRiskObservation",
@@ -249,5 +286,4 @@ __all__ = [
     "CoreUniverseDecision",
     "CoreUniverseReason",
     "CoreUniverseSpec",
-    "FeatureAvailabilityState",
 ]

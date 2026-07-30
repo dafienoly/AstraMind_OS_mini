@@ -5,18 +5,27 @@ from pydantic import ValidationError
 
 from astramind_mini.contracts import DatasetRef, DataSnapshot
 from astramind_mini.strategy_research.core import (
+    ASTRAMIND_F0,
     CORE_DATA_SEMANTICS,
     CORE_FEATURE_PACKAGES,
+    CoreDataSemantics,
     CoreDatasetSlice,
+    CoreFeaturePackageSpec,
     CoreFeatureValue,
+    CoreImputationSource,
     CoreInputLayer,
     CoreInputSnapshot,
     CoreMarketObservation,
+    CoreRawFeatureEnvelope,
+    CoreRawFeatureRowDraft,
     FeatureAvailabilityState,
     FinancialObservation,
     IndustryMembershipObservation,
+    build_core_raw_feature_envelope,
+    finalize_core_raw_feature_envelope,
     freeze_core_input_snapshot,
     point_in_time_industry_level,
+    prepare_core_raw_feature_batch,
     select_point_in_time_financial,
     select_point_in_time_industry,
     visible_core_market_observations,
@@ -33,10 +42,7 @@ def test_core_semantics_and_three_package_specs_are_frozen() -> None:
     assert CORE_DATA_SEMANTICS.version == "core-data-semantics-v1"
     assert CORE_DATA_SEMANTICS.ohlc_source == "continuous_research_price_index"
     assert CORE_DATA_SEMANTICS.execution_source == "point_in_time_raw_price_volume"
-    assert [
-        (item.package_id, item.canonical_dimension)
-        for item in CORE_FEATURE_PACKAGES
-    ] == [
+    assert [(item.package_id, item.canonical_dimension) for item in CORE_FEATURE_PACKAGES] == [
         ("astramind-f0-v1", 24),
         ("qlib-alpha158-79633dd", 158),
         ("formulaic-alpha101-v3", 101),
@@ -45,27 +51,106 @@ def test_core_semantics_and_three_package_specs_are_frozen() -> None:
         "core-data-semantics-v1"
     }
     assert {item.universe_version for item in CORE_FEATURE_PACKAGES} == {"U0-v1"}
-
-
-def test_feature_availability_never_encodes_unknown_as_zero() -> None:
-    missing = CoreFeatureValue(
-        feature_id="EP_TTM",
-        state=FeatureAvailabilityState.MISSING,
-        reason_code="financial_input_missing",
+    assert CORE_DATA_SEMANTICS.feature_states == (
+        FeatureAvailabilityState.OBSERVED,
+        FeatureAvailabilityState.MISSING,
+        FeatureAvailabilityState.NOT_APPLICABLE,
     )
-    assert missing.value is None
-
+    for invalid_states in (
+        (FeatureAvailabilityState.OBSERVED, FeatureAvailabilityState.MISSING),
+        (
+            FeatureAvailabilityState.MISSING,
+            FeatureAvailabilityState.OBSERVED,
+            FeatureAvailabilityState.NOT_APPLICABLE,
+        ),
+    ):
+        with pytest.raises(ValidationError):
+            CoreDataSemantics(feature_states=invalid_states)
+        with pytest.raises(ValidationError):
+            CORE_DATA_SEMANTICS.model_copy(update={"feature_states": invalid_states})
     with pytest.raises(ValidationError):
-        CoreFeatureValue(
-            feature_id="EP_TTM",
-            state=FeatureAvailabilityState.MISSING,
-            value=0.0,
-            reason_code="financial_input_missing",
+        CoreFeaturePackageSpec(
+            package_id="astramind-f0-v1",
+            canonical_dimension=25,
+            authoritative_source="REQ-2026-0007-v2.3.0-section-6",
+            data_semantics_version="core-data-semantics-v1",
+            universe_version="U0-v1",
+        )
+
+
+def _feature_value(**changes: object) -> CoreFeatureValue:
+    payload = {
+        "feature_snapshot_id": "feature-snapshot:test",
+        "instrument_id": "600000.SH",
+        "decision_time": CUTOFF,
+        "feature_definition_id": "EP_TTM",
+        "feature_definition_version": "1.0.0",
+        "value_raw": 0.12,
+        "availability_state": FeatureAvailabilityState.OBSERVED,
+        "missing_reason_code": None,
+        "value_winsorized": None,
+        "value_standardized": None,
+        "imputation_source": CoreImputationSource.NONE,
+        "missing_indicator": False,
+        "not_applicable_indicator": False,
+        "neutralized_diagnostic": None,
+        "data_semantics_version": "core-data-semantics-v1",
+        **changes,
+    }
+    return CoreFeatureValue.model_validate(payload)
+
+
+def test_feature_availability_fields_are_strictly_consistent() -> None:
+    missing = _feature_value(
+        value_raw=None,
+        availability_state=FeatureAvailabilityState.MISSING,
+        missing_reason_code="financial_input_missing",
+        missing_indicator=True,
+    )
+    assert missing.value_raw is None
+    invalid_changes = (
+        {
+            "value_raw": 0.0,
+            "availability_state": FeatureAvailabilityState.MISSING,
+            "missing_reason_code": "financial_input_missing",
+            "missing_indicator": True,
+        },
+        {
+            "value_raw": None,
+            "availability_state": FeatureAvailabilityState.NOT_APPLICABLE,
+            "missing_reason_code": "industry_level_unavailable",
+        },
+        {"imputation_source": CoreImputationSource.SW_L1_MEDIAN},
+        {"value_winsorized": 0.1},
+        {
+            "value_raw": None,
+            "availability_state": FeatureAvailabilityState.MISSING,
+            "missing_reason_code": "financial_input_missing",
+            "missing_indicator": True,
+            "value_winsorized": 0.0,
+            "value_standardized": 0.0,
+        },
+    )
+    for changes in invalid_changes:
+        with pytest.raises(ValidationError):
+            _feature_value(**changes)
+
+
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_raw_and_processed_values_fail_closed(bad_value: float) -> None:
+    with pytest.raises(ValidationError):
+        CoreRawFeatureRowDraft(
+            instrument_id="600000.SH",
+            decision_time=CUTOFF,
+            feature_definition_id="EP_TTM",
+            feature_definition_version="1.0.0",
+            value_raw=bad_value,
+            availability_state=FeatureAvailabilityState.OBSERVED,
         )
     with pytest.raises(ValidationError):
-        CoreFeatureValue(
-            feature_id="INDUSTRY_REL_MOM_60_5",
-            state=FeatureAvailabilityState.NOT_APPLICABLE,
+        _feature_value(
+            value_winsorized=bad_value,
+            value_standardized=0.0,
         )
 
 
@@ -88,14 +173,12 @@ def test_future_industry_membership_is_excluded() -> None:
         available_at=datetime(2026, 2, 2, 18, 0, tzinfo=TZ),
         source_record_hash=HASH_B,
     )
-
     selected = select_point_in_time_industry(
         (future, old),
         instrument_id="600000.SH",
         decision_date=date(2026, 1, 30),
         cutoff_at=CUTOFF,
     )
-
     assert selected == old
     l1_only = old.model_copy(update={"sw_l2": None, "sw_l3": None})
     assert point_in_time_industry_level(l1_only, level="sw_l2") is None
@@ -130,7 +213,6 @@ def test_future_financial_announcement_and_revision_do_not_rewrite_history() -> 
         source_record_hash=HASH_C,
     )
     sessions = (date(2026, 1, 29), date(2026, 1, 30), date(2026, 2, 2))
-
     selected = select_point_in_time_financial(
         (revision, original),
         instrument_id="600000.SH",
@@ -147,7 +229,6 @@ def test_future_financial_announcement_and_revision_do_not_rewrite_history() -> 
         cutoff_at=CUTOFF,
         common_sessions=sessions,
     )
-
     assert selected is not None
     assert selected.observation == original
     assert selected.available_at == datetime(2026, 1, 30, 15, 0, tzinfo=TZ)
@@ -172,7 +253,6 @@ def test_future_and_mutable_market_inputs_are_excluded() -> None:
             "content_hash": HASH_C,
         }
     )
-
     assert visible_core_market_observations(
         (future, current, visible),
         decision_date=date(2026, 1, 30),
@@ -180,11 +260,7 @@ def test_future_and_mutable_market_inputs_are_excluded() -> None:
     ) == (visible,)
 
 
-def _snapshot(
-    *,
-    dataset_version: str = "daily-v1",
-    content_hash: str = HASH_A,
-) -> DataSnapshot:
+def _snapshot(*, dataset_version: str = "daily-v1", content_hash: str = HASH_A) -> DataSnapshot:
     return DataSnapshot(
         snapshot_id="snapshot:core-test",
         as_of=datetime(2026, 1, 30, 17, 30, tzinfo=TZ),
@@ -249,7 +325,6 @@ def test_core_input_snapshot_is_idempotent_and_every_content_change_reidentifies
     assert baseline.core_input_snapshot_id.endswith(
         baseline.content_hash.removeprefix("sha256:")
     )
-
     version_changed = _freeze(
         snapshot=_snapshot(dataset_version="daily-v2"),
         dataset=_slice(dataset_version="daily-v2"),
@@ -261,7 +336,6 @@ def test_core_input_snapshot_is_idempotent_and_every_content_change_reidentifies
         snapshot=_snapshot(content_hash=HASH_B),
         dataset=_slice(content_hash=HASH_B),
     )
-
     identities = {
         item.content_hash
         for item in (
@@ -285,3 +359,142 @@ def test_core_input_snapshot_rejects_future_or_mutable_data() -> None:
         )
     with pytest.raises(ValueError, match="input layer is forbidden"):
         _freeze(dataset=_slice(input_layer=CoreInputLayer.CURRENT_SESSION))
+    original_ref = _snapshot().datasets[0]
+    duplicate_ref = original_ref.model_copy(
+        update={"dataset_version": "daily-v2", "content_hash": HASH_B}
+    )
+    duplicate_snapshot = _snapshot().model_copy(
+        update={"datasets": (original_ref, duplicate_ref)}
+    )
+    with pytest.raises(ValueError, match="duplicate dataset names"):
+        _freeze(snapshot=duplicate_snapshot)
+
+
+def _raw_package_rows(
+    package: CoreFeaturePackageSpec,
+) -> tuple[tuple[str, ...], tuple[CoreRawFeatureRowDraft, ...]]:
+    feature_order = tuple(
+        f"{package.package_id}:feature-{index:03d}" for index in range(package.canonical_dimension)
+    )
+    rows = []
+    exceptional_states = {
+        (1, 0): (FeatureAvailabilityState.MISSING, None, "formula_input_missing"),
+        (1, 1): (
+            FeatureAvailabilityState.NOT_APPLICABLE,
+            None,
+            "strict_industry_level_unavailable",
+        ),
+    }
+    for instrument_index, instrument_id in enumerate(("000001.SZ", "600000.SH")):
+        for feature_index, feature_id in enumerate(feature_order):
+            state, value, reason = exceptional_states.get(
+                (instrument_index, feature_index),
+                (
+                    FeatureAvailabilityState.OBSERVED,
+                    float(instrument_index + feature_index + 1),
+                    None,
+                ),
+            )
+            rows.append(
+                CoreRawFeatureRowDraft(
+                    instrument_id=instrument_id,
+                    decision_time=CUTOFF,
+                    feature_definition_id=feature_id,
+                    feature_definition_version="1.0.0",
+                    value_raw=value,
+                    availability_state=state,
+                    missing_reason_code=reason,
+                )
+            )
+    return feature_order, tuple(rows)
+
+
+def _build_raw(
+    package: CoreFeaturePackageSpec,
+    feature_order: tuple[str, ...],
+    rows: tuple[CoreRawFeatureRowDraft, ...],
+) -> CoreRawFeatureEnvelope:
+    return build_core_raw_feature_envelope(
+        core_input=_freeze(),
+        package_spec=package,
+        feature_order=feature_order,
+        rows=rows,
+    )
+
+
+@pytest.mark.parametrize("package", CORE_FEATURE_PACKAGES)
+def test_all_three_packages_share_idempotent_two_stage_raw_envelope(
+    package: CoreFeaturePackageSpec,
+) -> None:
+    core_input = _freeze()
+    feature_order, rows = _raw_package_rows(package)
+    prepared = prepare_core_raw_feature_batch(
+        core_input=core_input,
+        package_spec=package,
+        feature_order=feature_order,
+        rows=rows,
+    )
+    repeated = prepare_core_raw_feature_batch(
+        core_input=core_input,
+        package_spec=package,
+        feature_order=feature_order,
+        rows=tuple(reversed(rows)),
+    )
+    envelope = finalize_core_raw_feature_envelope(prepared)
+    assert prepared == repeated
+    assert envelope == _build_raw(package, feature_order, rows)
+    assert "feature_snapshot_id" not in CoreRawFeatureRowDraft.model_fields
+    assert envelope.core_input_snapshot_id == core_input.core_input_snapshot_id
+    assert envelope.feature_snapshot.data_snapshot_id == core_input.data_snapshot.snapshot_id
+    assert (envelope.package_spec, envelope.feature_order) == (package, feature_order)
+    assert (
+        envelope.manifest.row_count,
+        envelope.manifest.instrument_count,
+        envelope.manifest.missing_count,
+        envelope.manifest.not_applicable_count,
+    ) == (2 * package.canonical_dimension, 2, 1, 1)
+    assert envelope.manifest.rows_content_hash == prepared.rows_content_hash
+    assert (
+        tuple(item.feature_definition_id for item in envelope.manifest.feature_coverage)
+        == feature_order
+    )
+    assert all(
+        item.feature_snapshot_id == envelope.feature_snapshot.feature_snapshot_id
+        for item in envelope.rows
+    )
+    assert all(
+        item.value_winsorized is None and item.value_standardized is None
+        for item in envelope.rows
+    )
+    assert all(item.imputation_source == CoreImputationSource.NONE for item in envelope.rows)
+    assert all(item.neutralized_diagnostic is None for item in envelope.rows)
+
+
+def test_raw_envelope_order_and_content_changes_reidentify() -> None:
+    feature_order, rows = _raw_package_rows(ASTRAMIND_F0)
+    baseline = _build_raw(ASTRAMIND_F0, feature_order, rows)
+    reversed_order = _build_raw(ASTRAMIND_F0, tuple(reversed(feature_order)), rows)
+    changed_rows = (
+        rows[0].model_copy(update={"value_raw": (rows[0].value_raw or 0.0) + 1.0}),
+        *rows[1:],
+    )
+    content_changed = _build_raw(ASTRAMIND_F0, feature_order, changed_rows)
+    assert reversed_order.feature_snapshot.content_hash != baseline.feature_snapshot.content_hash
+    assert content_changed.feature_snapshot.content_hash != baseline.feature_snapshot.content_hash
+    assert reversed_order.manifest.row_order != baseline.manifest.row_order
+
+
+def test_raw_envelope_fails_closed_on_width_duplicates_and_wrong_cutoff() -> None:
+    feature_order, rows = _raw_package_rows(ASTRAMIND_F0)
+    with pytest.raises(ValueError, match="complete canonical package width"):
+        _build_raw(ASTRAMIND_F0, feature_order, rows[:-1])
+    with pytest.raises(ValueError, match="duplicate an instrument-feature"):
+        _build_raw(ASTRAMIND_F0, feature_order, (*rows, rows[0]))
+    duplicate_order = (*feature_order[:-1], feature_order[0])
+    with pytest.raises(ValueError, match="feature_order cannot contain duplicate"):
+        _build_raw(ASTRAMIND_F0, duplicate_order, rows)
+    wrong_time = rows[0].model_copy(
+        update={"decision_time": datetime(2026, 1, 30, 17, 0, tzinfo=TZ)}
+    )
+    with pytest.raises(ValueError, match="CoreInputSnapshot cutoff"):
+        _build_raw(ASTRAMIND_F0, feature_order, (wrong_time, *rows[1:]))
