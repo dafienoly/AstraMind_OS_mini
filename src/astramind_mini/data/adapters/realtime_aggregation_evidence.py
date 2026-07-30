@@ -6,14 +6,13 @@ import gzip
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from pydantic import TypeAdapter
 
 from ..application.identity import content_hash
+from ..application.realtime_minute_replay import RealtimeMinuteReplay
 from ..contracts.realtime import QuoteMicroBatch, RealtimeQuoteObservation
-
-SHANGHAI = ZoneInfo("Asia/Shanghai")
+from ..contracts.realtime_projection import RealtimeMinuteBar
 
 
 def verified_observations(
@@ -38,36 +37,16 @@ def verified_observations(
     return tuple(rows)
 
 
-def expected_minute_keys(
+def replay_closed_minutes(
     rows: tuple[RealtimeQuoteObservation, ...],
     *,
+    session_id: str,
     ended_at: datetime,
-) -> set[tuple[str, datetime]]:
-    prior: dict[str, tuple[float, float]] = {}
-    expected: set[tuple[str, datetime]] = set()
-    completed_before = ended_at.astimezone(SHANGHAI).replace(second=0, microsecond=0)
-    for row in rows:
-        if row.last_price is None:
-            continue
-        previous = prior.get(row.instrument_id)
-        volume = row.volume if row.volume is not None else (previous[0] if previous else 0)
-        amount = row.amount if row.amount is not None else (previous[1] if previous else 0)
-        prior[row.instrument_id] = (volume, amount)
-        if previous is None or (volume == previous[0] and amount == previous[1]):
-            continue
-        minute = _market_minute(row)
-        if minute < completed_before:
-            expected.add((row.instrument_id, minute))
-    return expected
+) -> tuple[RealtimeMinuteBar, ...]:
+    replay = RealtimeMinuteReplay(session_id)
+    replay.ingest(rows)
+    closed = (*replay.drain_closed(), *replay.close_completed(ended_at))
+    return tuple(row.rebuild(lifecycle="sealed") for row in closed)
 
 
-def _market_minute(row: RealtimeQuoteObservation) -> datetime:
-    value = (
-        datetime.fromtimestamp(row.market_time_ms / 1000, tz=SHANGHAI)
-        if row.market_time_ms is not None and row.market_time_ms > 1_000_000_000_000
-        else row.received_at.astimezone(SHANGHAI)
-    )
-    return value.replace(second=0, microsecond=0)
-
-
-__all__ = ["expected_minute_keys", "verified_observations"]
+__all__ = ["replay_closed_minutes", "verified_observations"]

@@ -37,15 +37,27 @@ class RealtimeMarketTaskSpec:
         )
         return subprocess.list2cmdline(
             [
-                "-d",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                self.wrapper_path,
+                "-Distro",
                 self.distro,
-                "--cd",
+                "-Workdir",
                 self.repository_root.as_posix(),
-                "--",
-                "/bin/bash",
-                "-lc",
+                "-Command",
                 shell_command,
             ]
+        )
+
+    @property
+    def wrapper_path(self) -> str:
+        relative = self.repository_root.as_posix().lstrip("/")
+        return (
+            rf"\\wsl.localhost\{self.distro}"
+            rf"\{relative.replace('/', chr(92))}"
+            r"\scripts\windows\run_realtime_market_task.ps1"
         )
 
 
@@ -83,7 +95,7 @@ def task_xml(spec: RealtimeMarketTaskSpec) -> bytes:
     _setting(restart, "Count", "999")
     actions = ET.SubElement(task, _tag("Actions"), {"Context": "LocalUser"})
     execute = ET.SubElement(actions, _tag("Exec"))
-    ET.SubElement(execute, _tag("Command")).text = "wsl.exe"
+    ET.SubElement(execute, _tag("Command")).text = "powershell.exe"
     ET.SubElement(execute, _tag("Arguments")).text = spec.action_arguments
     payload = cast(bytes, ET.tostring(task, encoding="utf-16", xml_declaration=True))
     _assert_safe(payload.decode("utf-16"))

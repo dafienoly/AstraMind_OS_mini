@@ -22,7 +22,7 @@ from ..contracts.realtime_projection import (
     RealtimeMarketProjection,
     RealtimeMinuteBar,
 )
-from .realtime_aggregation_evidence import expected_minute_keys, verified_observations
+from .realtime_aggregation_evidence import replay_closed_minutes, verified_observations
 
 
 class RealtimeProjectionStore:
@@ -229,13 +229,14 @@ class RealtimeProjectionStore:
         ):
             raise ValueError("实时会话微批身份与会话清单不一致")
         observations = verified_observations(directory, microbatch_paths)
-        expected_keys = expected_minute_keys(
+        expected_rows = replay_closed_minutes(
             observations,
+            session_id=session_id,
             ended_at=datetime.fromisoformat(str(session_manifest["ended_at"])),
         )
-        aggregate_keys = {(row.instrument_id, row.minute) for row in aggregate_rows}
-        if not expected_keys.issubset(aggregate_keys):
-            raise ValueError("实时会话分钟聚合遗漏应聚合的证券或市场分钟")
+        if _bar_values(aggregate_rows) != _bar_values(expected_rows):
+            raise ValueError("实时会话分钟聚合值或覆盖与规范微批重放不一致")
+        expected_hash = content_hash([row.model_dump(mode="json") for row in expected_rows])
         payload = {
             "session_id": session_id,
             "verified_at": datetime.now().astimezone().isoformat(),
@@ -244,9 +245,7 @@ class RealtimeProjectionStore:
             "microbatch_hashes": microbatch_hashes,
             "row_count": len(aggregate_rows),
             "primary_key_hash": content_hash(sorted(keys)),
-            "expected_coverage_hash": content_hash(
-                sorted((instrument, minute.isoformat()) for instrument, minute in expected_keys)
-            ),
+            "expected_values_hash": expected_hash,
             "evidence_hash": content_hash(
                 {
                     "session_id": session_id,
@@ -254,11 +253,7 @@ class RealtimeProjectionStore:
                     "microbatch_hashes": microbatch_hashes,
                     "row_count": len(aggregate_rows),
                     "primary_key_hash": content_hash(sorted(keys)),
-                    "expected_coverage_hash": content_hash(
-                        sorted(
-                            (instrument, minute.isoformat()) for instrument, minute in expected_keys
-                        )
-                    ),
+                    "expected_values_hash": expected_hash,
                 }
             ),
         }
@@ -394,11 +389,12 @@ class RealtimeProjectionStore:
                 self._root / str(relative) for relative in sorted(microbatch_hashes)
             )
             observations = verified_observations(directory, manifest_paths)
-            expected_keys = expected_minute_keys(
+            expected_rows = replay_closed_minutes(
                 observations,
+                session_id=str(session["session_id"]),
                 ended_at=datetime.fromisoformat(str(session["ended_at"])),
             )
-            if not expected_keys.issubset({(row.instrument_id, row.minute) for row in rows}):
+            if _bar_values(rows) != _bar_values(expected_rows):
                 return False
             identity = {
                 "session_id": evidence["session_id"],
@@ -406,13 +402,11 @@ class RealtimeProjectionStore:
                 "microbatch_hashes": microbatch_hashes,
                 "row_count": evidence["row_count"],
                 "primary_key_hash": evidence["primary_key_hash"],
-                "expected_coverage_hash": evidence["expected_coverage_hash"],
+                "expected_values_hash": evidence["expected_values_hash"],
             }
-            expected_hash = content_hash(
-                sorted((instrument, minute.isoformat()) for instrument, minute in expected_keys)
-            )
+            expected_hash = content_hash([row.model_dump(mode="json") for row in expected_rows])
             return bool(
-                evidence.get("expected_coverage_hash") == expected_hash
+                evidence.get("expected_values_hash") == expected_hash
                 and evidence.get("evidence_hash") == content_hash(identity)
             )
         except (FileNotFoundError, KeyError, OSError, TypeError, ValueError):
@@ -425,6 +419,12 @@ def _session_market_date(value: dict[str, object]) -> date:
         return date.fromisoformat(str(explicit))
     subscribed_at = datetime.fromisoformat(str(value["subscribed_at"]))
     return subscribed_at.astimezone(ZoneInfo("Asia/Shanghai")).date()
+
+
+def _bar_values(
+    rows: Sequence[RealtimeMinuteBar],
+) -> dict[tuple[str, datetime], dict[str, object]]:
+    return {(row.instrument_id, row.minute): row.model_dump(mode="json") for row in rows}
 
 
 def _revision(path: Path) -> tuple[int, int]:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from astramind_mini.data.adapters.realtime_aggregation_evidence import expected_minute_keys
+from astramind_mini.data.adapters.realtime_aggregation_evidence import replay_closed_minutes
 from astramind_mini.data.adapters.realtime_projection_store import RealtimeProjectionStore
 from astramind_mini.data.adapters.streaming_realtime_store import StreamingRealtimeStore
 from astramind_mini.data.application.identity import canonical_json, content_hash
@@ -378,10 +378,32 @@ def test_aggregation_verification_rejects_missing_whole_instrument(tmp_path: Pat
     )
     assert aggregate is not None
 
-    with pytest.raises(ValueError, match="遗漏应聚合"):
+    with pytest.raises(ValueError, match="值或覆盖"):
         store.verify_session_aggregation(
             session_id=session_id,
             aggregate_paths=(aggregate,),
+        )
+    forged = tuple(
+        row.rebuild(
+            open=999,
+            high=999,
+            low=999,
+            close=999,
+            volume=999,
+            amount=999,
+        )
+        for row in rows
+    )
+    forged_path = store.append_aggregate(
+        kind="1m",
+        market_date=started.date(),
+        rows=forged,
+    )
+    assert forged_path is not None
+    with pytest.raises(ValueError, match="值或覆盖"):
+        store.verify_session_aggregation(
+            session_id=session_id,
+            aggregate_paths=(forged_path,),
         )
 
 
@@ -397,11 +419,12 @@ def test_first_cumulative_baseline_and_no_trade_tick_do_not_require_bar() -> Non
     )
 
     assert (
-        expected_minute_keys(
+        replay_closed_minutes(
             (baseline, no_trade),
+            session_id=content_hash({"session": "no-trade"}),
             ended_at=started.replace(minute=31),
         )
-        == set()
+        == ()
     )
 
 

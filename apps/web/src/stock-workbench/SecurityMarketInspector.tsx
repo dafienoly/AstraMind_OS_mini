@@ -6,6 +6,7 @@ import {
 import { fetchRealtimeBarWindow } from "../market-dashboard/marketDashboardClient";
 import { RealtimeMinuteChart } from "../market-dashboard/realtime/RealtimeMinuteChart";
 import { RealtimeOrderBook } from "../market-dashboard/realtime/RealtimeOrderBook";
+import { buildRealtimeDisplayBars } from "../market-dashboard/realtime/realtimeMinuteAggregation";
 import type {
   PriceCandle,
   RealtimeInstrumentQuote,
@@ -105,7 +106,8 @@ export function SecurityMarketInspector({
         ) : period === "minute" && minute.bars.length ? (
           <>
           <RealtimeMinuteChart bars={minute.bars} indicators={minute.indicators}
-            indicatorState={minute.indicatorState} instrumentId={instrumentId} />
+            indicatorState={minute.indicatorState} instrumentId={instrumentId}
+            frequency={minuteFrequency} />
           {minute.gaps.length ? <p className="history-coverage-note">
             分钟缺口 {minute.gaps.length} 个；不完整桶已失败关闭。
           </p> : <p className="history-coverage-note">
@@ -151,7 +153,8 @@ function useMinuteWindow(
   sessions: number,
   current: RealtimeMinuteBar[],
 ) {
-  const [bars, setBars] = useState(current);
+  const [historyBars, setHistoryBars] = useState<RealtimeMinuteBar[]>([]);
+  const [closedOneMinute, setClosedOneMinute] = useState<RealtimeMinuteBar[]>([]);
   const [indicatorState, setIndicatorState] = useState<"ready" | "insufficient_seed">(
     "insufficient_seed",
   );
@@ -162,27 +165,27 @@ function useMinuteWindow(
     if (period !== "minute") return;
     const controller = new AbortController();
     setLoad("loading");
-    void fetchRealtimeBarWindow(instrumentId, frequency, sessions, controller.signal)
-      .then((page) => {
-        setBars(page.bars ?? []);
+    const history = fetchRealtimeBarWindow(instrumentId, frequency, sessions, controller.signal);
+    const source = frequency === 1
+      ? Promise.resolve(null)
+      : fetchRealtimeBarWindow(instrumentId, 1, 1, controller.signal);
+    void Promise.all([history, source]).then(([page, oneMinute]) => {
+        setHistoryBars(page.bars ?? []);
+        setClosedOneMinute(oneMinute?.bars ?? page.bars ?? []);
         setIndicatorState(page.indicator_state ?? "insufficient_seed");
         setGaps(page.known_gaps ?? []);
         setIndicators(page.indicators ?? []);
         setLoad("ready");
-      }).catch(() => {
+    }).catch(() => {
         setIndicatorState("insufficient_seed");
         if (!controller.signal.aborted) setLoad("error");
       });
     return () => controller.abort();
   }, [frequency, instrumentId, period, sessions]);
-  useEffect(() => {
-    if (!current.length) return;
-    setBars((history) => {
-      const values = new Map(history.map((row) => [row.minute, row]));
-      for (const row of current) values.set(row.minute, row);
-      return [...values.values()].sort((left, right) => left.minute.localeCompare(right.minute));
-    });
-  }, [current]);
+  const bars = useMemo(
+    () => buildRealtimeDisplayBars(historyBars, closedOneMinute, current, frequency),
+    [closedOneMinute, current, frequency, historyBars],
+  );
   return { bars, gaps, indicators, indicatorState, load };
 }
 

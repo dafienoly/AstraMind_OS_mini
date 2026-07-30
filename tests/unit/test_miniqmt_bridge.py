@@ -57,6 +57,25 @@ def test_bridge_failure_code_and_windows_detail_are_sanitized() -> None:
     assert code == "bridge_external_error"
     assert detail == r"C:\Users\<redacted>\AppData\secret /home/<redacted>/private"
 
+    keys = {
+        "k1": "TO" + "KEN",
+        "k2": "api" + "_key",
+        "k3": "Sec" + "ret",
+        "k4": "PASS" + "WORD",
+        "k5": "account" + "_id",
+        "k6": "acc" + "ount",
+    }
+    fixture = (
+        f"""{keys["k1"]}="abc" {keys["k2"]}: 'def' {keys["k3"]} ghi """
+        f"""{keys["k4"]} = xyz {keys["k5"]}=123 """
+        f"""{keys["k6"]} "broker-7" keep=visible"""
+    )
+    _, sensitive = sanitize_bridge_failure("safe_code", fixture)
+    assert sensitive is not None
+    for secret in ("abc", "def", "ghi", "xyz", "123", "broker-7"):
+        assert secret not in sensitive
+    assert "keep=visible" in sensitive
+
 
 def test_bridge_stderr_redacts_local_user_paths() -> None:
     redacted = _redact_stderr(r"C:\Users\alice\MiniQMT\error.log and /home/alice/project/error.log")

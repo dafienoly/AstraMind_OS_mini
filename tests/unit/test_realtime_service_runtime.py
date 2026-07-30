@@ -64,7 +64,11 @@ def test_retention_keeps_last_five_open_dates_only() -> None:
 
 def test_runtime_status_is_atomic_and_lock_rejects_duplicate(tmp_path: Path) -> None:
     status_store = RealtimeStatusStore(tmp_path)
-    status_store.publish("waiting", market_date=date(2026, 7, 29))
+    status_store.publish(
+        "waiting",
+        market_date=date(2026, 7, 29),
+        successful_heartbeat=True,
+    )
 
     status = status_store.read()
 
@@ -136,3 +140,33 @@ def test_recovering_status_inherits_last_feed_times_and_heartbeat(tmp_path: Path
     assert after.last_message_at == message_at.isoformat()
     assert after.last_microbatch_at == microbatch_at.isoformat()
     assert after.last_successful_heartbeat_at == before.last_successful_heartbeat_at
+
+
+def test_connecting_preserves_failure_until_real_connection_succeeds(tmp_path: Path) -> None:
+    store = RealtimeStatusStore(tmp_path)
+    failure = ({"attempt": 1, "error_code": "bridge_timeout"},)
+    store.publish(
+        "recovering",
+        last_error="bridge_timeout",
+        retry_failures=failure,
+        successful_heartbeat=False,
+    )
+    assert store.read() is not None
+    store.publish_connecting(date(2026, 7, 30), "sha256:" + "1" * 64)
+    connecting = store.read()
+    assert connecting is not None
+    assert connecting.last_error == "bridge_timeout"
+    assert connecting.retry_failures == failure
+    assert connecting.last_successful_heartbeat_at is None
+
+    store.publish(
+        "capturing",
+        last_error=None,
+        retry_failures=(),
+        successful_heartbeat=True,
+    )
+    connected = store.read()
+    assert connected is not None
+    assert connected.last_error is None
+    assert connected.retry_failures == ()
+    assert connected.last_successful_heartbeat_at is not None

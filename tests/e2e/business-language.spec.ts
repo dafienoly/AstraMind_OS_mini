@@ -60,19 +60,35 @@ test("stock watchlist renders dynamic feed state through business language", asy
 test("approved stock inspector exposes deterministic minute scales and five-day window", async ({
   page,
 }) => {
-  await page.addInitScript((projection) => {
+  const realtime = realtimeProjection();
+  realtime.open_minutes = [minuteBar("2026-07-30T09:34:00+08:00", false)];
+  const closed = [0, 1, 2, 3].map((offset) => (
+    minuteBar(`2026-07-30T09:3${offset}:00+08:00`, true)
+  ));
+  await page.addInitScript(({ projection, realtime, closed }) => {
     class NoopEventSource {
       static readonly CONNECTING = 0;
       static readonly OPEN = 1;
       static readonly CLOSED = 2;
+      static listener: ((event: MessageEvent<string>) => void) | null = null;
       readonly readyState = 1;
       constructor(readonly url: string | URL) {}
-      addEventListener() {}
+      addEventListener(_type: string, listener: EventListenerOrEventListenerObject) {
+        NoopEventSource.listener = listener as (event: MessageEvent<string>) => void;
+      }
       close() {}
       dispatchEvent() { return true; }
       removeEventListener() {}
     }
     window.EventSource = NoopEventSource as unknown as typeof EventSource;
+    const state = window as unknown as {
+      __barFetchCount: number;
+      __emitRealtime: (value: unknown) => void;
+    };
+    state.__barFetchCount = 0;
+    state.__emitRealtime = (value) => NoopEventSource.listener?.(
+      new MessageEvent("instruments", { data: JSON.stringify(value) }),
+    );
     window.fetch = async (input) => {
       const url = typeof input === "string"
         ? input
@@ -80,29 +96,38 @@ test("approved stock inspector exposes deterministic minute scales and five-day 
       if (url.includes("/api/market/stocks/")) {
         return Response.json(projection);
       }
+      if (url.includes("/api/market/realtime/instruments?")) {
+        return Response.json(realtime);
+      }
       if (url.includes("/bars?")) {
+        state.__barFetchCount += 1;
+        const frequency = new URL(url).searchParams.get("frequency");
         return Response.json({
           instrument_id: "000001.SZ",
-          frequency_minutes: 1,
+          frequency_minutes: Number(frequency),
           start_date: "2026-07-30",
           end_date: "2026-07-30",
           sessions: ["2026-07-30"],
-          bars: [],
-          indicators: [],
-          indicator_state: "insufficient_seed",
+          bars: frequency === "1" ? closed : [],
+          indicators: closed.map((row) => ({
+            minute: row.minute,
+            ma5: 10, ma10: 10, ma30: 10, ma60: 10,
+            macd: 0.2, signal: 0.1, histogram: 0.2,
+          })),
+          indicator_state: "ready",
           known_gaps: [],
           next_cursor: `sha256:${"d".repeat(64)}`,
         });
       }
       return new Response(null, { status: 404 });
     };
-  }, stockWorkbenchProjection());
+  }, { projection: stockWorkbenchProjection(), realtime, closed });
 
   await page.goto(
     "/stocks/000001.SZ?origin=watchlist&mode=completed&return_target=market_stocks",
   );
   await expect(page.locator(".route-loading-overlay")).toHaveCount(0);
-  await page.getByRole("button", { name: "分钟", exact: true }).click();
+  await expect(page.getByText(/形成中 · 1 分钟/)).toBeVisible();
 
   await expect(page.getByLabel("分钟周期与窗口")).toBeVisible();
   for (const label of ["1 分钟", "5 分钟", "15 分钟", "30 分钟", "60 分钟", "120 分钟"]) {
@@ -110,7 +135,59 @@ test("approved stock inspector exposes deterministic minute scales and five-day 
   }
   await expect(page.getByRole("button", { name: "5 日", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "年 K", exact: true })).toBeVisible();
+  const chart = page.getByRole("img", { name: /分钟 K 线/ });
+  const box = await chart.boundingBox();
+  if (!box) throw new Error("minute chart has no visible bounds");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.getByText(/DIF .* DEA .* MACD/)).toBeVisible();
+  await page.getByRole("button", { name: "5 分钟", exact: true }).click();
+  await expect(page.getByText(/形成中 · 5 分钟/)).toBeVisible();
+  const requests = await page.evaluate(() => (
+    window as unknown as { __barFetchCount: number }
+  ).__barFetchCount);
+  const updated = structuredClone(realtime);
+  updated.open_minutes = [{
+    ...minuteBar("2026-07-30T09:34:00+08:00", false),
+    close: 10.8,
+  }];
+  await page.evaluate((value) => (
+    window as unknown as { __emitRealtime: (next: unknown) => void }
+  ).__emitRealtime(value), updated);
+  await expect(page.getByText(/C 10.8/)).toBeVisible();
+  expect(await page.evaluate(() => (
+    window as unknown as { __barFetchCount: number }
+  ).__barFetchCount)).toBe(requests);
+  updated.open_minutes = [{
+    ...updated.open_minutes[0],
+    known_gaps: ["cumulative_counter_reset"],
+  }];
+  await page.evaluate((value) => (
+    window as unknown as { __emitRealtime: (next: unknown) => void }
+  ).__emitRealtime(value), updated);
+  await expect(page.getByText(/形成中 · 5 分钟/)).toHaveCount(0);
+  await expect(page.getByRole("img", { name: /分钟 K 线/ })).toHaveCount(0);
 });
+
+function minuteBar(minute: string, complete: boolean) {
+  return {
+    provider: "miniqmt",
+    session_id: `sha256:${"b".repeat(64)}`,
+    instrument_id: "000001.SZ",
+    minute,
+    open: 10,
+    high: 11,
+    low: 9,
+    close: 10.5,
+    volume: 1,
+    amount: 10,
+    observation_count: 1,
+    source_kind: "l1",
+    source_identity: `sha256:${"e".repeat(64)}`,
+    is_complete: complete,
+    known_gaps: [] as string[],
+    lifecycle: complete ? "sealed" : "forming",
+  };
+}
 
 function realtimeProjection() {
   return {
@@ -142,7 +219,7 @@ function realtimeProjection() {
       bids: [],
       asks: [],
     }],
-    open_minutes: [],
+    open_minutes: [] as ReturnType<typeof minuteBar>[],
     known_gaps: ["brand_new_internal_code"],
   };
 }

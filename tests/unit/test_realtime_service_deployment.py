@@ -40,8 +40,9 @@ def test_realtime_task_is_persistent_restartable_and_broker_free() -> None:
     assert "PT0S" in payload
     assert "realtime-market-service-run" in payload
     assert "/home/ly/work/AstraMind_OS_mini" in payload
-    assert "/bin/bash" in payload
-    assert "-lc" in payload
+    assert "powershell.exe" in payload
+    assert "run_realtime_market_task.ps1" in payload
+    assert "wsl.exe" not in payload
     assert all(
         forbidden not in payload.lower()
         for forbidden in (
@@ -61,6 +62,17 @@ def test_scheduler_result_does_not_trust_wsl_exit_code_alone() -> None:
         f"任务名: \\{TASK_NAME}\n状态: Ready",
         "",
     )
+
+
+def test_windows_task_wrapper_bounds_logs_and_exposes_wsl_exit() -> None:
+    payload = Path("scripts/windows/run_realtime_market_task.ps1").read_text(encoding="utf-8")
+
+    assert "$MaxBytes = 2MB" in payload
+    assert "$Generations = 4" in payload
+    assert "wsl_start_failed=" in payload
+    assert "wsl_exit_code=" in payload
+    assert "Redact-Line" in payload
+    assert "token|api[_ -]?key|secret|password|account" in payload
     assert scheduler_query_state(0, f"任务名: \\{TASK_NAME}", "") == "installed"
     assert (
         scheduler_query_state(1, "", "ERROR: The system cannot find the file specified.")

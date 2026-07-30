@@ -89,7 +89,7 @@ class RealtimeStatusStore:
         last_error: str | None = None,
         retry_failures: tuple[dict[str, object], ...] = (),
         recovery_action: str | None = None,
-        successful_heartbeat: bool = True,
+        successful_heartbeat: bool = False,
     ) -> None:
         now = datetime.now(UTC)
         previous = self.read()
@@ -149,11 +149,16 @@ class RealtimeStatusStore:
         return RealtimeRuntimeStatus(**payload)
 
     def publish_connecting(self, market_date: date, session_id: str) -> None:
+        previous = self.read()
         self.publish(
             "connecting",
             market_date=market_date,
             session_id=session_id,
             feed_state="connecting",
+            last_error=previous.last_error if previous else None,
+            retry_failures=previous.retry_failures if previous else (),
+            recovery_action=previous.recovery_action if previous else None,
+            successful_heartbeat=False,
         )
 
 

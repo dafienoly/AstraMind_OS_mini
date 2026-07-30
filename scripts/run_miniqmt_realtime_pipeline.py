@@ -83,6 +83,7 @@ async def _run_session(
             session_id=session_id,
             feed_state="connected",
             projection_state="forming",
+            successful_heartbeat=True,
         )
         while monotonic() < deadline:
             event = await bridge.next_quote_event(timeout_seconds=1)
@@ -104,6 +105,7 @@ async def _run_session(
                         projection_state="forming",
                         last_message_at=last_message_at,
                         last_microbatch_at=last_microbatch_at,
+                        successful_heartbeat=True,
                     )
                     last_heartbeat = monotonic()
                 continue

@@ -97,8 +97,9 @@ def _print_preview(spec: RealtimeMarketTaskSpec, artifact: Path) -> None:
     print("restart_on_failure=1m")
     print("multiple_instances=ignore_new")
     print(f"working_directory={spec.repository_root}")
-    print("command=wsl.exe")
+    print("command=powershell.exe")
     print(f"arguments={spec.action_arguments}")
+    print(f"windows_wrapper={spec.wrapper_path}")
     print(f"task_xml={artifact}")
     print("broker_actions_allowed=false")
 

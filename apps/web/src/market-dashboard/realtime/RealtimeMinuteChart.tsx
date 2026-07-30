@@ -17,15 +17,20 @@ export function RealtimeMinuteChart({
   bars,
   indicatorState = "ready",
   indicators = [],
+  frequency = 1,
 }: {
   instrumentId: string;
   bars: RealtimeMinuteBar[];
   indicatorState?: "ready" | "insufficient_seed";
   indicators?: RealtimeIndicatorPoint[];
+  frequency?: number;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const { chart, candle, volume, amount, maLines, macd, dif, dea } = useChartSeries(host);
   const [crosshairText, setCrosshairText] = useState("移动十字光标查看该分钟明细");
+  const forming = bars.find((row) => (
+    row.lifecycle === "forming" && !row.is_complete && row.known_gaps.length === 0
+  ));
 
   useEffect(() => {
     if (!candle.current || !volume.current || !amount.current) return;
@@ -101,7 +106,15 @@ export function RealtimeMinuteChart({
 
   return <section>
     <div className="realtime-minute-chart" ref={host} role="img"
+      onMouseMove={(event) => {
+        const text = crosshairTextAt(event.clientX, event.currentTarget, bars, indicators);
+        if (text) setCrosshairText(text);
+      }}
       aria-label={`${instrumentId} 分钟 K 线、成交量与成交额`} />
+    {forming ? <p className="history-coverage-note" data-state="forming">
+      形成中 · {frequency} 分钟 · O {forming.open} H {forming.high} L {forming.low} C {forming.close}
+      {" · "}量 {forming.volume} 额 {forming.amount}
+    </p> : null}
     <p className="history-coverage-note">
       {indicatorState === "insufficient_seed"
         ? "MA / MACD：闭合种子不足（insufficient_seed）"
@@ -178,4 +191,24 @@ function useChartSeries(host: RefObject<HTMLDivElement | null>) {
 
 function toTime(value: string): Time {
   return Math.floor(new Date(value).getTime() / 1000) as Time;
+}
+
+function crosshairTextAt(
+  clientX: number,
+  host: HTMLDivElement,
+  bars: RealtimeMinuteBar[],
+  indicators: RealtimeIndicatorPoint[],
+): string | null {
+  const drawable = bars.filter((row) => row.is_complete && row.known_gaps.length === 0);
+  if (!drawable.length) return null;
+  const bounds = host.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(0.999, (clientX - bounds.left) / bounds.width));
+  const bar = drawable[Math.floor(ratio * drawable.length)];
+  const point = indicators.find((row) => row.minute === bar.minute);
+  return [
+    `O ${bar.open} H ${bar.high} L ${bar.low} C ${bar.close}`,
+    `量 ${bar.volume} 额 ${bar.amount}`,
+    `MA ${point?.ma5 ?? "—"}/${point?.ma10 ?? "—"}/${point?.ma30 ?? "—"}/${point?.ma60 ?? "—"}`,
+    `DIF ${point?.macd ?? "—"} DEA ${point?.signal ?? "—"} MACD ${point?.histogram ?? "—"}`,
+  ].join(" · ");
 }
