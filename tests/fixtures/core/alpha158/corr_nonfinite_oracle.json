@@ -1,0 +1,29 @@
+{
+  "schema": "qlib-alpha158-corr-nonfinite-oracle-v1",
+  "qlib_commit": "79633dd9506ea689e5400dea0197717b5b3d74b7",
+  "pandas": "2.2.3",
+  "seed": 710158,
+  "case_count": 1000,
+  "length": 16,
+  "minimal_window": 5,
+  "minimal_left": [
+    2.0,
+    0.1,
+    0.1,
+    0.1,
+    0.1
+  ],
+  "minimal_right": [
+    null,
+    null,
+    1.0,
+    2.0,
+    3.0
+  ],
+  "case_final_classifications": [
+    "positive_infinity",
+    "negative_infinity",
+    "negative_infinity",
+    "positive_infinity"
+  ]
+}

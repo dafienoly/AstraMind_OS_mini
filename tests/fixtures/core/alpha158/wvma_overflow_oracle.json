@@ -1,0 +1,77 @@
+{
+  "schema": "qlib-alpha158-wvma-overflow-oracle-v1",
+  "qlib_commit": "79633dd9506ea689e5400dea0197717b5b3d74b7",
+  "reference_generator_sha256": "7c4428980f86e3ac8b070a88b2be994fd28227946253587a1955276c47936950",
+  "feature_name": "WVMA5",
+  "feature_index": 138,
+  "ohlc_rule": "open=high=low=close",
+  "input_fields": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume_lots",
+    "vwap"
+  ],
+  "close": [
+    1e-308,
+    1e+308,
+    1e-308,
+    1e+308,
+    1e-308,
+    2e-308,
+    3e-308,
+    4e-308
+  ],
+  "volume_lots": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "vwap": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "intermediate_abs_return_volume_classification": [
+    "nan",
+    "positive_infinity",
+    "finite",
+    "positive_infinity",
+    "finite",
+    "finite",
+    "finite",
+    "finite"
+  ],
+  "expected_values": [
+    null,
+    null,
+    null,
+    null,
+    0.0,
+    0.0,
+    0.285714285713959,
+    0.48507125007198104
+  ],
+  "expected_nonfinite_mask": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+  ],
+  "generation_policy": "Generated only by the committed reference generator in the isolated fixed-Qlib environment; the production calculator was not imported."
+}

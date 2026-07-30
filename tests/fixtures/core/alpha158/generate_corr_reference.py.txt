@@ -1,0 +1,112 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+QLIB_COMMIT = "79633dd9506ea689e5400dea0197717b5b3d74b7"
+SEED = 710158
+CASE_COUNT = 1000
+LENGTH = 16
+
+
+def nonfinite_mask(values: np.ndarray) -> np.ndarray:
+    result = np.zeros(values.shape, dtype=np.uint8)
+    result[np.isnan(values)] = 1
+    result[np.isposinf(values)] = 2
+    result[np.isneginf(values)] = 3
+    return result
+
+
+def qlib_corr(left: np.ndarray, right: np.ndarray, window: int) -> np.ndarray:
+    left_series = pd.Series(left)
+    right_series = pd.Series(right)
+    result = left_series.rolling(window, min_periods=1).corr(right_series)
+    left_std = left_series.rolling(window, min_periods=1).std()
+    right_std = right_series.rolling(window, min_periods=1).std()
+    result.loc[
+        np.isclose(left_std, 0, atol=2e-5) | np.isclose(right_std, 0, atol=2e-5)
+    ] = np.nan
+    return result.to_numpy(dtype=np.float64)
+
+
+def build_inputs() -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(SEED)
+    inputs = np.empty((CASE_COUNT, 2, LENGTH), dtype=np.float64)
+    windows = rng.integers(2, 10, size=CASE_COUNT, dtype=np.int16)
+    discrete = np.asarray([-3.0, -0.1, 0.0, 0.1, 0.2, 1.0, 2.0, 7.0])
+    for case in range(CASE_COUNT):
+        if case % 4 == 0:
+            inputs[case] = rng.choice(discrete, size=(2, LENGTH))
+        elif case % 4 == 1:
+            inputs[case] = rng.normal(0.0, 3.0, size=(2, LENGTH))
+        elif case % 4 == 2:
+            centers = rng.choice(discrete, size=(2, 1))
+            inputs[case] = centers + rng.normal(0.0, 1e-6, size=(2, LENGTH))
+        else:
+            inputs[case] = rng.normal(0.0, 1e8, size=(2, LENGTH))
+        missing = rng.random((2, LENGTH)) < 0.22
+        inputs[case][missing] = np.nan
+        signed_infinity = rng.random((2, LENGTH))
+        inputs[case][signed_infinity < 0.015] = np.inf
+        inputs[case][signed_infinity > 0.985] = -np.inf
+
+    minimal_left = np.asarray([2.0, 0.1, 0.1, 0.1, 0.1] + [np.nan] * 11)
+    minimal_right = np.asarray([np.nan, np.nan, 1.0, 2.0, 3.0] + [np.nan] * 11)
+    inputs[0] = np.stack((minimal_left, minimal_right))
+    inputs[1] = np.stack((minimal_left, -minimal_right))
+    inputs[2] = np.stack((-minimal_left, minimal_right))
+    inputs[3] = np.stack((-minimal_left, -minimal_right))
+    windows[:4] = 5
+    return inputs, windows
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output_directory")
+    args = parser.parse_args()
+    destination = Path(args.output_directory)
+    destination.mkdir(parents=True, exist_ok=True)
+    inputs, windows = build_inputs()
+    expected = np.stack(
+        tuple(
+            qlib_corr(inputs[index, 0], inputs[index, 1], int(windows[index]))
+            for index in range(CASE_COUNT)
+        )
+    )
+    np.save(destination / "corr_inputs.npy", inputs, allow_pickle=False)
+    np.save(destination / "corr_windows.npy", windows, allow_pickle=False)
+    np.save(destination / "corr_expected.npy", expected, allow_pickle=False)
+    np.save(
+        destination / "corr_expected_nonfinite_mask.npy",
+        nonfinite_mask(expected),
+        allow_pickle=False,
+    )
+    oracle = {
+        "schema": "qlib-alpha158-corr-nonfinite-oracle-v1",
+        "qlib_commit": QLIB_COMMIT,
+        "pandas": pd.__version__,
+        "seed": SEED,
+        "case_count": CASE_COUNT,
+        "length": LENGTH,
+        "minimal_window": 5,
+        "minimal_left": [2.0, 0.1, 0.1, 0.1, 0.1],
+        "minimal_right": [None, None, 1.0, 2.0, 3.0],
+        "case_final_classifications": [
+            "positive_infinity",
+            "negative_infinity",
+            "negative_infinity",
+            "positive_infinity",
+        ],
+    }
+    (destination / "corr_nonfinite_oracle.json").write_text(
+        json.dumps(oracle, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+if __name__ == "__main__":
+    main()

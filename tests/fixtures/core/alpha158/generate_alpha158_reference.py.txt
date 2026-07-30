@@ -1,0 +1,196 @@
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import pathlib
+
+import numpy as np
+import pandas as pd
+
+
+def _load_cython() -> object:
+    path = next(pathlib.Path("qlib/data/_libs").glob("rolling*.so"))
+    spec = importlib.util.spec_from_file_location("rolling", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load fixed Qlib rolling extension")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+CYTHON = _load_cython()
+WINDOWS = (5, 10, 20, 30, 60)
+
+
+def _series(values: np.ndarray) -> pd.Series:
+    return pd.Series(np.asarray(values, dtype=np.float64))
+
+
+def _ref(values: np.ndarray, periods: int) -> np.ndarray:
+    return _series(values).shift(periods).to_numpy()
+
+
+def _rolling(values: np.ndarray, window: int, name: str) -> np.ndarray:
+    return getattr(_series(values).rolling(window, min_periods=1), name)().to_numpy()
+
+
+def _quantile(values: np.ndarray, window: int, q: float) -> np.ndarray:
+    return _series(values).rolling(window, min_periods=1).quantile(q).to_numpy()
+
+
+def _rank(values: np.ndarray, window: int) -> np.ndarray:
+    return _series(values).rolling(window, min_periods=1).rank(pct=True).to_numpy()
+
+
+def _idx(values: np.ndarray, window: int, kind: str) -> np.ndarray:
+    function = np.argmax if kind == "max" else np.argmin
+    return (
+        _series(values)
+        .rolling(window, min_periods=1)
+        .apply(lambda item: function(item) + 1, raw=True)
+        .to_numpy()
+    )
+
+
+def _corr(left: np.ndarray, right: np.ndarray, window: int) -> np.ndarray:
+    left_series = _series(left)
+    right_series = _series(right)
+    result = left_series.rolling(window, min_periods=1).corr(right_series)
+    left_std = left_series.rolling(window, min_periods=1).std()
+    right_std = right_series.rolling(window, min_periods=1).std()
+    result.loc[
+        np.isclose(left_std, 0, atol=2e-5) | np.isclose(right_std, 0, atol=2e-5)
+    ] = np.nan
+    return result.to_numpy()
+
+
+def _families(
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    volume: np.ndarray,
+    window: int,
+) -> tuple[np.ndarray, ...]:
+    close_ref = _ref(close, 1)
+    volume_ref = _ref(volume, 1)
+    close_delta = close - close_ref
+    volume_delta = volume - volume_ref
+    close_abs = np.abs(close_delta)
+    volume_abs = np.abs(volume_delta)
+    close_ratio = close / close_ref
+    volume_log = np.log(volume + 1.0)
+    volume_ratio_log = np.log(volume / volume_ref + 1.0)
+    positive_close = np.maximum(close_delta, 0.0)
+    negative_close = np.maximum(-close_delta, 0.0)
+    positive_volume = np.maximum(volume_delta, 0.0)
+    negative_volume = np.maximum(-volume_delta, 0.0)
+    high_max = _rolling(high, window, "max")
+    low_min = _rolling(low, window, "min")
+    close_abs_volume = np.abs(close_ratio - 1.0) * volume
+    close_abs_sum = _rolling(close_abs, window, "sum")
+    volume_abs_sum = _rolling(volume_abs, window, "sum")
+    positive_close_sum = _rolling(positive_close, window, "sum")
+    negative_close_sum = _rolling(negative_close, window, "sum")
+    positive_volume_sum = _rolling(positive_volume, window, "sum")
+    negative_volume_sum = _rolling(negative_volume, window, "sum")
+    count_positive = _rolling((close > close_ref).astype(np.float64), window, "mean")
+    count_negative = _rolling((close < close_ref).astype(np.float64), window, "mean")
+    slope = CYTHON.rolling_slope(close, window)
+    rsquare = CYTHON.rolling_rsquare(close, window)
+    rsquare[
+        np.isclose(
+            _series(close).rolling(window, min_periods=1).std(),
+            0,
+            atol=2e-5,
+        )
+    ] = np.nan
+    residual = CYTHON.rolling_resi(close, window)
+    return (
+        _ref(close, window) / close,
+        _rolling(close, window, "mean") / close,
+        _rolling(close, window, "std") / close,
+        slope / close,
+        rsquare,
+        residual / close,
+        high_max / close,
+        low_min / close,
+        _quantile(close, window, 0.8) / close,
+        _quantile(close, window, 0.2) / close,
+        _rank(close, window),
+        (close - low_min) / (high_max - low_min + 1e-12),
+        _idx(high, window, "max") / window,
+        _idx(low, window, "min") / window,
+        (_idx(high, window, "max") - _idx(low, window, "min")) / window,
+        _corr(close, volume_log, window),
+        _corr(close_ratio, volume_ratio_log, window),
+        count_positive,
+        count_negative,
+        count_positive - count_negative,
+        positive_close_sum / (close_abs_sum + 1e-12),
+        negative_close_sum / (close_abs_sum + 1e-12),
+        (positive_close_sum - negative_close_sum) / (close_abs_sum + 1e-12),
+        _rolling(volume, window, "mean") / (volume + 1e-12),
+        _rolling(volume, window, "std") / (volume + 1e-12),
+        _rolling(close_abs_volume, window, "std")
+        / (_rolling(close_abs_volume, window, "mean") + 1e-12),
+        positive_volume_sum / (volume_abs_sum + 1e-12),
+        negative_volume_sum / (volume_abs_sum + 1e-12),
+        (positive_volume_sum - negative_volume_sum) / (volume_abs_sum + 1e-12),
+    )
+
+
+def calculate(inputs: np.ndarray) -> np.ndarray:
+    results: list[np.ndarray] = []
+    for instrument in inputs:
+        open_, high, low, close, volume, vwap = (
+            instrument[:, index] for index in range(6)
+        )
+        with np.errstate(all="ignore"):
+            prefix = (
+                (close - open_) / open_,
+                (high - low) / open_,
+                (close - open_) / (high - low + 1e-12),
+                (high - np.maximum(open_, close)) / open_,
+                (high - np.maximum(open_, close)) / (high - low + 1e-12),
+                (np.minimum(open_, close) - low) / open_,
+                (np.minimum(open_, close) - low) / (high - low + 1e-12),
+                (2.0 * close - high - low) / open_,
+                (2.0 * close - high - low) / (high - low + 1e-12),
+                open_ / close,
+                high / close,
+                low / close,
+                vwap / close,
+            )
+            families = tuple(
+                _families(close, high, low, volume, window) for window in WINDOWS
+            )
+            columns = prefix + tuple(
+                family[index] for index in range(29) for family in families
+            )
+        results.append(np.column_stack(columns))
+    return np.stack(results)
+
+
+def mask(values: np.ndarray) -> np.ndarray:
+    result = np.zeros(values.shape, dtype=np.uint8)
+    result[np.isnan(values)] = 1
+    result[np.isposinf(values)] = 2
+    result[np.isneginf(values)] = 3
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("inputs")
+    parser.add_argument("output")
+    parser.add_argument("output_mask")
+    args = parser.parse_args()
+    inputs = np.load(args.inputs, allow_pickle=False)
+    expected = np.asarray(calculate(inputs), dtype="<f8", order="C")
+    np.save(args.output, expected, allow_pickle=False)
+    np.save(args.output_mask, mask(expected), allow_pickle=False)
+    print(expected.shape)
+
+
+if __name__ == "__main__":
+    main()
