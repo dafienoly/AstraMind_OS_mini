@@ -63,6 +63,11 @@ def test_context_uses_calendar_and_common_completed_market_date(tmp_path: Path) 
 
     context = SnapshotMarketSessionContext(tmp_path).read(today=date(2026, 7, 30))
 
+    assert context.calendar_dates == (
+        date(2026, 7, 28),
+        date(2026, 7, 29),
+        date(2026, 7, 30),
+    )
     assert context.open_dates == (date(2026, 7, 29), date(2026, 7, 30))
     assert context.latest_completed_trade_date == date(2026, 7, 29)
 

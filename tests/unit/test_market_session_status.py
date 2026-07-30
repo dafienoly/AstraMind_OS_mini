@@ -12,7 +12,8 @@ from astramind_mini.data.application.market_session_status import (
 )
 from astramind_mini.data.contracts.realtime_projection import RealtimeMarketProjection
 
-OPEN_DATES = tuple(date(2026, 7, day) for day in range(27, 32))
+CALENDAR_DATES = (*tuple(date(2026, 7, day) for day in range(27, 32)), date(2026, 8, 1))
+OPEN_DATES = CALENDAR_DATES[:-1]
 
 
 def local_time(day: int, hour: int, minute: int = 0) -> datetime:
@@ -38,6 +39,7 @@ def test_non_streaming_market_phases_ignore_old_tick_age(
         latest_received_at=now - timedelta(hours=1),
         transport_disconnected=False,
         context=MarketSessionContext(
+            calendar_dates=CALENDAR_DATES,
             open_dates=OPEN_DATES,
             latest_completed_trade_date=completed,
         ),
@@ -50,13 +52,14 @@ def test_non_streaming_market_phases_ignore_old_tick_age(
 def test_continuous_auction_uses_tick_age_and_recovers() -> None:
     now = local_time(30, 10)
     context = MarketSessionContext(
+        calendar_dates=CALENDAR_DATES,
         open_dates=OPEN_DATES,
         latest_completed_trade_date=date(2026, 7, 29),
     )
 
     delayed = assess_market_session(
         now=now,
-        latest_received_at=now - timedelta(seconds=11),
+        latest_received_at=local_time(29, 15),
         transport_disconnected=False,
         context=context,
     )
@@ -76,6 +79,7 @@ def test_continuous_auction_uses_tick_age_and_recovers() -> None:
 def test_transport_disconnect_and_daily_lag_are_independent() -> None:
     now = local_time(30, 15, 30)
     context = MarketSessionContext(
+        calendar_dates=CALENDAR_DATES,
         open_dates=OPEN_DATES,
         latest_completed_trade_date=date(2026, 7, 29),
     )
@@ -97,6 +101,50 @@ def test_transport_disconnect_and_daily_lag_are_independent() -> None:
     assert connected.transport_health == "connected"
     assert disconnected.operational_state == "disconnected"
     assert disconnected.daily_data_state == "lagging"
+
+
+def test_calendar_without_today_fails_closed_instead_of_claiming_holiday() -> None:
+    now = local_time(30, 10)
+
+    status = assess_market_session(
+        now=now,
+        latest_received_at=now,
+        transport_disconnected=False,
+        context=MarketSessionContext(
+            calendar_dates=(date(2026, 7, 28), date(2026, 7, 29)),
+            open_dates=(date(2026, 7, 28), date(2026, 7, 29)),
+            latest_completed_trade_date=date(2026, 7, 29),
+        ),
+    )
+
+    assert status.market_session == "unknown"
+    assert status.latest_trading_date is None
+    assert status.daily_data_state == "unknown"
+    assert status.operational_state == "unknown"
+    assert status.legacy_state == "stale"
+
+
+def test_known_statutory_holiday_is_non_trading_day() -> None:
+    now = datetime(2026, 10, 1, 10, tzinfo=SHANGHAI).astimezone(UTC)
+
+    status = assess_market_session(
+        now=now,
+        latest_received_at=now - timedelta(days=1),
+        transport_disconnected=False,
+        context=MarketSessionContext(
+            calendar_dates=(
+                date(2026, 9, 30),
+                date(2026, 10, 1),
+                date(2026, 10, 2),
+            ),
+            open_dates=(date(2026, 9, 30),),
+            latest_completed_trade_date=date(2026, 9, 30),
+        ),
+    )
+
+    assert status.market_session == "non_trading_day"
+    assert status.daily_data_state == "current"
+    assert status.operational_state == "non_trading_day"
 
 
 def test_missing_calendar_is_unknown_instead_of_healthy() -> None:

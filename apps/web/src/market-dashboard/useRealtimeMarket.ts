@@ -98,11 +98,16 @@ export function useRealtimeMarket(): RealtimeMarketView {
   return view;
 }
 
-function effectiveState(
+export function effectiveState(
   projection: RealtimeMarketProjection,
 ): RealtimeMarketView["effectiveState"] {
-  if (projection.operational_state === "disconnected") return "disconnected";
-  return projection.operational_state === "updating" ? "current" : "stale";
+  if (
+    projection.transport_health === "disconnected"
+    || projection.operational_state === "disconnected"
+  ) {
+    return "disconnected";
+  }
+  return projection.state;
 }
 
 type StreamEvent = MessageEvent<string>;

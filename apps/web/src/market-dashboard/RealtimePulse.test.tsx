@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { RealtimePulse } from "./RealtimePulse";
 import { realtimeProjection } from "./realtimeTestSupport";
 import type { RealtimeOperationalState } from "./realtimeTypes";
-import type { RealtimeMarketView } from "./useRealtimeMarket";
+import { effectiveState, type RealtimeMarketView } from "./useRealtimeMarket";
 
 describe("RealtimePulse market-session semantics", () => {
   afterEach(cleanup);
@@ -32,6 +32,33 @@ describe("RealtimePulse market-session semantics", () => {
     expect(screen.getByLabelText("技术详情")).not.toHaveAttribute("open");
     expect(screen.getByText(projection.session_id)).not.toBeVisible();
     expect(screen.getByText(projection.projection_id)).not.toBeVisible();
+  });
+
+  it("keeps transport unknown while the first projection is loading", () => {
+    render(<RealtimePulse view={{
+      phase: "loading",
+      connection: "connecting",
+      projection: null,
+      message: null,
+      effectiveState: "disconnected",
+    }} />);
+
+    const pulse = screen.getByRole("region", { name: "盘中会话脉冲" });
+    expect(pulse).toHaveAttribute("data-state", "unknown");
+    expect(screen.getByText("正在连接")).toBeInTheDocument();
+    expect(screen.getByText("传输").parentElement).toHaveTextContent("待确认");
+    expect(screen.queryByText("实时连接中断")).not.toBeInTheDocument();
+  });
+
+  it("does not fold a non-streaming market phase back into stale", () => {
+    const projection = {
+      ...realtimeProjection(),
+      state: "current" as const,
+      market_session: "lunch_break" as const,
+      operational_state: "lunch_break" as const,
+    };
+
+    expect(effectiveState(projection)).toBe("current");
   });
 });
 

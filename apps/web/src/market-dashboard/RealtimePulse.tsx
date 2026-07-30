@@ -31,7 +31,7 @@ export function RealtimePulse({ view }: { view: RealtimeMarketView }) {
       />
       <PulseValue
         label="传输"
-        value={projection?.transport_health === "connected" ? "连接正常" : "连接中断"}
+        value={transportLabel(view)}
       />
       <PulseValue label="页面延迟" value={latency === null ? "—" : `${latency} ms`} />
       <PulseValue
@@ -74,8 +74,21 @@ function stateLabel(view: RealtimeMarketView) {
 }
 
 function semanticState(view: RealtimeMarketView) {
+  if (!view.projection) {
+    return view.connection === "disconnected" ? "disconnected" : "unknown";
+  }
   if (view.effectiveState === "disconnected") return "disconnected";
-  return view.projection?.operational_state ?? "unknown";
+  return view.projection.operational_state ?? "unknown";
+}
+
+function transportLabel(view: RealtimeMarketView) {
+  if (!view.projection) {
+    return view.connection === "disconnected" ? "连接中断" : "待确认";
+  }
+  if (view.connection === "disconnected" || view.projection.transport_health === "disconnected") {
+    return "连接中断";
+  }
+  return "连接正常";
 }
 
 function coverage(projection: RealtimeMarketView["projection"]) {

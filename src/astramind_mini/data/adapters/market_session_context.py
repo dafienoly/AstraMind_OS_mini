@@ -30,25 +30,27 @@ class SnapshotMarketSessionContext:
         if self._cached is not None and self._cached[:2] == (revision, today):
             return self._cached[2]
         references = self._snapshot_references()
-        calendar = self._manifest("trade_calendar", references)
-        calendar_paths = self._artifact_paths("trade_calendar", calendar)
+        calendar_manifest = self._manifest("trade_calendar", references)
+        calendar_paths = self._artifact_paths("trade_calendar", calendar_manifest)
         lower = today - timedelta(days=90)
         with duckdb.connect(":memory:") as connection:
             rows = connection.execute(
                 """
-                SELECT DISTINCT calendar_date
+                SELECT DISTINCT calendar_date, is_open
                 FROM read_parquet(?)
-                WHERE exchange = 'SSE' AND is_open
+                WHERE exchange = 'SSE'
                   AND calendar_date BETWEEN ? AND ?
-                ORDER BY calendar_date
+                ORDER BY calendar_date, is_open
                 """,
                 [[str(path) for path in calendar_paths], lower, today],
             ).fetchall()
+        calendar = _calendar_rows(rows)
         completed = min(
             self._manifest(name, references).date_range[1] for name in _COMPLETED_MARKET_DATASETS
         )
         result = MarketSessionContext(
-            open_dates=tuple(row[0] for row in rows if isinstance(row[0], date)),
+            calendar_dates=tuple(calendar),
+            open_dates=tuple(day for day, is_open in calendar.items() if is_open),
             latest_completed_trade_date=completed,
         )
         self._cached = (revision, today, result)
@@ -109,6 +111,17 @@ def _digest(identity: str, prefix: str) -> str:
     if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
         raise ValueError(f"非法内容身份：{identity}")
     return value
+
+
+def _calendar_rows(rows: list[tuple[object, ...]]) -> dict[date, bool]:
+    calendar: dict[date, bool] = {}
+    for raw_day, raw_is_open in rows:
+        if not isinstance(raw_day, date) or not isinstance(raw_is_open, bool):
+            raise ValueError("交易日历字段类型无效")
+        if raw_day in calendar and calendar[raw_day] != raw_is_open:
+            raise ValueError(f"交易日历同日状态冲突：{raw_day.isoformat()}")
+        calendar[raw_day] = raw_is_open
+    return calendar
 
 
 __all__ = ["SnapshotMarketSessionContext"]

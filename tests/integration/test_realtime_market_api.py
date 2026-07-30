@@ -98,6 +98,11 @@ def test_disconnected_projection_is_not_relabelled_current_or_stale(
 
 def test_api_freshness_distinguishes_lunch_close_and_daily_lag() -> None:
     context = MarketSessionContext(
+        calendar_dates=(
+            date(2026, 7, 28),
+            date(2026, 7, 29),
+            date(2026, 7, 30),
+        ),
         open_dates=(
             date(2026, 7, 28),
             date(2026, 7, 29),

@@ -21,6 +21,7 @@ FRESHNESS_THRESHOLD = timedelta(seconds=10)
 
 @dataclass(frozen=True, slots=True)
 class MarketSessionContext:
+    calendar_dates: tuple[date, ...]
     open_dates: tuple[date, ...]
     latest_completed_trade_date: date | None
 
@@ -98,7 +99,7 @@ def enrich_market_projection(
 
 
 def _phase(local: datetime, context: MarketSessionContext | None) -> MarketSessionPhase:
-    if context is None or not context.open_dates:
+    if context is None or local.date() not in context.calendar_dates:
         return "unknown"
     if local.date() not in context.open_dates:
         return "non_trading_day"
@@ -116,7 +117,7 @@ def _latest_trading_date(
     today: date,
     context: MarketSessionContext | None,
 ) -> date | None:
-    if context is None:
+    if context is None or today not in context.calendar_dates:
         return None
     return max((day for day in context.open_dates if day <= today), default=None)
 
@@ -126,7 +127,7 @@ def _expected_completed_date(
     phase: MarketSessionPhase,
     context: MarketSessionContext | None,
 ) -> date | None:
-    if context is None:
+    if context is None or phase == "unknown":
         return None
     if phase in {"closed", "non_trading_day"}:
         upper = local.date()
