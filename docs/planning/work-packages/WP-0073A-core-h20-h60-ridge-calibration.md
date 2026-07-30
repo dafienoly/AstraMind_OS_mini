@@ -1,6 +1,6 @@
 # WP-0073A：核心 H20/H60 B0/Ridge、滚动预测与绝对收益校准
 
-- 版本：1.0.0
+- 版本：1.1.0
 - 状态：已授权，依赖门等待 WP-0072 集成
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5C
@@ -9,8 +9,8 @@
 
 ## 目标
 
-消费 WP-0072 冻结的 `full/selected` 特征视图，建立 H20、H60 完全独立的周度学习链
-第一段：点时标签、五年滚动训练、季度重训、B0 永久锚点、Ridge 主比较、滚动样本外
+消费 WP-0072 冻结的 `full/selected` 特征视图和公共前向标签，建立 H20、H60
+完全独立的周度学习链第一段：五年滚动训练、季度重训、B0 永久锚点、Ridge 主比较、滚动样本外
 预测、十桶 isotonic 绝对收益校准，以及绑定环境和上游身份的安全模型制品。
 
 本包发布 B0/Ridge 候选及其样本外预测证据，不自行宣布最终赢家。WP-0074A 使用准确
@@ -22,7 +22,9 @@ C2 成本与 O0 从中冻结每周期 Ridge 决赛者和最多四个 LightGBM �
 
 1. WP-0071A/B/C 与 WP-0072 均已由主控复核并集成；
 2. 三包 `full` 和 H20/H60 `selected` manifest 身份完整，处理矩阵无未解释非有限值；
-3. 工作树从包含 WP-0072 的最新主线建立，且没有其他包修改根依赖或核心模型合同；
+3. WP-0072 的 `CoreProcessedFeaturePanelManifest`、
+   `CoreForwardReturnLabelBatch`、选择先验和 H20/H60 选择身份均可验证；
+4. 工作树从包含 WP-0072 的最新主线建立，且没有其他包修改根依赖或核心模型合同；
 
 依赖未满足时保持 `dependency_blocked`。本包属于 D-114 持续实施授权，不再请求重复
 功能授权。
@@ -53,7 +55,6 @@ manifest 并映射到公共合同；确需扩展共享合同则停止交主控�
 
 `strategy_research.core.modeling` 拥有：
 
-- `CoreLabelSpec` / `CoreLabelBatch`；
 - `CoreTrainingFold` / `CoreTrainingPlan`；
 - `CoreModelLineageSpec`；
 - `CoreModelArtifactManifest`；
@@ -68,10 +69,15 @@ manifest 并映射到公共合同；确需扩展共享合同则停止交主控�
 Ridge 使用项目已有的确定性安全模型制品能力。ZIP 时间戳、临时路径、线程数和进程
 身份不得进入内容差异。
 
+前向收益公式、成熟状态和标签批次由 WP-0072 的 `strategy_research.core.labels`
+唯一拥有。本包只从中筛选每周最后一个共同交易日并构造模型训练计划，不得复制标签
+公式、重新读取未来价格或发布第二种 `CoreLabelSpec`。
+
 ## 决策日、标签与样本
 
-- 只使用每周最后一个沪深共同交易日 `T` 的冻结截面；
-- 标签为 `P_research_close(T+H) / P_research_open(T+1) - 1`；
+- 只使用公共 label batch 中每周最后一个沪深共同交易日 `T` 的冻结截面；
+- 标签语义沿用公共
+  `P_research_close(T+H) / P_research_open(T+1) - 1`，本包不得重算；
 - 主目标为当日 U0 内绝对收益的升序截面百分位，平均秩并列，
   `(average_rank - 1) / (n - 1)`；`n < 2` 无效；
 - H20 与 H60 分别构造标签、训练计划、模型、预测和校准，禁止共享目标或用一个多输出

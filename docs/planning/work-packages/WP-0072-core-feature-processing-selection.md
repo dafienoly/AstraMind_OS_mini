@@ -1,6 +1,6 @@
 # WP-0072：核心特征处理、冻结选择与平行中性化诊断
 
-- 版本：1.0.0
+- 版本：1.1.0
 - 状态：已授权，依赖门等待 WP-0071A/B/C 全部集成
 - 需求：REQ-2026-0007 v2.3.0
 - 阶段：5B
@@ -23,7 +23,9 @@
 
 1. WP-0071A、WP-0071B、WP-0071C 均已由主控独立复核并集成到同一主线；
 2. 三包分别通过注册表哈希、golden、点时负测和公共 raw builder 身份验收；
-3. 工作树已显式同步到包含三包集成提交的最新主线且保持干净。
+3. 三包公开的规范公式/表达式和 computation manifest 足以逐项冻结 283 个 selection
+   prior；任何公式缺失或定义身份不一致先返回主控，不由本包猜测；
+4. 工作树已显式同步到包含三包集成提交的最新主线且保持干净。
 
 任一因子包阻断时，本包保持 `dependency_blocked`，不得用临时公式、空列、随机数或
 部分包结果代替。持续实施授权已经释放，不再请求重复功能授权。
@@ -42,6 +44,7 @@
 
 - `src/astramind_mini/strategy_research/core/feature_processing/**`
 - `src/astramind_mini/strategy_research/core/feature_selection/**`
+- `src/astramind_mini/strategy_research/core/labels/**`
 - `tests/unit/test_core_feature_processing_*.py`
 - `tests/unit/test_core_feature_selection_*.py`
 - `tests/golden/test_core_feature_processing_selection.py`
@@ -50,23 +53,35 @@
 
 不得修改 `strategy_research/core` 现有公共合同、三个因子包、`contracts/**`、
 `data/**`、`composition.py`、数据库迁移、根配置或前端。调用方分别从
-`strategy_research.core.feature_processing` 和
-`strategy_research.core.feature_selection` 导入；不修改高争用
+`strategy_research.core.feature_processing`、
+`strategy_research.core.feature_selection` 和
+`strategy_research.core.labels` 导入；不修改高争用
 `strategy_research/core/__init__.py`。若冻结合同无法表达必要身份，停止并把最小合同
 缺口交主控单独处理。
 
 ## 唯一所有者与公共 API
 
-Strategy Research 的两个内聚子包分别拥有：
+Strategy Research 的三个内聚子包分别拥有：
 
 1. `feature_processing`：三态覆盖、截面处理、填补、状态指示和中性化诊断；
 2. `feature_selection`：折内 RankIC、确定性重采样、BH、相关簇和冻结清单。
+3. `labels`：H20/H60 公共前向收益标签公式、成熟证据和独立标签快照；WP-0073A
+   复用该公共标签，不得再定义第二套标签语义。
 
 最小公开制品为：
 
 - `CoreProcessingSpec`：身份固定为 `core-feature-processing-v1`；
-- `CoreProcessedFeatureEnvelope`：绑定准确 raw envelope、U0、决策日集合、处理规格、
+- `CoreProcessedFeatureEnvelope`：绑定准确 raw envelope、U0、单个决策日、处理规格、
   每行处理结果、覆盖证据和内容哈希；
+- `CoreProcessedFeaturePanelManifest`：按日期升序绑定多个日级 processed/raw
+  envelope、准确 `CoreInputSnapshot`、U0、控制面板和内容哈希；跨日统计只能消费
+  该 manifest，不能把 T+H 数据塞回 T 日快照；
+- `CoreForwardReturnLabelSpec` / `CoreForwardReturnLabelBatch`：绑定 H20/H60、
+  T+1 开盘、T+H 收盘、标签数据快照、可用截止、成熟状态、绝对收益和截面百分位；
+- `CoreSelectionPriorManifest`：在打开 RankIC 前冻结每个定义的
+  `feature_id@version`、预期方向、经济机制、规范表达式和复杂度；
+- `CoreSelectionFold` / `CoreSelectionPlan`：只拥有特征选择的开发折和身份，不代替
+  WP-0073A 的模型训练计划；
 - `CoreSelectionSpec`：身份固定为 `core-feature-selection-v1`；
 - `CoreFeatureSelectionManifest`：绑定包、`H20` 或 `H60`、训练折、标签身份、方向登记、
   选择证据、选中列有序清单和内容哈希；
@@ -80,13 +95,32 @@ Strategy Research 的两个内聚子包分别拥有：
 ## 输入和点时边界
 
 - 每次请求只消费一个不可变 `CoreInputSnapshot` 血缘，不混合数据版本；
+- 每个处理 envelope 只对应一个决策日；跨日期处理和选择由
+  `CoreProcessedFeaturePanelManifest` 有序聚合，不能伪造一个“多日 CoreInputSnapshot”；
 - 处理截面必须是该决策日完整 U0 研究成员，不因状态或值缺失删除证券；
 - 只处理三包公共 raw builder 已验证的有限 `observed` 数值和显式非观测状态；
-- 标签由 WP-0070 的共同交易日历和 REQ-2026-0007 第 4 节构造，入场为 T+1 连续
-  研究开盘价，终点为 T+H 连续研究收盘价；标签成熟前不可进入选择；
+- 标签由本包 `labels` 子包按 WP-0070 共同交易日历和 REQ-2026-0007 第 4 节构造，
+  入场为 T+1 连续研究开盘价，终点为 T+H 连续研究收盘价；标签批次独立绑定实际
+  T+H 数据快照及可用截止，标签成熟前不可进入选择；
 - 训练折必须删除末端尚未成熟的 H60 标签，不加入未登记的对称 embargo；
 - 行业和流通市值控制只使用决策时点可知记录，不能回填当前行业或未来市值；
 - 当前会话行情、形成中分钟、未封存 Tick、X0 和执行诊断不得进入本包。
+
+### U0 与控制面板
+
+`CoreProcessingControlPanel` 按决策日、证券冻结完整 `CoreUniverseDecision`、
+点时 SW2021 L1、流通市值、各观察的 `available_at`、来源数据集身份和内容哈希。
+证券集合必须与当日 U0 研究成员逐一相等，缺行、多行、额外行、U0 哈希不符或控制记录
+晚于决策截止均失败关闭。行业/规模控制缺失只使相应填补回退或中性化诊断不可用，
+不能删除证券。
+
+每个 `CoreForwardReturnLabelBatch` 还必须逐 T 绑定当日完整
+`CoreUniverseDecision` 有序行集和 `universe_content_hash`。batch 保留完整 U0
+行集，但百分位只在其中具有合法、成熟绝对收益的行上计算，`n` 为这些合法行数；
+其他行 percentile 为空并保留原因，`n < 2` 时整个标签截面无效。每个预期证券必须有合法标签或明确
+`not_matured / entry_missing / horizon_close_missing / not_research_member` 原因。
+选择入口逐日验证 label U0、processed panel U0 和控制面 U0 完全相等，不能只比较
+日期或证券交集。
 
 ## 三态覆盖门
 
@@ -108,6 +142,9 @@ Strategy Research 的两个内聚子包分别拥有：
 
 无任何有适用成员日期或 `passing_date_ratio < 0.90` 时，整个因子在该折失败关闭，
 不能进入 `selected`。覆盖统计必须保存日期数、逐日计数、比率和稳定原因码。
+原始 envelope 的 `observed_coverage_ratio=observed/row_count` 只用于原始制品审计，
+因为其分母含 N/A，不能复用为本门槛；本包必须发布独立的 applicable coverage
+evidence。
 
 ## 统一截面处理
 
@@ -123,8 +160,9 @@ Strategy Research 的两个内聚子包分别拥有：
 3. `winsorized = clip(x, m - 5*s, m + 5*s)`；
 4. `z = (winsorized - m) / s`。
 
-若原始 `observed` 值非有限，转为 `missing` 并记录
-`non_finite_raw_value`。若没有 observed 值，截面处理失败关闭。若 `s = 0`，所有合法
+公共 raw envelope 已拒绝非有限 observed；“非有限转 missing”只属于纯规范化内核的
+防御性单测，受保护入口遇到该状态必须先拒绝被篡改的 raw envelope，不能绕过公共
+合同后发布 processed 制品。若没有 observed 值，截面处理失败关闭。若 `s = 0`，所有合法
 observed 值的 `winsorized` 保留原值、`z = 0`，并记录 `zero_scale`；不得加入 epsilon。
 原始值、`m`、`s`、上下界、缩尾值和 z 值都必须可重建。
 
@@ -168,8 +206,41 @@ observed 行两个指示均为 0；非观测行只有与其准确状态对应的
 - 每个非 observed 指示列跟随其父因子；父因子未选中时对应指示列也不进入模型；
 - `model_input_dimension` 等于选中数值列加其准确两类状态指示列的实际总数，不能仍称
   24、158 或 101 维。
+- 每个父因子的视图列固定按
+  `<feature_id>__value, <feature_id>__is_missing, <feature_id>__is_not_applicable`
+  排列，父因子之间沿规范公式顺序；列名、父级映射和顺序都进入内容身份。
+- full manifest 永久保留无 observed 截面的定义，但其模型视图标记
+  `blocked/no_observed_cross_section`；不得删列、填 0 或以其他日期统计量解锁。
+  因而 Alpha101-full 等候选可以合法处于 blocked，WP-0073A 不得绕过。
+
+阻断粒度固定如下：单因子单日无 observed 只阻断该日整个模型 view，不删除证券；
+训练计划可带稳定原因码排除该完整日期，但不能重算覆盖或选择证据，且排除日期和原因
+进入模型 lineage。某因子在整个 fold 无 observed、排除后达不到下游最小样本，或当前
+推理日任一必需父因子阻断时，整个对应 full/selected 候选阻断。不得删除父因子、
+以其他日期填充或只删除缺失证券来挽救候选。
 
 ## H20/H60 折内选择算法
+
+### 冻结先验与样本日历
+
+- H20/H60 特征选择使用每日完成日截面；模型训练和生产证据仍由 WP-0073A 使用每周
+  最后一个共同交易日。每日选择样本不得伪装成周度模型证据；
+- `CoreSelectionPriorManifest` 对 283 个规范定义逐项冻结方向 `+1/-1`、非空经济
+  机制 ID、简体中文机制摘要、规范表达式和复杂度，不允许 `unknown`、开发后改符号
+  或遗漏定义；
+- 复杂度固定为规范表达式词法序列中函数名、算术/比较/逻辑运算符、滚动/滞后算子
+  的 token 数；变量、括号和数值常量不计。tokenizer 版本和表达式哈希进入 manifest；
+- 若包公式、计算 manifest、方向、机制、适用范围、tokenizer 或复杂度变化，必须形成
+  新先验身份和新的选择 lineage；
+- 每个选择折由有序每日决策日、标签成熟截止、panel manifest、label batch 和先验
+  manifest 唯一标识。开发折至少拆成三个连续子折，每个子折至少 60 个有效每日
+  RankIC；不足时方向一致性为失败，不用较短区间替代。
+
+WP-0072 分两个提交阶段：Stage P 只能阅读规范公式和公开语义，创建
+`feature_selection/core_selection_priors_v1.json`，由主控独立复核 283 项完整性、
+方向和机制摘要并把内容哈希写入本包实施结果；在该提交冻结前禁止运行或查看任何
+RankIC、标签收益、2023～2025 回放或选择输出。Stage S 只能消费已冻结 prior，不得
+在统计开发中改写。Stage P/S 均属于现有持续实施授权，不是新的用户授权门。
 
 每个包、每个生产周期独立执行：
 
@@ -186,7 +257,27 @@ observed 行两个指示均为 0；非观测行只有与其准确状态对应的
 8. 每簇只保留一个代表，依次比较：预登记方向跨折一致、注册表公式复杂度更低、覆盖
    更高、特征换手更低、RankIC 稳定性更高、注册 ID 字典序更前。
 
-所有比较量必须定义为可排序的有限标量并持久化。完全相同才进入下一 tie-break。
+因子相关只使用两个父因子在当日都为原始 `observed` 的处理后主 z 值，平均秩处理
+并列；配对证券少于 5 的日期无效，每对因子至少需要 60 个有效相关日，否则距离为
+`correlation_evidence_insufficient`，不得把未知距离当作 0、1 或可合并。特征换手也
+只使用相邻两日都为原始 `observed`、且属于两日 U0 交集的证券；先在各自日期转成
+截面百分位，再计算共同证券绝对变化均值，至少 5 只共同证券和 60 个有效日期转移，
+否则为 `not_comparable`。填补值和 N/A 占位不得进入相关或换手。
+
+BH 将候选按 `(p_value, feature_id@version)` 升序排列，取最大
+`k: p_k <= (k/m)*0.10`，前 k 项通过；p 值相同也不得依赖输入顺序。相关距离固定为
+`1 - abs(median_daily_spearman)`；完全链接从单元素簇开始，只合并最大两两距离
+`<= 0.15` 的簇；任一两两距离未知则该合并不合法。候选合并并列时按两个有序成员
+ID 元组的字典序决定。
+
+方向跨折一致固定为三个连续子折的有符号平均 RankIC 均严格大于 0；覆盖比较量为折内
+合格日期 `coverage_d` 的算术均值；特征换手为相邻有效日期、共同证券上截面百分位
+绝对变化均值的时间中位数，越低越优；稳定性为
+`1 / (1 + MAD(signed_daily_RankIC))`，越高越优。任一比较量不可构造时使用明确
+`not_comparable` 并排在可比较候选之后，不用 0 冒充。
+
+所有比较量必须是有限标量或明确 `not_comparable` 并持久化。完全相同才进入下一
+tie-break。
 预登记方向和公式复杂度来自冻结注册表，不能根据开发期表现回写。D1/D3/D5 可由后续
 诊断调用同一统计原语，但其结果不得写入 H20/H60 selection manifest。
 
@@ -194,22 +285,33 @@ observed 行两个指示均为 0；非观测行只有与其准确状态对应的
 
 种子输入使用 UTF-8 文本：
 
-`definition_version + "|" + horizon + "|" + fold_identity`
+`feature_id + "@" + definition_version + "|" + horizon + "|" + fold_identity`
 
 计算 SHA-256，取 digest 前 8 字节按 big-endian 解释为无符号 64 位整数。区块起点由
-该种子的确定性伪随机流生成。训练行顺序、证券顺序、行业顺序和并列秩规则必须固定；
+该种子的 SplitMix64-v1 流生成：每次先令
+`state=(state+0x9E3779B97F4A7C15) mod 2^64; z=state`，
+`z=((z xor (z>>30))*0xBF58476D1CE4E5B9) mod 2^64`，
+`z=((z xor (z>>27))*0x94D049BB133111EB) mod 2^64`，
+`output=z xor (z>>31)`；起点为输出 `mod n`，按该精确映射有放回取样，不使用拒绝
+采样或浮点均匀分布。每次 replicate 依次生成
+`ceil(n/20)` 个起点，每个展开 `(start+j) mod n, j=0..19`，拼接后只保留前 n 项；
+严格按 replicate 0..9999 顺序计算。必须提交至少三个
+`seed → 前十起点 → 首个重采样索引` golden vector。训练行顺序、证券顺序、行业顺序和并列秩规则必须固定；
 禁止使用进程随机 hash。
 
 ## Golden 与负向证明
 
 golden fixture 至少包含：
 
-- 三个包、260 个共同交易日、至少 12 只证券、三个 SW L1 行业；
+- 三个包、260 个共同交易日、至少 24 只证券、三个 SW L1 行业，以便同时覆盖
+  `n >= 5*p` 的成功 OLS 和样本不足分支；
 - observed/missing/not_applicable、非有限输入、零 MAD、行业不足 10 个 observed、
   无 U0 observed、控制缺失、样本不足和秩亏；
 - H20/H60 不同有效因子、BH 临界通过/失败、正负相关和完全链接反链式案例；
 - 两个训练折及一个 2023～2025 冻结回放身份；
 - 追加未来行情、标签、行业或市值后，历史截止前制品和选择身份不变。
+- 标签未成熟、标签快照晚于选择截止、U0/控制面板缺行/多行、旧 raw coverage 被误用、
+  全 N/A full 视图、D1/D3/D5 注入及旧先验 hash 攻击均有失败关闭反例。
 
 处理 oracle 使用手算小截面；Spearman、OLS、BH 和 bootstrap 至少各有独立参考实现，
 不得调用生产入口生成期望值。处理数值使用 `atol=rtol=1e-12`，OLS 和相关归约使用
@@ -227,21 +329,27 @@ golden fixture 至少包含：
 8. 同一输入重复运行身份一致；任何语义输入变化重标识；默认检查在 90 秒内。
 9. 导入图不包含 Data 内部模块、MiniQMT、Portfolio & Risk、Trading Execution、
    LightGBM、前端或网络。
+10. 单日 processed envelope 与多日 panel 身份分离；标签使用独立成熟数据快照；
+    U0/控制面板精确行集、每日选择日历、先验方向/机制/复杂度、BH/linkage 并列和
+    固定视图列顺序均有篡改负测。
 
 ## 检查
 
 ```text
 uv run pytest tests/unit/test_core_feature_processing_*.py \
   tests/unit/test_core_feature_selection_*.py \
+  tests/unit/test_core_labels_*.py \
   tests/golden/test_core_feature_processing_selection.py -q
 uv run pytest tests/unit/test_core_universe.py tests/unit/test_core_data_semantics.py \
   tests/unit/test_core_feature_identity.py tests/unit/test_architecture.py -q
 uv run ruff check src/astramind_mini/strategy_research/core/feature_processing \
   src/astramind_mini/strategy_research/core/feature_selection \
+  src/astramind_mini/strategy_research/core/labels \
   tests/unit/test_core_feature_processing_*.py tests/unit/test_core_feature_selection_*.py \
-  tests/golden/test_core_feature_processing_selection.py
+  tests/unit/test_core_labels_*.py tests/golden/test_core_feature_processing_selection.py
 uv run mypy --strict src/astramind_mini/strategy_research/core/feature_processing \
-  src/astramind_mini/strategy_research/core/feature_selection
+  src/astramind_mini/strategy_research/core/feature_selection \
+  src/astramind_mini/strategy_research/core/labels
 make docs-check
 git diff --check
 ```
