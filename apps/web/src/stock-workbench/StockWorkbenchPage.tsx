@@ -103,8 +103,11 @@ function StockWorkbenchReady({
     </header>
     <SecurityMarketInspector
       completed={value.completed_market_evidence}
+      dataSnapshotId={value.focus.data_snapshot_id}
+      evidenceCutoff={value.focus.as_of}
       instrumentId={identity.instrument_id}
       instrumentName={identity.instrument_name}
+      instrumentType="stock"
       realtime={{ state, quote, minutes }}
     />
     <div className="stock-context-grid">

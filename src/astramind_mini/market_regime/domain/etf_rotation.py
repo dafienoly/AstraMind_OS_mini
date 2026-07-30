@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
 from itertools import pairwise
@@ -58,6 +59,8 @@ class CandidateInput:
 
 def evaluate_candidate(value: CandidateInput) -> EtfRotationCandidate:
     prices = tuple(sorted(value.prices, key=lambda item: item.trade_date))
+    display_start = _one_year_before(value.decision_cutoff)
+    display_prices = tuple(item for item in prices if item.trade_date >= display_start)
     latest = prices[-1] if prices else None
     amount20 = (
         median(item.amount_cny for item in prices[-20:] if item.amount_cny is not None)
@@ -135,9 +138,9 @@ def evaluate_candidate(value: CandidateInput) -> EtfRotationCandidate:
         tracking_evidence_kind=("sw_l1_exposure_proxy" if tracking is not None else "unavailable"),
         price_conclusion=_price_conclusion(structure, return20),
         rejection_reasons=tuple(reasons),
-        candles=prices[-520:],
-        weekly_candles=_aggregate(prices, "week"),
-        monthly_candles=_aggregate(prices, "month"),
+        candles=display_prices,
+        weekly_candles=_aggregate(display_prices, "week"),
+        monthly_candles=_aggregate(display_prices, "month"),
     )
 
 
@@ -240,6 +243,11 @@ def _liquidity(amount: float | None) -> float:
     return _clamp(
         100.0 * math.log(amount / MIN_AMOUNT_CNY) / math.log(200_000_000.0 / MIN_AMOUNT_CNY)
     )
+
+
+def _one_year_before(value: date) -> date:
+    year = value.year - 1
+    return date(year, value.month, min(value.day, monthrange(year, value.month)[1]))
 
 
 def _tracking_error(

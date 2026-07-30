@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, cast
@@ -21,20 +22,16 @@ def index_views(
     path: tuple[Path, ...],
     cutoff: date,
 ) -> tuple[BroadIndexView, ...]:
+    history_start = cutoff - timedelta(days=400)
+    display_start = _one_year_before(cutoff)
     rows = connection.execute(
         """
-        WITH bounded AS (
-          SELECT *, row_number() OVER (
-            PARTITION BY instrument_id ORDER BY trade_date DESC
-          ) AS recent_rank
-          FROM read_parquet(?) WHERE trade_date <= ?
-        )
         SELECT instrument_id, instrument_name, trade_date, open, high, low, close,
                change, percent_change, volume_lots, amount_cny
-        FROM bounded WHERE recent_rank <= 520
+        FROM read_parquet(?) WHERE trade_date BETWEEN ? AND ?
         ORDER BY instrument_id, trade_date
         """,
-        [[str(item) for item in path], cutoff],
+        [[str(item) for item in path], history_start, cutoff],
     ).fetchall()
     grouped: dict[str, list[tuple[Any, ...]]] = {}
     for row in rows:
@@ -56,6 +53,7 @@ def index_views(
                 amount_cny=float(row[10]) if row[10] is not None else None,
             )
             for row in values
+            if row[2] >= display_start
         )
         result.append(
             BroadIndexView(
@@ -162,6 +160,11 @@ def market_totals(
 def _index_order(code: str) -> int:
     order = ("000001.SH", "399001.SZ", "399006.SZ", "000688.SH", "000300.SH", "000852.SH")
     return order.index(code) if code in order else len(order)
+
+
+def _one_year_before(value: date) -> date:
+    year = value.year - 1
+    return date(year, value.month, min(value.day, monthrange(year, value.month)[1]))
 
 
 __all__ = ["index_views", "market_totals"]

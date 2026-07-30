@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { TechnicalDetails } from "../business-language/TechnicalDetails";
 import { marketBusinessTexts } from "../business-language/marketBusinessText";
@@ -9,6 +9,11 @@ import {
 } from "../market/candleFixture";
 import { PriceChart } from "../market/PriceChart";
 import { RangeSelector } from "../market/RangeSelector";
+import {
+  HistoryWindowSelector,
+  type PriceHistoryWindow,
+  usePriceHistory,
+} from "../market/priceHistory";
 import type { MarketDashboardProjection } from "./types";
 import type { RealtimeMarketView } from "./useRealtimeMarket";
 
@@ -24,10 +29,19 @@ export function OverviewView({
   const initial = projection.selected_index_id ?? projection.indexes[0]?.instrument_id ?? "";
   const [selectedId, setSelectedId] = useState(initial);
   const [timeframe, setTimeframe] = useState<Timeframe>("日线");
+  const [historyWindow, setHistoryWindow] = useState<PriceHistoryWindow>("one_year");
   const selected = projection.indexes.find((item) => item.instrument_id === selectedId)
     ?? projection.indexes[0];
+  const history = usePriceHistory({
+    instrumentType: "index",
+    instrumentId: selected?.instrument_id ?? "",
+    dataSnapshotId: projection.data_snapshot_id,
+    evidenceCutoff: projection.evidence_cutoff ?? projection.as_of.slice(0, 10),
+    window: historyWindow,
+    fallback: selected?.candles ?? [],
+  });
   const daily = useMemo<Candle[]>(
-    () => (selected?.candles ?? []).map((item) => ({
+    () => history.bars.map((item) => ({
       time: item.trade_date,
       open: item.open,
       high: item.high,
@@ -36,13 +50,16 @@ export function OverviewView({
       volume: item.volume_lots,
       amount: item.amount_cny,
     })),
-    [selected],
+    [history.bars],
   );
   const candles = useMemo(() => aggregateCandles(daily, timeframe), [daily, timeframe]);
   const [range, setRange] = useState<[number, number]>(() => [
     Math.max(0, candles.length - 100),
     Math.max(0, candles.length - 1),
   ]);
+  useEffect(() => {
+    setRange([Math.max(0, candles.length - 100), Math.max(0, candles.length - 1)]);
+  }, [candles.length, selectedId, timeframe]);
   const end = Math.min(range[1], Math.max(0, candles.length - 1));
   const start = Math.min(range[0], Math.max(0, end - 1));
   const visible = candles.slice(start, end + 1);
@@ -71,6 +88,7 @@ export function OverviewView({
 
   function selectIndex(item: MarketDashboardProjection["indexes"][number]) {
     setSelectedId(item.instrument_id);
+    setHistoryWindow("one_year");
     const count = aggregateCandles(toCandles(item.candles), timeframe).length;
     setRange([Math.max(0, count - 100), Math.max(0, count - 1)]);
   }
@@ -100,7 +118,13 @@ export function OverviewView({
                 onClick={() => switchPeriod(item)} type="button">{item}</button>
             ))}
           </div>
+          <HistoryWindowSelector
+            onChange={setHistoryWindow}
+            state={history.kind}
+            value={historyWindow}
+          />
         </header>
+        <HistoryCoverageNote history={history} />
         <PriceChart candles={visible} liveReference={liveReference} />
         <RangeSelector
           count={candles.length}
@@ -114,6 +138,22 @@ export function OverviewView({
       <MarketInspector projection={projection} realtime={realtime} selected={selected} />
     </div>
   </>;
+}
+
+function HistoryCoverageNote({
+  history,
+}: {
+  history: ReturnType<typeof usePriceHistory>;
+}) {
+  if (history.kind === "error") return <p className="history-coverage-note">
+    {history.message}，继续显示近一年快照行情。
+  </p>;
+  if (history.kind !== "ready") return null;
+  return <p className="history-coverage-note">
+    实际覆盖 {history.page.coverage_start ?? "不可用"} 至 {
+      history.page.coverage_end ?? "不可用"
+    } · 快照和证据截止保持不变
+  </p>;
 }
 
 function IndexRibbon({

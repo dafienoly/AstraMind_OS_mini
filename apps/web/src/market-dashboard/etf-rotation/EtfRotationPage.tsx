@@ -114,8 +114,11 @@ export function EtfRotationPage() {
             weekly: candidate.weekly_candles,
             monthly: candidate.monthly_candles,
           }}
+          dataSnapshotId={value.data_snapshot_id}
+          evidenceCutoff={value.evidence_cutoff ?? value.as_of.slice(0, 10)}
           instrumentId={candidate.etf_code}
           instrumentName={candidate.etf_name ?? candidate.etf_code}
+          instrumentType="etf"
           realtime={{
             state: detail.state,
             quote: detail.quote,

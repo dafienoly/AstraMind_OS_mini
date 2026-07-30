@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from astramind_mini.config import Settings
 from astramind_mini.data.public import RealtimeInstrumentProjection, RealtimeMinuteBar
 
+from .price_history_api import register_price_history_route
 from .public import (
     SnapshotStockWorkbench,
     StockRealtimeMarketOverlay,
@@ -33,6 +34,7 @@ def register_stock_workbench_route(
     settings: Settings,
     realtime_store: RealtimeStockOverlayReader,
 ) -> None:
+    register_price_history_route(app, settings)
 
     @app.get(
         "/api/market/stocks/{instrument_id}",

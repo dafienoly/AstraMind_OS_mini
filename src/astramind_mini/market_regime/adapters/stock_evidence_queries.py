@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from datetime import date, datetime
 from decimal import Decimal
 from itertools import pairwise
@@ -31,16 +32,17 @@ def price_candles(
 ) -> tuple[PriceCandle, ...]:
     if instrument_id is None:
         return ()
+    history_start = _one_year_before(as_of)
     if period == "day":
         rows = connection.execute(
             """
             SELECT trade_date, open, high, low, close, volume_lots,
                    amount_thousand_cny * 1000
             FROM read_parquet(?)
-            WHERE instrument_id = ? AND trade_date <= ?
-            ORDER BY trade_date DESC LIMIT 300
+            WHERE instrument_id = ? AND trade_date BETWEEN ? AND ?
+            ORDER BY trade_date DESC
             """,
-            [market_paths, instrument_id, as_of],
+            [market_paths, instrument_id, history_start, as_of],
         ).fetchall()
     else:
         rows = _aggregate_period(
@@ -48,6 +50,7 @@ def price_candles(
             market_paths,
             calendar_paths,
             instrument_id=instrument_id,
+            start=history_start,
             as_of=as_of,
             period=period,
         )
@@ -71,6 +74,7 @@ def _aggregate_period(
     calendar_paths: list[str],
     *,
     instrument_id: str,
+    start: date,
     as_of: date,
     period: Literal["week", "month"],
 ) -> list[tuple[object, ...]]:
@@ -92,15 +96,15 @@ def _aggregate_period(
                  sum(volume_lots) AS volume_lots,
                  sum(amount_thousand_cny) * 1000 AS amount_cny
           FROM read_parquet(?)
-          WHERE instrument_id = ? AND trade_date <= ?
+          WHERE instrument_id = ? AND trade_date BETWEEN ? AND ?
           GROUP BY bucket
         )
         SELECT c.period_end, b.open, b.high, b.low, b.close, b.volume_lots, b.amount_cny
         FROM bars b JOIN calendar_ends c USING (bucket)
         WHERE c.period_end <= ?
-        ORDER BY c.period_end DESC LIMIT 180
+        ORDER BY c.period_end DESC
         """,
-        [calendar_paths, market_paths, instrument_id, as_of, as_of],
+        [calendar_paths, market_paths, instrument_id, start, as_of, as_of],
     ).fetchall()
 
 
@@ -162,30 +166,20 @@ def _fundamental_history(
                  m.amount_thousand_cny * 1000 amount_cny
           FROM read_parquet(?) m
           LEFT JOIN read_parquet(?) b USING (instrument_id, trade_date)
-          WHERE m.instrument_id = ? AND m.trade_date <= ?
+          WHERE m.instrument_id = ?
+            AND m.trade_date BETWEEN (? - INTERVAL 5 YEAR) AND ?
             AND CAST(m.available_at AT TIME ZONE 'Asia/Shanghai' AS DATE) <= ?
             AND (
               b.available_at IS NULL
               OR CAST(b.available_at AT TIME ZONE 'Asia/Shanghai' AS DATE) <= ?
             )
-        ), ranked AS (
-          SELECT *,
-                 row_number() OVER (ORDER BY trade_date DESC) recent_rank,
-                 row_number() OVER (
-                   PARTITION BY date_trunc('week', trade_date) ORDER BY trade_date DESC
-                 ) week_rank,
-                 row_number() OVER (
-                   PARTITION BY date_trunc('month', trade_date) ORDER BY trade_date DESC
-                 ) month_rank
-          FROM evidence
         )
         SELECT trade_date, available_at, close, percent_change, turnover_rate,
                price_earnings_ttm, price_book, total_mv, circulating_mv, amount_cny
-        FROM ranked
-        WHERE recent_rank <= 300 OR week_rank = 1 OR month_rank = 1
+        FROM evidence
         ORDER BY trade_date
         """,
-        [market_paths, basic_paths, instrument_id, as_of, as_of, as_of],
+        [market_paths, basic_paths, instrument_id, as_of, as_of, as_of, as_of],
     ).fetchall()
     return tuple(
         StockFundamentalEvidence(
@@ -324,6 +318,11 @@ def _float(value: object) -> float | None:
     if not isinstance(value, (int, float, Decimal)):
         raise ValueError("股票证据数值字段类型无效")
     return float(value)
+
+
+def _one_year_before(value: date) -> date:
+    year = value.year - 1
+    return date(year, value.month, min(value.day, monthrange(year, value.month)[1]))
 
 
 __all__ = ["price_candles", "stock_evidence"]

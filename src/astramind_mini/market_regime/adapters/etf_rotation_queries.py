@@ -19,14 +19,10 @@ def load_prices(
 ) -> tuple[dict[str, list[PriceCandle]], date | None, date | None]:
     rows = connection.execute(
         """
-        WITH bounded AS (
-          SELECT *, row_number() OVER (
-            PARTITION BY instrument_id ORDER BY trade_date DESC
-          ) recent_rank
-          FROM read_parquet(?) WHERE trade_date <= ? AND available_at::DATE <= ?
-        )
         SELECT instrument_id, trade_date, open, high, low, close, volume_lots, amount_cny
-        FROM bounded WHERE recent_rank <= 520 ORDER BY instrument_id, trade_date
+        FROM read_parquet(?)
+        WHERE trade_date <= ? AND available_at::DATE <= ?
+        ORDER BY instrument_id, trade_date
         """,
         [_strings(paths), cutoff, cutoff],
     ).fetchall()
@@ -55,14 +51,9 @@ def load_industry_closes(
 ) -> dict[str, list[tuple[date, float]]]:
     rows = connection.execute(
         """
-        WITH bounded AS (
-          SELECT *, row_number() OVER (
-            PARTITION BY industry_code ORDER BY trade_date DESC
-          ) recent_rank
-          FROM read_parquet(?) WHERE level='L1' AND trade_date <= ?
-        )
-        SELECT industry_code, trade_date, close FROM bounded
-        WHERE recent_rank <= 520 ORDER BY industry_code, trade_date
+        SELECT industry_code, trade_date, close FROM read_parquet(?)
+        WHERE level='L1' AND trade_date <= ?
+        ORDER BY industry_code, trade_date
         """,
         [_strings(paths), cutoff],
     ).fetchall()

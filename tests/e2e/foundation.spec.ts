@@ -42,8 +42,10 @@ test("today consumes the same daily exception projection", async ({ page }) => {
 test("market overview and industry heat use one bounded projection per view", async ({ page }) => {
   test.setTimeout(120_000);
   let dashboardRequests = 0;
+  let historyRequests = 0;
   page.on("request", (request) => {
     if (request.url().includes("/api/market/dashboard")) dashboardRequests += 1;
+    if (request.url().includes("/api/market/history/index/")) historyRequests += 1;
   });
   mkdirSync("var/evidence", { recursive: true });
 
@@ -60,9 +62,12 @@ test("market overview and industry heat use one bounded projection per view", as
   await expect(page.getByRole("region", { name: "宽基指数" }).getByRole("button"))
     .toHaveCount(6);
   await page.getByRole("button", { name: /上证指数/ }).click();
+  await page.getByRole("button", { name: "近五年" }).click();
+  await expect(page.getByText(/实际覆盖 .* · 快照和证据截止保持不变/)).toBeVisible();
   await page.getByRole("button", { name: "周线" }).click();
   await expect(page.getByRole("heading", { name: "上证指数" })).toBeVisible();
   expect(dashboardRequests).toBe(1);
+  expect(historyRequests).toBeGreaterThanOrEqual(1);
   await page.screenshot({
     path: "var/evidence/wp-0045-realtime-market-overview.png",
     fullPage: true,
