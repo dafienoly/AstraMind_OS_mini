@@ -30,6 +30,7 @@ from astramind_mini.strategy_research.core import (
     select_point_in_time_industry,
     visible_core_market_observations,
 )
+from astramind_mini.strategy_research.core.packages import CORE_FEATURE_ORDERS
 
 TZ = datetime.fromisoformat("2026-01-01T00:00:00+08:00").tzinfo
 CUTOFF = datetime(2026, 1, 30, 18, 0, tzinfo=TZ)
@@ -75,6 +76,7 @@ def test_core_semantics_and_three_package_specs_are_frozen() -> None:
             authoritative_source="REQ-2026-0007-v2.3.0-section-6",
             data_semantics_version="core-data-semantics-v1",
             universe_version="U0-v1",
+            required_definition_registry_hash=ASTRAMIND_F0.required_definition_registry_hash,
         )
 
 
@@ -373,9 +375,7 @@ def test_core_input_snapshot_rejects_future_or_mutable_data() -> None:
 def _raw_package_rows(
     package: CoreFeaturePackageSpec,
 ) -> tuple[tuple[str, ...], tuple[CoreRawFeatureRowDraft, ...]]:
-    feature_order = tuple(
-        f"{package.package_id}:feature-{index:03d}" for index in range(package.canonical_dimension)
-    )
+    feature_order = CORE_FEATURE_ORDERS[package.package_id]
     rows = []
     exceptional_states = {
         (1, 0): (FeatureAvailabilityState.MISSING, None, "formula_input_missing"),
@@ -470,18 +470,17 @@ def test_all_three_packages_share_idempotent_two_stage_raw_envelope(
     assert all(item.neutralized_diagnostic is None for item in envelope.rows)
 
 
-def test_raw_envelope_order_and_content_changes_reidentify() -> None:
+def test_raw_envelope_rejects_order_changes_and_reidentifies_content() -> None:
     feature_order, rows = _raw_package_rows(ASTRAMIND_F0)
     baseline = _build_raw(ASTRAMIND_F0, feature_order, rows)
-    reversed_order = _build_raw(ASTRAMIND_F0, tuple(reversed(feature_order)), rows)
+    with pytest.raises(ValueError, match="canonical package"):
+        _build_raw(ASTRAMIND_F0, tuple(reversed(feature_order)), rows)
     changed_rows = (
         rows[0].model_copy(update={"value_raw": (rows[0].value_raw or 0.0) + 1.0}),
         *rows[1:],
     )
     content_changed = _build_raw(ASTRAMIND_F0, feature_order, changed_rows)
-    assert reversed_order.feature_snapshot.content_hash != baseline.feature_snapshot.content_hash
     assert content_changed.feature_snapshot.content_hash != baseline.feature_snapshot.content_hash
-    assert reversed_order.manifest.row_order != baseline.manifest.row_order
 
 
 def test_raw_envelope_fails_closed_on_width_duplicates_and_wrong_cutoff() -> None:

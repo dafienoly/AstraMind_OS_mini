@@ -10,7 +10,6 @@ from astramind_mini.contracts import FeatureSnapshot
 
 from .contracts import CoreFeaturePackageSpec, CoreInputSnapshot
 from .feature_identity import (
-    canonical_definition_registry_hash,
     canonical_feature_snapshot_id,
     canonical_manifest_content_hash,
     canonical_manifest_id,
@@ -18,6 +17,7 @@ from .feature_identity import (
     canonical_raw_snapshot_content_hash,
     canonical_row_content_hashes,
     canonical_rows_content_hash,
+    validated_definition_registry_hash,
 )
 from .feature_output import (
     CoreFeatureCoverage,
@@ -62,7 +62,11 @@ def prepare_core_raw_feature_batch(
     row_content_hashes = canonical_row_content_hashes(canonical_rows)
     rows_content_hash = canonical_rows_content_hash(row_content_hashes)
     package_spec_hash = canonical_package_spec_hash(package_spec)
-    registry_hash = canonical_definition_registry_hash(ordered_features, canonical_rows)
+    registry_hash = validated_definition_registry_hash(
+        package_spec,
+        ordered_features,
+        canonical_rows,
+    )
     content_hash = canonical_raw_snapshot_content_hash(
         core_input_snapshot_id=core_input.core_input_snapshot_id,
         core_input_content_hash=core_input.content_hash,

@@ -119,6 +119,10 @@ WP-0071A/B/C。三个因子包可以并行计算，但不得并行修改本包�
   身份、行数、逐特征覆盖和内容哈希，并显式绑定核心输入、完整包规范与定义注册表
   哈希；draft、manifest、envelope 均用同一组规范身份函数重算验证，原始阶段不做
   缩尾、填补、标准化或中性化；
+- `CoreFeaturePackageSpec` 进一步冻结三包准确 `required_definition_registry_hash`：
+  F0 使用第 6 节 24 个 ID 顺序，Alpha158 使用固定 Qlib 158 维顺序，Alpha101 使用
+  `alpha101_001` 至 `alpha101_101`；builder、draft、manifest、envelope 都要求实际
+  注册表哈希与包内锚点一致，即使伪造方重算全部行、snapshot 和 manifest 身份也失败；
 - 三份聚焦单测覆盖新股、北交所、ST、未知、停牌、流动性/覆盖、未来泄漏、
   非 A 股、规格篡改、三态/非有限值、三包共用 envelope、宽度/重复、幂等与内容变化
   负测；身份与 dump 篡改负测独立放在专属测试模块，既有数据语义测试保持原样。

@@ -61,6 +61,17 @@ def canonical_definition_registry_hash(
     )
 
 
+def validated_definition_registry_hash(
+    package_spec: CoreFeaturePackageSpec,
+    feature_order: Sequence[str],
+    rows: Sequence[DefinitionRow],
+) -> str:
+    registry_hash = canonical_definition_registry_hash(feature_order, rows)
+    if registry_hash != package_spec.required_definition_registry_hash:
+        raise ValueError("definition registry does not match the canonical package")
+    return registry_hash
+
+
 def canonical_raw_row_hash(row: RawValueRow) -> str:
     return research_hash(
         {
@@ -178,4 +189,5 @@ __all__ = [
     "canonical_raw_snapshot_content_hash",
     "canonical_row_content_hashes",
     "canonical_rows_content_hash",
+    "validated_definition_registry_hash",
 ]

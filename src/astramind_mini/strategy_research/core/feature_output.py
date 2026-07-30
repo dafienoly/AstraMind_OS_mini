@@ -15,7 +15,6 @@ from astramind_mini.contracts.base import (
 
 from .contracts import CoreFeaturePackageSpec
 from .feature_identity import (
-    canonical_definition_registry_hash,
     canonical_feature_snapshot_id,
     canonical_manifest_content_hash,
     canonical_manifest_id,
@@ -23,6 +22,7 @@ from .feature_identity import (
     canonical_raw_snapshot_content_hash,
     canonical_row_content_hashes,
     canonical_rows_content_hash,
+    validated_definition_registry_hash,
 )
 from .feature_values import (
     CoreFeatureValue,
@@ -53,7 +53,11 @@ class CoreRawFeatureBatchDraft(ContractModel):
         row_hashes = canonical_row_content_hashes(self.rows)
         rows_hash = canonical_rows_content_hash(row_hashes)
         package_hash = canonical_package_spec_hash(self.package_spec)
-        registry_hash = canonical_definition_registry_hash(self.feature_order, self.rows)
+        registry_hash = validated_definition_registry_hash(
+            self.package_spec,
+            self.feature_order,
+            self.rows,
+        )
         content_hash = canonical_raw_snapshot_content_hash(
             core_input_snapshot_id=self.core_input_snapshot_id,
             core_input_content_hash=self.core_input_content_hash,
@@ -148,7 +152,8 @@ class CoreRawFeatureManifest(ContractModel):
             raise ValueError("manifest package identity does not match package spec")
         if self.package_spec_hash != canonical_package_spec_hash(self.package_spec):
             raise ValueError("manifest package spec hash mismatch")
-        registry_hash = canonical_definition_registry_hash(
+        registry_hash = validated_definition_registry_hash(
+            self.package_spec,
             self.feature_order,
             self.row_order,
         )
@@ -272,7 +277,8 @@ def _validate_envelope_content_identity(envelope: CoreRawFeatureEnvelope) -> Non
     if envelope.manifest.rows_content_hash != canonical_rows_content_hash(row_hashes):
         raise ValueError("envelope rows content hash mismatch")
     package_hash = canonical_package_spec_hash(envelope.package_spec)
-    registry_hash = canonical_definition_registry_hash(
+    registry_hash = validated_definition_registry_hash(
+        envelope.package_spec,
         envelope.feature_order,
         envelope.rows,
     )

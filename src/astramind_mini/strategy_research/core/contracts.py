@@ -252,20 +252,39 @@ class CoreFeaturePackageSpec(_ValidatedCopyContract):
     authoritative_source: Identifier
     data_semantics_version: Literal["core-data-semantics-v1"]
     universe_version: Literal["U0-v1"]
+    required_definition_registry_hash: ContentHash
 
     @model_validator(mode="after")
     def validate_canonical_package(self) -> CoreFeaturePackageSpec:
         expected = {
-            "astramind-f0-v1": (24, "REQ-2026-0007-v2.3.0-section-6"),
+            "astramind-f0-v1": (
+                24,
+                "REQ-2026-0007-v2.3.0-section-6",
+                "core-data-semantics-v1",
+                "U0-v1",
+                "sha256:5fd8435ecfd1dee75ca078a6aed7cfd47a257efa427394766938ba1fa5598b9b",
+            ),
             "qlib-alpha158-79633dd": (
                 158,
                 "qlib-79633dd9506ea689e5400dea0197717b5b3d74b7",
+                "core-data-semantics-v1",
+                "U0-v1",
+                "sha256:002151c6f808dc503b292caa604435f634d69672193288535f3fec504dd61c04",
             ),
-            "formulaic-alpha101-v3": (101, "arxiv-1601.00991v3"),
+            "formulaic-alpha101-v3": (
+                101,
+                "arxiv-1601.00991v3",
+                "core-data-semantics-v1",
+                "U0-v1",
+                "sha256:6895ebea945ed4c95e43d8fd7d19cd97a77fb3a32f7868133c320a5f9ebde1c5",
+            ),
         }
         if expected.get(self.package_id) != (
             self.canonical_dimension,
             self.authoritative_source,
+            self.data_semantics_version,
+            self.universe_version,
+            self.required_definition_registry_hash,
         ):
             raise ValueError("unknown or altered canonical core feature package")
         return self
