@@ -57,6 +57,60 @@ test("stock watchlist renders dynamic feed state through business language", asy
   await expect(page.getByText("brand_new_internal_code", { exact: true })).toHaveCount(0);
 });
 
+test("approved stock inspector exposes deterministic minute scales and five-day window", async ({
+  page,
+}) => {
+  await page.addInitScript((projection) => {
+    class NoopEventSource {
+      static readonly CONNECTING = 0;
+      static readonly OPEN = 1;
+      static readonly CLOSED = 2;
+      readonly readyState = 1;
+      constructor(readonly url: string | URL) {}
+      addEventListener() {}
+      close() {}
+      dispatchEvent() { return true; }
+      removeEventListener() {}
+    }
+    window.EventSource = NoopEventSource as unknown as typeof EventSource;
+    window.fetch = async (input) => {
+      const url = typeof input === "string"
+        ? input
+        : input instanceof URL ? input.href : input.url;
+      if (url.includes("/api/market/stocks/")) {
+        return Response.json(projection);
+      }
+      if (url.includes("/bars?")) {
+        return Response.json({
+          instrument_id: "000001.SZ",
+          frequency_minutes: 1,
+          start_date: "2026-07-30",
+          end_date: "2026-07-30",
+          sessions: ["2026-07-30"],
+          bars: [],
+          indicators: [],
+          indicator_state: "insufficient_seed",
+          known_gaps: [],
+          next_cursor: `sha256:${"d".repeat(64)}`,
+        });
+      }
+      return new Response(null, { status: 404 });
+    };
+  }, stockWorkbenchProjection());
+
+  await page.goto(
+    "/stocks/000001.SZ?origin=watchlist&mode=completed&return_target=market_stocks",
+  );
+  await page.getByRole("button", { name: "分钟", exact: true }).click();
+
+  await expect(page.getByLabel("分钟周期与窗口")).toBeVisible();
+  for (const label of ["1 分钟", "5 分钟", "15 分钟", "30 分钟", "60 分钟", "120 分钟"]) {
+    await expect(page.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole("button", { name: "5 日", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "年 K", exact: true })).toBeVisible();
+});
+
 function realtimeProjection() {
   return {
     projection_id: `sha256:${"a".repeat(64)}`,
@@ -89,5 +143,80 @@ function realtimeProjection() {
     }],
     open_minutes: [],
     known_gaps: ["brand_new_internal_code"],
+  };
+}
+
+function stockWorkbenchProjection() {
+  const identity = `sha256:${"c".repeat(64)}`;
+  return {
+    focus: {
+      focus_id: identity,
+      instrument_id: "000001.SZ",
+      origin: "watchlist",
+      as_of: "2026-07-30",
+      data_snapshot_id: `snapshot:${identity}`,
+      industry_code: "801780.SI",
+      mode: "completed",
+      return_target: "market_stocks",
+      created_at: "2026-07-30T16:00:00+08:00",
+    },
+    instrument_identity: {
+      instrument_id: "000001.SZ",
+      instrument_name: "平安银行",
+      exchange: "SZ",
+      market: "主板",
+      risk_status: null,
+      is_special_treatment: false,
+    },
+    completed_market_evidence: {
+      evidence: {
+        state: "ready",
+        as_of: "2026-07-30",
+        provider: "tushare",
+        content_identity: identity,
+        known_gaps: [],
+      },
+      daily: [],
+      weekly: [],
+      monthly: [],
+    },
+    realtime_market_overlay: null,
+    industry_context: {
+      evidence: {
+        state: "ready",
+        as_of: "2026-07-30",
+        provider: "tushare",
+        content_identity: identity,
+        known_gaps: [],
+      },
+      taxonomy: "SW",
+      taxonomy_version: "SW2021",
+      l1_code: "801780.SI",
+      l1_name: "银行",
+      l2_code: null,
+      l2_name: null,
+    },
+    stock_evidence: {
+      instrument_id: "000001.SZ",
+      instrument_name: "平安银行",
+      as_of: "2026-07-30",
+      fundamental: null,
+      shareholder_concentration: {
+        status: "unavailable",
+        announced_on: null,
+        reporting_period: null,
+        available_at: null,
+        holder_count: null,
+        previous_holder_count: null,
+        change_rate: null,
+        direction: null,
+        consecutive_periods: 0,
+        observation_age_days: null,
+        known_gaps: [],
+      },
+      known_gaps: [],
+    },
+    content_identity: identity,
+    known_gaps: [],
   };
 }

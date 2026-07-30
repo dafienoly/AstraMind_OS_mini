@@ -9,6 +9,7 @@ from astramind_mini.local_ops.realtime_service_runtime import (
     RealtimeServiceLock,
     RealtimeStatusStore,
     active_capture_deadline,
+    realtime_session_state,
     retained_open_dates,
 )
 
@@ -35,6 +36,13 @@ def test_capture_window_uses_shanghai_trading_date() -> None:
     )
 
 
+def test_runtime_names_preopen_lunch_capture_and_sealing_phases() -> None:
+    assert realtime_session_state(datetime(2026, 7, 30, 1, 0, tzinfo=UTC)) == "preopen"
+    assert realtime_session_state(datetime(2026, 7, 30, 3, 0, tzinfo=UTC)) == "capturing"
+    assert realtime_session_state(datetime(2026, 7, 30, 4, 0, tzinfo=UTC)) == "lunch_break"
+    assert realtime_session_state(datetime(2026, 7, 30, 7, 1, tzinfo=UTC)) == "sealing"
+
+
 def test_retention_keeps_last_five_open_dates_only() -> None:
     open_dates = tuple(date(2026, 7, day) for day in range(20, 30))
 
@@ -59,6 +67,10 @@ def test_runtime_status_is_atomic_and_lock_rejects_duplicate(tmp_path: Path) -> 
 
     assert status is not None
     assert status.state == "waiting"
+    assert status.process_state == "running"
+    assert status.feed_state == "not_started"
+    assert status.last_successful_heartbeat_at is not None
+    assert status.log_path is not None
     assert status.market_date == "2026-07-29"
     with (
         RealtimeServiceLock(tmp_path),
@@ -66,4 +78,33 @@ def test_runtime_status_is_atomic_and_lock_rejects_duplicate(tmp_path: Path) -> 
         RealtimeServiceLock(tmp_path),
     ):
         pass
-    assert not (tmp_path / "service.lock").exists()
+    assert (tmp_path / "service.lock").exists()
+
+
+def test_runtime_status_retains_bounded_retry_root_causes(tmp_path: Path) -> None:
+    failures = tuple(
+        {"attempt": index, "error_code": f"specific_{index}", "detail": "bridge stderr"}
+        for index in range(1, 7)
+    )
+    store = RealtimeStatusStore(tmp_path)
+
+    store.publish(
+        "blocked",
+        feed_state="blocked",
+        projection_state="blocked",
+        exit_code=2,
+        last_error="specific_6",
+        retry_failures=failures,
+        recovery_action="检查 bridge stderr",
+    )
+
+    status = store.read()
+    assert status is not None
+    assert [item["error_code"] for item in status.retry_failures] == [
+        "specific_3",
+        "specific_4",
+        "specific_5",
+        "specific_6",
+    ]
+    assert status.exit_code == 2
+    assert status.recovery_action == "检查 bridge stderr"

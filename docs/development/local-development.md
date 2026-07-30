@@ -347,9 +347,15 @@ make miniqmt-source-benchmark PROVIDER_ENV_FILE=/mnt/e/work/AstraMind_OS/.env
 会话，闭市或休市保持等待；每个交易日和每次断线重连都会换代会话。进程锁阻止
 第二实例，运行心跳写入 `var/control/realtime-market-service/status.json`。
 
-一秒市场/行业结果只更新 SSE 消费的当前投影，不长期保存；全 A 股一分钟 K 线长期
-只追加保存，会话结束时冲刷最后一个未闭合分钟。原始与规范化细粒度微批在一分钟
-聚合校验通过后按五个交易日清理；会话/微批清单、哈希、缺口和删除台账永久保留。
+一秒市场/行业结果只更新 SSE 消费的当前投影，不长期保存。服务建立只读 feed 前，
+先从 `xtquant.xtdata` 热缓存补取当日已完成一分钟 Bar，再以
+`证券 + 市场分钟` 与 L1 增量确定性对账；形成中、闭合和封存 Bar 分层记录。断线时
+不把形成中分钟冒充闭合分钟，跨会话重叠登记为显式缺口并失败关闭。原始响应、
+规范一分钟和封存一分钟均保留最近五个交易日。
+
+原始与规范化微批只在会话微批身份、证券/分钟主键、完整性和内容哈希均可从聚合证据
+重算后清理；空的或被篡改的 `aggregation-verified.json` 不授权删除。会话/微批清单、
+哈希、缺口和删除台账永久保留。
 
 ```bash
 make realtime-market-service-status
@@ -358,8 +364,11 @@ make realtime-market-service-install
 make realtime-market-service-start
 ```
 
-`status` 同时报告 Windows 任务状态、WSL 运行状态、PID、心跳年龄、当前市场日期、
-会话、消息数和微批数；心跳超过 90 秒或 PID 不存在显示 `stale_process`。
+`status` 用 `installed / not_installed / query_failed` 区分 Windows 计划任务查询，
+并分别报告 WSL 进程、feed 会话、当前投影和完成日状态。状态还包含最后成功心跳、
+最后消息/微批、退出码、有界轮转日志、逐次重试根因和恢复动作；心跳超过 90 秒或
+PID 不存在显示 `stale_process`。查询失败不会覆盖最后已知安装事实，暂停后启动会先
+重新启用任务；恢复流程不需要卸载任务。
 
 测速命令记录原生获取、桥接、规范化、落盘和端到端延迟。默认产生诊断报告，不能
 激活生产路由；只有完整生产范围的覆盖、点时和内容门禁报告才允许执行配置级切源。

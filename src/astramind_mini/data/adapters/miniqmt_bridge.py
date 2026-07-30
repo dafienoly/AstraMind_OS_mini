@@ -6,16 +6,19 @@ import asyncio
 import contextlib
 import json
 import os
+import re
 import subprocess
 import uuid
+from collections import deque
 from collections.abc import AsyncIterator
 from pathlib import Path
 
 
 class MiniQMTBridgeError(RuntimeError):
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, detail: str | None = None) -> None:
         super().__init__(code)
         self.code = code
+        self.detail = detail
 
 
 class MiniQMTBridgeClient:
@@ -46,6 +49,11 @@ class MiniQMTBridgeClient:
         self._write_lock = asyncio.Lock()
         self._interop_socket: str | None = None
         self._windows_process_id: int | None = None
+        self._stderr_lines: deque[str] = deque(maxlen=20)
+
+    @property
+    def stderr_tail(self) -> tuple[str, ...]:
+        return tuple(self._stderr_lines)
 
     @property
     def provider_version(self) -> str:
@@ -72,7 +80,10 @@ class MiniQMTBridgeClient:
             except TimeoutError:
                 await self._force_stop()
                 if attempt == 2:
-                    raise MiniQMTBridgeError("bridge_startup_timeout") from None
+                    raise MiniQMTBridgeError(
+                        "bridge_startup_timeout",
+                        "\n".join(self._stderr_lines) or None,
+                    ) from None
                 await asyncio.sleep(0.5 * (attempt + 1))
                 continue
             self._provider_version = str(ready.get("provider_version", "unknown"))
@@ -280,7 +291,10 @@ class MiniQMTBridgeClient:
                 self._events.put_nowait(value)
             except asyncio.QueueFull:
                 self._overflowed = True
-        error = MiniQMTBridgeError("bridge_disconnected")
+        error = MiniQMTBridgeError(
+            "bridge_disconnected",
+            "\n".join(self._stderr_lines) or None,
+        )
         for future in self._pending.values():
             if not future.done():
                 future.set_exception(error)
@@ -289,8 +303,10 @@ class MiniQMTBridgeClient:
     async def _drain_stderr(self) -> None:
         process = self._process
         assert process is not None and process.stderr is not None
-        while await process.stderr.readline():
-            pass
+        while line := await process.stderr.readline():
+            text = line.decode(errors="replace").strip()
+            if text:
+                self._stderr_lines.append(_redact_stderr(text[-1000:]))
 
     def _command(self) -> list[str]:
         interpreter = self._python
@@ -324,6 +340,11 @@ class MiniQMTBridgeClient:
             text=True,
         )
         return result.stdout.strip()
+
+
+def _redact_stderr(value: str) -> str:
+    value = re.sub(r"(?i)c:\\users\\[^\\\s]+", r"C:\\Users\\<redacted>", value)
+    return re.sub(r"/home/[^/\s]+", "/home/<redacted>", value)
 
 
 __all__ = ["MiniQMTBridgeClient", "MiniQMTBridgeError"]

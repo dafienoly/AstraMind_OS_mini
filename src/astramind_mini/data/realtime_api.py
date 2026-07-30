@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -15,11 +15,17 @@ from pydantic import BaseModel, Field
 from .adapters.market_session_context import SnapshotMarketSessionContext
 from .adapters.realtime_projection_store import RealtimeProjectionStore
 from .adapters.realtime_watchlist_store import RealtimeWatchlistStore
+from .application.identity import content_hash
 from .application.market_session_status import (
     SHANGHAI,
     MarketSessionContext,
     enrich_market_projection,
 )
+from .application.realtime_indicators import (
+    RealtimeIndicatorPoint,
+    compute_realtime_indicators,
+)
+from .application.realtime_minutes import incomplete_bucket_gaps
 from .contracts.realtime_projection import (
     RealtimeInstrumentProjection,
     RealtimeInstrumentQuote,
@@ -52,6 +58,19 @@ class RealtimeInstrumentSearchResult(BaseModel):
     last_price: float | None
     change_percent: float | None
     status_label: str
+
+
+class RealtimeBarWindow(BaseModel):
+    instrument_id: str
+    frequency_minutes: int
+    start_date: date
+    end_date: date
+    sessions: tuple[date, ...]
+    bars: tuple[RealtimeMinuteBar, ...]
+    indicators: tuple[RealtimeIndicatorPoint, ...]
+    indicator_state: str
+    known_gaps: tuple[str, ...] = ()
+    next_cursor: str | None = None
 
 
 def register_realtime_routes(app: FastAPI, data_root: Path) -> None:
@@ -176,6 +195,8 @@ def _register_instrument_routes(
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
+    _register_bar_routes(app, store)
+
     @app.get(
         "/api/market/realtime/instruments/{instrument_id}",
         response_model=RealtimeInstrumentDetail,
@@ -204,6 +225,80 @@ def _register_instrument_routes(
             quote=quote,
             minutes=minutes,
             known_gaps=projection.known_gaps,
+        )
+
+
+def _register_bar_routes(app: FastAPI, store: RealtimeProjectionStore) -> None:
+    @app.get(
+        "/api/market/realtime/instruments/{instrument_id}/bars",
+        response_model=RealtimeBarWindow,
+    )
+    def realtime_instrument_bars(
+        instrument_id: str,
+        frequency: int = 1,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        recent_sessions: int = 1,
+    ) -> RealtimeBarWindow:
+        if frequency not in {1, 5, 15, 30, 60, 120}:
+            raise HTTPException(422, detail={"code": "unsupported_realtime_frequency"})
+        if not 1 <= recent_sessions <= 5:
+            raise HTTPException(422, detail={"code": "invalid_recent_session_count"})
+        available = store.available_market_dates()
+        if not available:
+            raise HTTPException(404, detail={"code": "realtime_minutes_not_available"})
+        resolved_end = end_date or available[-1]
+        eligible = tuple(value for value in available if value <= resolved_end)
+        selected = (
+            tuple(value for value in eligible if start_date <= value)
+            if start_date is not None
+            else eligible[-recent_sessions:]
+        )
+        if not selected or len(selected) > 5:
+            raise HTTPException(
+                422,
+                detail={"code": "realtime_date_window_exceeds_five_sessions"},
+            )
+        source_minutes = store.history_bars(
+            instrument_id=instrument_id.upper(),
+            frequency=1,
+            start_date=selected[0],
+            end_date=selected[-1],
+        )
+        bars = store.history_bars(
+            instrument_id=instrument_id.upper(),
+            frequency=frequency,
+            start_date=selected[0],
+            end_date=selected[-1],
+        )
+        seed_sessions = eligible[-5:]
+        calculation_bars = store.history_bars(
+            instrument_id=instrument_id.upper(),
+            frequency=frequency,
+            start_date=seed_sessions[0],
+            end_date=selected[-1],
+        )
+        all_indicators, indicator_state = compute_realtime_indicators(calculation_bars)
+        indicators = tuple(point for point in all_indicators if point.minute.date() >= selected[0])
+        cursor = content_hash(
+            {
+                "instrument_id": instrument_id.upper(),
+                "frequency": frequency,
+                "sessions": selected,
+                "last": bars[-1].source_identity if bars else None,
+            }
+        )
+        return RealtimeBarWindow(
+            instrument_id=instrument_id.upper(),
+            frequency_minutes=frequency,
+            start_date=selected[0],
+            end_date=selected[-1],
+            sessions=selected,
+            bars=bars,
+            indicators=indicators,
+            indicator_state=indicator_state,
+            known_gaps=incomplete_bucket_gaps(source_minutes, frequency),
+            next_cursor=cursor,
         )
 
 

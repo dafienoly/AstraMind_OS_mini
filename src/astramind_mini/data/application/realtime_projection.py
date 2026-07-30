@@ -36,6 +36,8 @@ class _OpenMinute:
     volume: float = 0
     amount: float = 0
     count: int = 0
+    first_observed_at: datetime | None = None
+    last_observed_at: datetime | None = None
 
 
 class RealtimeQuoteProjector:
@@ -57,6 +59,8 @@ class RealtimeQuoteProjector:
         self._limits = dict(price_limits or {})
         self._latest: dict[str, RealtimeQuoteObservation] = {}
         self._cumulative: dict[str, tuple[float, float]] = {}
+        self._reset_epochs: dict[str, int] = {}
+        self._minute_gaps: dict[str, set[str]] = defaultdict(set)
         self._minutes: dict[str, _OpenMinute] = {}
         self._closed: list[RealtimeMinuteBar] = []
 
@@ -165,6 +169,9 @@ class RealtimeQuoteProjector:
                 session_id=self._session_id,
                 instrument_id=instrument_id,
                 current=current,
+                is_complete=False,
+                known_gaps=tuple(sorted(self._minute_gaps.get(instrument_id, ()))),
+                counter_epoch=self._reset_epochs.get(instrument_id, 0),
             )
             for instrument_id, current in sorted(self._minutes.items())
             if instrument_id in self._types
@@ -193,23 +200,43 @@ class RealtimeQuoteProjector:
                     session_id=self._session_id,
                     instrument_id=instrument_id,
                     current=current,
+                    is_complete=True,
+                    known_gaps=tuple(sorted(self._minute_gaps.get(instrument_id, ()))),
+                    counter_epoch=self._reset_epochs.get(instrument_id, 0),
                 )
             )
         self._minutes.clear()
+        return self.drain_closed_minutes()
+
+    def close_completed_minutes(self, now: datetime) -> tuple[RealtimeMinuteBar, ...]:
+        completed_before = now.astimezone(SHANGHAI).replace(second=0, microsecond=0)
+        completed = tuple(
+            instrument_id
+            for instrument_id, current in self._minutes.items()
+            if current.minute < completed_before
+        )
+        for instrument_id in completed:
+            current = self._minutes.pop(instrument_id)
+            self._closed.append(
+                _minute_bar(
+                    session_id=self._session_id,
+                    instrument_id=instrument_id,
+                    current=current,
+                    is_complete=True,
+                    known_gaps=tuple(sorted(self._minute_gaps.pop(instrument_id, ()))),
+                    counter_epoch=self._reset_epochs.get(instrument_id, 0),
+                )
+            )
         return self.drain_closed_minutes()
 
     def _update_minute(self, row: RealtimeQuoteObservation) -> None:
         if row.last_price is None:
             return
         prior = self._cumulative.get(row.instrument_id)
-        current_volume = row.volume or (prior[0] if prior else 0)
-        current_amount = row.amount or (prior[1] if prior else 0)
+        current_volume = row.volume if row.volume is not None else (prior[0] if prior else 0)
+        current_amount = row.amount if row.amount is not None else (prior[1] if prior else 0)
         self._cumulative[row.instrument_id] = (current_volume, current_amount)
         if prior is None:
-            return
-        volume_delta = max(0, current_volume - prior[0])
-        amount_delta = max(0, current_amount - prior[1])
-        if volume_delta == 0 and amount_delta == 0:
             return
         minute = _market_datetime(row).replace(second=0, microsecond=0)
         current = self._minutes.get(row.instrument_id)
@@ -219,9 +246,24 @@ class RealtimeQuoteProjector:
                     session_id=self._session_id,
                     instrument_id=row.instrument_id,
                     current=current,
+                    is_complete=True,
+                    known_gaps=tuple(sorted(self._minute_gaps.get(row.instrument_id, ()))),
+                    counter_epoch=self._reset_epochs.get(row.instrument_id, 0),
                 )
             )
+            self._minute_gaps.pop(row.instrument_id, None)
             current = None
+        reset = current_volume < prior[0] or current_amount < prior[1]
+        if reset:
+            self._reset_epochs[row.instrument_id] = self._reset_epochs.get(row.instrument_id, 0) + 1
+            self._minute_gaps[row.instrument_id].add("cumulative_counter_reset")
+            volume_delta = current_volume
+            amount_delta = current_amount
+        else:
+            volume_delta = current_volume - prior[0]
+            amount_delta = current_amount - prior[1]
+        if volume_delta == 0 and amount_delta == 0 and not reset:
+            return
         if current is None:
             current = _OpenMinute(
                 minute=minute,
@@ -237,6 +279,8 @@ class RealtimeQuoteProjector:
         current.count += 1
         current.volume += volume_delta
         current.amount += amount_delta
+        current.first_observed_at = current.first_observed_at or row.received_at
+        current.last_observed_at = row.received_at
 
     def _instrument_quote(self, row: RealtimeQuoteObservation) -> RealtimeInstrumentQuote:
         limits = self._limits.get(row.instrument_id)
@@ -281,7 +325,25 @@ def _minute_bar(
     session_id: str,
     instrument_id: str,
     current: _OpenMinute,
+    is_complete: bool,
+    known_gaps: tuple[str, ...],
+    counter_epoch: int,
 ) -> RealtimeMinuteBar:
+    identity = content_hash(
+        {
+            "session_id": session_id,
+            "instrument_id": instrument_id,
+            "minute": current.minute,
+            "first_observed_at": current.first_observed_at,
+            "last_observed_at": current.last_observed_at,
+            "open": current.open,
+            "high": current.high,
+            "low": current.low,
+            "close": current.close,
+            "volume": current.volume,
+            "amount": current.amount,
+        }
+    )
     return RealtimeMinuteBar(
         provider="miniqmt",
         session_id=session_id,
@@ -294,6 +356,16 @@ def _minute_bar(
         volume=current.volume,
         amount=current.amount,
         observation_count=current.count,
+        source_kind="l1",
+        source_identity=identity,
+        first_observed_at=current.first_observed_at,
+        last_observed_at=current.last_observed_at,
+        is_complete=is_complete,
+        lifecycle="closed" if is_complete else "forming",
+        known_gaps=known_gaps,
+        coverage_minutes=1 if is_complete else 0,
+        content_identity=identity,
+        counter_epoch=counter_epoch,
     )
 
 

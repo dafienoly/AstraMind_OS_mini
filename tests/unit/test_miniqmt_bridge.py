@@ -9,6 +9,7 @@ import pytest
 from astramind_mini.data.adapters.miniqmt_bridge import (
     MiniQMTBridgeClient,
     MiniQMTBridgeError,
+    _redact_stderr,
 )
 
 
@@ -44,3 +45,13 @@ def test_request_timeout_force_stops_bridge(monkeypatch: pytest.MonkeyPatch) -> 
 
     asyncio.run(request())
     assert forced
+
+
+def test_bridge_stderr_redacts_local_user_paths() -> None:
+    redacted = _redact_stderr(r"C:\Users\alice\MiniQMT\error.log and /home/alice/project/error.log")
+
+    assert "alice" not in redacted
+    assert redacted == (
+        r"C:\Users\<redacted>\MiniQMT\error.log and "
+        "/home/<redacted>/project/error.log"
+    )

@@ -8,6 +8,7 @@ import type {
   RealtimeInstrumentDetail,
   RealtimeInstrumentProjection,
   RealtimeInstrumentSearchResult,
+  RealtimeBarWindow,
 } from "./types";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
@@ -170,6 +171,29 @@ export async function fetchRealtimeInstrumentDetail(
     response.status === 404 ? "尚无该证券盘中数据" : `证券明细 HTTP ${response.status}`,
   );
   return (await response.json()) as RealtimeInstrumentDetail;
+}
+
+export async function fetchRealtimeBarWindow(
+  instrumentId: string,
+  frequency: number,
+  recentSessions: number,
+  signal?: AbortSignal,
+): Promise<RealtimeBarWindow> {
+  const query = new URLSearchParams({
+    frequency: String(frequency),
+    recent_sessions: String(recentSessions),
+  });
+  const response = await fetch(
+    `${apiBaseUrl}/api/market/realtime/instruments/${
+      encodeURIComponent(instrumentId)
+    }/bars?${query}`,
+    { signal },
+  );
+  if (!response.ok) throw new RealtimeMarketFetchError(
+    response.status === 404 ? "empty" : "error",
+    response.status === 404 ? "尚无所选分钟窗口" : `分钟窗口 HTTP ${response.status}`,
+  );
+  return (await response.json()) as RealtimeBarWindow;
 }
 
 export async function fetchMarketWatchlist(signal?: AbortSignal): Promise<string[]> {

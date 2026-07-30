@@ -99,6 +99,35 @@ export type RealtimeMinuteBar = {
   volume: number;
   amount: number;
   observation_count: number;
+  source_kind: "warm_start" | "l1" | "reconciled";
+  source_identity: string | null;
+  is_complete: boolean;
+  known_gaps: string[];
+  lifecycle: "forming" | "closed" | "sealed";
+};
+
+export type RealtimeBarWindow = {
+  instrument_id: string;
+  frequency_minutes: number;
+  start_date: string;
+  end_date: string;
+  sessions: string[];
+  bars: RealtimeMinuteBar[];
+  indicators: RealtimeIndicatorPoint[];
+  indicator_state: "ready" | "insufficient_seed";
+  known_gaps: string[];
+  next_cursor: string | null;
+};
+
+export type RealtimeIndicatorPoint = {
+  minute: string;
+  ma5: number | null;
+  ma10: number | null;
+  ma30: number | null;
+  ma60: number | null;
+  macd: number | null;
+  signal: number | null;
+  histogram: number | null;
 };
 
 export type RealtimeInstrumentProjection = {

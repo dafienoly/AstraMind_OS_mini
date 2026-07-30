@@ -90,6 +90,21 @@ class RealtimeMinuteBar(ContractModel):
     volume: float = Field(ge=0)
     amount: float = Field(ge=0)
     observation_count: int = Field(ge=1)
+    source_kind: Literal["warm_start", "l1", "reconciled"] = "l1"
+    source_identity: ContentHash | None = None
+    first_observed_at: AwareDatetime | None = None
+    last_observed_at: AwareDatetime | None = None
+    is_complete: bool = True
+    known_gaps: tuple[str, ...] = ()
+    lifecycle: Literal["forming", "closed", "sealed"] = "closed"
+    schema_version: str = "miniqmt-minute-bar-v2"
+    price_unit: str = "CNY_per_share"
+    volume_unit: str = "provider_native_volume"
+    amount_unit: str = "CNY"
+    retrieved_at: AwareDatetime | None = None
+    coverage_minutes: int = Field(default=1, ge=0)
+    content_identity: ContentHash | None = None
+    counter_epoch: int = Field(default=0, ge=0)
 
 
 class RealtimeBookLevel(ContractModel):

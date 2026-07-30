@@ -7,11 +7,12 @@ import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 TASK_NAME = "AstraMind OS Mini - Realtime Market"
 TASK_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 TRIGGER_LABELS = ("Windows 登录后启动", "每日 08:55 恢复启动")
+type SchedulerQueryState = Literal["installed", "not_installed", "query_failed"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +24,17 @@ class RealtimeMarketTaskSpec:
 
     @property
     def action_arguments(self) -> str:
-        shell_command = shlex.join(["/usr/bin/make", "realtime-market-service-run"])
+        shell_command = shlex.join(
+            [
+                "/usr/bin/uv",
+                "run",
+                "python",
+                "scripts/manage_realtime_market_service.py",
+                "run-task",
+                "--make-target",
+                "realtime-market-service-run",
+            ]
+        )
         return subprocess.list2cmdline(
             [
                 "-d",
@@ -111,10 +122,30 @@ def task_is_present(stdout: str, stderr: str) -> bool:
     return TASK_NAME.lower() in "\n".join((stdout, stderr)).lower()
 
 
+def scheduler_query_state(
+    returncode: int,
+    stdout: str,
+    stderr: str,
+) -> SchedulerQueryState:
+    if returncode == 0 and task_is_present(stdout, stderr):
+        return "installed"
+    message = "\n".join((stdout, stderr)).casefold()
+    missing_markers = (
+        "cannot find the file specified",
+        "找不到指定的文件",
+        "系统找不到指定的文件",
+    )
+    if returncode == 1 and any(marker in message for marker in missing_markers):
+        return "not_installed"
+    return "query_failed"
+
+
 __all__ = [
     "TASK_NAME",
     "TRIGGER_LABELS",
     "RealtimeMarketTaskSpec",
+    "SchedulerQueryState",
+    "scheduler_query_state",
     "task_access_denied",
     "task_is_present",
     "task_xml",

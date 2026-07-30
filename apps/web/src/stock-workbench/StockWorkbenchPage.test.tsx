@@ -46,6 +46,20 @@ describe("StockWorkbenchPage business language", () => {
     expect(screen.getByText(projection().content_identity)).not.toBeVisible();
     expect(screen.getByText("historical_membership_not_then_known")).not.toBeVisible();
   });
+
+  it("reuses the approved inspector for minute scales, five days and yearly bars", async () => {
+    render(<StockWorkbenchPage />);
+
+    await screen.findByRole("heading", { level: 1, name: /平安银行/ });
+    expect(screen.getByRole("button", { name: "分钟" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "年 K" })).toBeVisible();
+    screen.getByRole("button", { name: "分钟" }).click();
+    await screen.findByRole("button", { name: "1 分钟" });
+    for (const label of ["1 分钟", "5 分钟", "15 分钟", "30 分钟", "60 分钟", "120 分钟"]) {
+      expect(screen.getByRole("button", { name: label })).toBeVisible();
+    }
+    expect(screen.getByRole("button", { name: "5 日" })).toBeVisible();
+  });
 });
 
 function projection(): StockWorkbenchProjection {

@@ -8,13 +8,15 @@ import os
 import tempfile
 import threading
 from collections.abc import Sequence
+from contextlib import suppress
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from ..application.identity import canonical_json, content_hash, file_hash
+from ..application.realtime_minutes import aggregate_session_bars
 from ..contracts.realtime_projection import (
     RealtimeInstrumentProjection,
     RealtimeMarketProjection,
@@ -75,19 +77,70 @@ class RealtimeProjectionStore:
         market_date: date,
     ) -> tuple[RealtimeMinuteBar, ...]:
         directory = self._root / "aggregates" / "1m" / market_date.isoformat()
-        rows: dict[datetime, RealtimeMinuteBar] = {}
+        rows: list[RealtimeMinuteBar] = []
         if directory.is_dir():
             for path in sorted(directory.glob("*.json.gz")):
-                payload = json.loads(gzip.decompress(path.read_bytes()))
-                for value in payload:
-                    if value.get("instrument_id") == instrument_id:
-                        row = RealtimeMinuteBar.model_validate(value)
-                        rows[row.minute] = row
-        with_current = self.current_instruments()
-        for row in with_current.open_minutes:
-            if row.instrument_id == instrument_id:
-                rows[row.minute] = row
-        return tuple(rows[key] for key in sorted(rows))
+                payload = TypeAdapter(tuple[RealtimeMinuteBar, ...]).validate_json(
+                    gzip.decompress(path.read_bytes())
+                )
+                rows.extend(row for row in payload if row.instrument_id == instrument_id)
+        try:
+            with_current = self.current_instruments()
+        except FileNotFoundError:
+            with_current = None
+        if with_current is not None and with_current.market_date == market_date:
+            for row in with_current.open_minutes:
+                if row.instrument_id == instrument_id:
+                    rows.append(row)
+        return aggregate_session_bars(tuple(rows), 1)
+
+    def history_bars(
+        self,
+        *,
+        instrument_id: str,
+        frequency: int,
+        start_date: date,
+        end_date: date,
+    ) -> tuple[RealtimeMinuteBar, ...]:
+        if end_date < start_date:
+            raise ValueError("invalid_realtime_date_window")
+        root = self._root / "aggregates" / "1m"
+        rows: list[RealtimeMinuteBar] = []
+        if root.is_dir():
+            for directory in sorted(root.iterdir()):
+                try:
+                    value = date.fromisoformat(directory.name)
+                except ValueError:
+                    continue
+                if not start_date <= value <= end_date:
+                    continue
+                rows.extend(self.minute_bars(instrument_id=instrument_id, market_date=value))
+        return aggregate_session_bars(tuple(rows), frequency)
+
+    def available_market_dates(self) -> tuple[date, ...]:
+        root = self._root / "aggregates" / "1m"
+        values = []
+        if root.is_dir():
+            for directory in root.iterdir():
+                try:
+                    values.append(date.fromisoformat(directory.name))
+                except ValueError:
+                    continue
+        return tuple(sorted(set(values)))
+
+    def persist_warm_start(
+        self,
+        *,
+        market_date: date,
+        request_identity: str,
+        raw_payload: object,
+        rows: Sequence[RealtimeMinuteBar],
+    ) -> tuple[Path, Path | None]:
+        digest = request_identity.rsplit(":", 1)[-1]
+        raw_path = self._root / "warm-start" / market_date.isoformat() / f"{digest}.raw.json.gz"
+        _write_once(raw_path, gzip.compress(canonical_json(raw_payload), mtime=0))
+        aggregate = self.append_aggregate(kind="1m", market_date=market_date, rows=rows)
+        return raw_path, aggregate
 
     def append_aggregate(
         self,
@@ -115,15 +168,62 @@ class RealtimeProjectionStore:
         relative_paths = tuple(path.relative_to(self._root) for path in aggregate_paths)
         if any(path.parts[:2] != ("aggregates", "1m") for path in relative_paths):
             raise ValueError("细粒度留存清理只能使用 1 分钟聚合证据")
+        aggregate_rows: list[RealtimeMinuteBar] = []
+        for path in aggregate_paths:
+            values = TypeAdapter(tuple[RealtimeMinuteBar, ...]).validate_json(
+                gzip.decompress(path.read_bytes())
+            )
+            aggregate_rows.extend(values)
+        if not aggregate_rows:
+            raise ValueError("实时会话分钟聚合为空")
+        if any(row.session_id != session_id for row in aggregate_rows):
+            raise ValueError("实时会话分钟聚合混入其他会话")
+        keys = [
+            (row.provider, row.session_id, row.instrument_id, row.minute.isoformat())
+            for row in aggregate_rows
+        ]
+        if len(keys) != len(set(keys)):
+            raise ValueError("实时会话分钟聚合主键重复")
+        if any(not row.is_complete or row.known_gaps for row in aggregate_rows):
+            raise ValueError("实时会话分钟聚合含不完整或缺口 Bar")
+        aggregate_hashes = {
+            str(path.relative_to(self._root)): file_hash(path) for path in aggregate_paths
+        }
+        directory = self._root / "sessions" / session_id.rsplit(":", 1)[-1]
+        microbatch_paths = tuple(sorted((directory / "microbatches").glob("*.json")))
+        if not microbatch_paths:
+            raise ValueError("实时会话缺少微批证据")
+        microbatch_hashes = {
+            str(path.relative_to(self._root)): file_hash(path) for path in microbatch_paths
+        }
+        session_manifest = json.loads((directory / "session.json").read_text(encoding="utf-8"))
+        microbatch_values = [
+            json.loads(path.read_text(encoding="utf-8")) for path in microbatch_paths
+        ]
+        microbatch_ids = tuple(str(value["microbatch_id"]) for value in microbatch_values)
+        if (
+            any(value.get("session_id") != session_id for value in microbatch_values)
+            or tuple(session_manifest.get("microbatch_ids", ())) != microbatch_ids
+        ):
+            raise ValueError("实时会话微批身份与会话清单不一致")
         payload = {
             "session_id": session_id,
             "verified_at": datetime.now().astimezone().isoformat(),
             "aggregate_kind": "1m",
-            "aggregate_hashes": {
-                str(path.relative_to(self._root)): file_hash(path) for path in aggregate_paths
-            },
+            "aggregate_hashes": aggregate_hashes,
+            "microbatch_hashes": microbatch_hashes,
+            "row_count": len(aggregate_rows),
+            "primary_key_hash": content_hash(sorted(keys)),
+            "evidence_hash": content_hash(
+                {
+                    "session_id": session_id,
+                    "aggregate_hashes": aggregate_hashes,
+                    "microbatch_hashes": microbatch_hashes,
+                    "row_count": len(aggregate_rows),
+                    "primary_key_hash": content_hash(sorted(keys)),
+                }
+            ),
         }
-        directory = self._root / "sessions" / session_id.rsplit(":", 1)[-1]
         path = directory / "aggregation-verified.json"
         _write_once(path, canonical_json(payload))
         return path
@@ -141,6 +241,8 @@ class RealtimeProjectionStore:
             if not manifest.is_file() or not verified.is_file():
                 continue
             value = json.loads(manifest.read_text(encoding="utf-8"))
+            if not self._aggregation_evidence_valid(value, verified):
+                continue
             market_date = _session_market_date(value)
             if market_date in retained_dates:
                 continue
@@ -162,6 +264,99 @@ class RealtimeProjectionStore:
                 target.unlink()
                 removed.append(target)
         return tuple(removed)
+
+    def prune_minute_history(self, *, retained_dates: frozenset[date]) -> tuple[Path, ...]:
+        removed = []
+        for relative in (Path("aggregates/1m"), Path("warm-start")):
+            root = self._root / relative
+            if not root.is_dir():
+                continue
+            for directory in root.iterdir():
+                try:
+                    market_date = date.fromisoformat(directory.name)
+                except ValueError:
+                    continue
+                if market_date in retained_dates:
+                    continue
+                for path in directory.iterdir():
+                    if path.is_file():
+                        path.unlink()
+                        removed.append(path)
+                with suppress(OSError):
+                    directory.rmdir()
+        return tuple(sorted(removed))
+
+    def _aggregation_evidence_valid(
+        self,
+        session: dict[str, object],
+        path: Path,
+    ) -> bool:
+        try:
+            evidence = json.loads(path.read_text(encoding="utf-8"))
+            if evidence.get("session_id") != session.get("session_id"):
+                return False
+            hashes = evidence["aggregate_hashes"]
+            microbatch_hashes = evidence["microbatch_hashes"]
+            if (
+                not isinstance(hashes, dict)
+                or not hashes
+                or not isinstance(microbatch_hashes, dict)
+                or not microbatch_hashes
+            ):
+                return False
+            if any(
+                file_hash(self._root / str(relative)) != expected
+                for relative, expected in {**hashes, **microbatch_hashes}.items()
+            ):
+                return False
+            rows = tuple(
+                row
+                for relative in hashes
+                for row in TypeAdapter(tuple[RealtimeMinuteBar, ...]).validate_json(
+                    gzip.decompress((self._root / str(relative)).read_bytes())
+                )
+            )
+            keys = sorted(
+                (row.provider, row.session_id, row.instrument_id, row.minute.isoformat())
+                for row in rows
+            )
+            if len(keys) != len(set(keys)):
+                return False
+            if (
+                len(rows) != evidence["row_count"]
+                or content_hash(keys) != evidence["primary_key_hash"]
+                or any(
+                    row.session_id != session.get("session_id")
+                    or not row.is_complete
+                    or row.known_gaps
+                    for row in rows
+                )
+            ):
+                return False
+            microbatch_ids = tuple(
+                str(
+                    json.loads((self._root / str(relative)).read_text(encoding="utf-8"))[
+                        "microbatch_id"
+                    ]
+                )
+                for relative in sorted(microbatch_hashes)
+            )
+            session_microbatch_ids = session.get("microbatch_ids")
+            if (
+                not isinstance(session_microbatch_ids, list | tuple)
+                or tuple(str(value) for value in session_microbatch_ids) != microbatch_ids
+            ):
+                return False
+            identity = {
+                "session_id": evidence["session_id"],
+                "aggregate_hashes": hashes,
+                "microbatch_hashes": microbatch_hashes,
+                "row_count": evidence["row_count"],
+                "primary_key_hash": evidence["primary_key_hash"],
+            }
+            return bool(evidence.get("evidence_hash") == content_hash(identity))
+        except (FileNotFoundError, KeyError, OSError, TypeError, ValueError):
+            return False
 
 
 def _session_market_date(value: dict[str, object]) -> date:

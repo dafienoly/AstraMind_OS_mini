@@ -205,6 +205,63 @@ def test_instrument_projection_keeps_book_status_limits_and_forming_minute() -> 
     assert projection.open_minutes[0].close == 11.01
 
 
+def test_cumulative_counter_reset_is_explicit_not_silently_clamped() -> None:
+    started = datetime(2026, 7, 30, 1, 30, 10, tzinfo=UTC)
+    projector = RealtimeQuoteProjector(
+        session_id=content_hash({"session": "reset"}),
+        instrument_types={"600000.SH": "stock"},
+    )
+    projector.ingest((quote("600000.SH", started, price=10, volume=100, amount=1000),))
+    projector.ingest(
+        (
+            quote(
+                "600000.SH",
+                started.replace(second=20),
+                price=10.1,
+                volume=0,
+                amount=0,
+            ),
+        )
+    )
+
+    forming = projector.instrument_projection(started.replace(second=21)).open_minutes[0]
+
+    assert forming.volume == 0
+    assert forming.amount == 0
+    assert forming.known_gaps == ("cumulative_counter_reset",)
+    assert forming.is_complete is False
+    assert forming.counter_epoch == 1
+
+
+def test_short_capture_does_not_close_current_incomplete_minute() -> None:
+    started = datetime(2026, 7, 30, 1, 30, 10, tzinfo=UTC)
+    projector = RealtimeQuoteProjector(
+        session_id=content_hash({"session": "short-capture"}),
+        instrument_types={"600000.SH": "stock"},
+    )
+    projector.ingest((quote("600000.SH", started, price=10, volume=100, amount=1000),))
+    projector.ingest(
+        (
+            quote(
+                "600000.SH",
+                started.replace(second=20),
+                price=10.1,
+                volume=110,
+                amount=1101,
+            ),
+        )
+    )
+
+    assert projector.close_completed_minutes(started.replace(second=40)) == ()
+    forming = projector.instrument_projection(started.replace(second=40)).open_minutes
+    assert len(forming) == 1
+    assert forming[0].lifecycle == "forming"
+    sealed = projector.close_completed_minutes(started.replace(minute=31, second=0))
+    assert len(sealed) == 1
+    assert sealed[0].lifecycle == "closed"
+    assert sealed[0].is_complete is True
+
+
 def test_raw_retention_requires_verified_aggregation(tmp_path: Path) -> None:
     store = RealtimeProjectionStore(tmp_path)
     session_id = content_hash({"session": "old"})
@@ -231,10 +288,10 @@ def test_raw_retention_requires_verified_aggregation(tmp_path: Path) -> None:
         retained_dates=frozenset({date(2026, 7, 28), date(2026, 7, 29)})
     )
 
-    assert removed == (normalized, raw)
-    assert not raw.exists()
-    assert not normalized.exists()
-    assert (directory / "raw-retention-tombstone.json").is_file()
+    assert removed == ()
+    assert raw.exists()
+    assert normalized.exists()
+    assert not (directory / "raw-retention-tombstone.json").exists()
 
 
 def test_retention_requires_minute_aggregation_evidence(tmp_path: Path) -> None:

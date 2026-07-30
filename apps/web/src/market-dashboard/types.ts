@@ -9,6 +9,8 @@ export type {
   RealtimeInstrumentSearchResult,
   RealtimeMarketProjection,
   RealtimeMinuteBar,
+  RealtimeBarWindow,
+  RealtimeIndicatorPoint,
   RealtimeOperationalState,
 } from "./realtimeTypes";
 

@@ -21,6 +21,7 @@ from astramind_mini.data.contracts import RealtimeMarketProjection
 from astramind_mini.data.contracts.realtime_projection import (
     RealtimeInstrumentProjection,
     RealtimeInstrumentQuote,
+    RealtimeMinuteBar,
 )
 from astramind_mini.data.realtime_api import _freshness, _instrument_events
 
@@ -222,3 +223,51 @@ def test_instrument_sse_does_not_block_the_api_event_loop() -> None:
 
     assert responsive is True
     assert "event: instruments" in payload
+
+
+def test_realtime_bar_window_aggregates_complete_session_buckets(tmp_path: Path) -> None:
+    settings = Settings(
+        environment="test",
+        data_dir=tmp_path / "data",
+        control_db_path=tmp_path / "control.sqlite3",
+        local_ops_db_path=tmp_path / "ops.sqlite3",
+        shadow_db_path=tmp_path / "shadow.sqlite3",
+    )
+    market_date = date(2026, 7, 30)
+    start = datetime(2026, 7, 30, 9, 30, tzinfo=SHANGHAI)
+    rows = tuple(
+        RealtimeMinuteBar(
+            provider="miniqmt",
+            session_id=content_hash({"session": "bars"}),
+            instrument_id="600000.SH",
+            minute=start + timedelta(minutes=index),
+            open=10 + index,
+            high=10 + index,
+            low=10 + index,
+            close=10 + index,
+            volume=1,
+            amount=10 + index,
+            observation_count=1,
+            source_identity=content_hash({"minute": index}),
+            lifecycle="sealed",
+        )
+        for index in range(15)
+    )
+    RealtimeProjectionStore(settings.data_dir).append_aggregate(
+        kind="1m",
+        market_date=market_date,
+        rows=rows,
+    )
+
+    response = TestClient(create_app(settings)).get(
+        "/api/market/realtime/instruments/600000.SH/bars",
+        params={"frequency": 15, "recent_sessions": 5},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["sessions"] == ["2026-07-30"]
+    assert len(response.json()["bars"]) == 1
+    assert response.json()["bars"][0]["open"] == 10
+    assert response.json()["bars"][0]["close"] == 24
+    assert response.json()["indicator_state"] == "insufficient_seed"
+    assert response.json()["known_gaps"] == []
